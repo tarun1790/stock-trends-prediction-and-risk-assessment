@@ -1,5 +1,6 @@
 /**
- * StockTrend AI - Next-Gen Quantitative Intelligence Dashboard Client
+ * StockTrend AI - Real-Time Quantitative Intelligence Client
+ * Groww-Style Stock Terminal with Live WebSockets & Strict Black/White/Red/Green Palette.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -14,6 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let featureImportanceChartInstance = null;
   let temporalAttentionChartInstance = null;
   let monteCarloChartInstance = null;
+  let liveWebSocket = null;
 
   // DOM Elements
   const tabBtns = document.querySelectorAll(".tab-btn");
@@ -21,14 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const sectorSelect = document.getElementById("sector-select");
   const customTickerInput = document.getElementById("custom-ticker-input");
   const btnCustomTicker = document.getElementById("btn-custom-ticker");
-  const btnRefreshData = document.getElementById("btn-refresh-data");
   const overlaySelect = document.getElementById("indicator-overlay-select");
 
   const btnRunMultiHorizon = document.getElementById("btn-run-multi-horizon");
   const btnRunExplain = document.getElementById("btn-run-explain");
   const btnRunMonteCarlo = document.getElementById("btn-run-monte-carlo");
   const btnRunBenchmark = document.getElementById("btn-run-benchmark");
-  const btnRunPrediction = document.getElementById("btn-run-prediction");
   const btnRunBacktest = document.getElementById("btn-run-backtest");
 
   // -----------------------------------------------------------------------
@@ -37,11 +37,11 @@ document.addEventListener("DOMContentLoaded", () => {
   tabBtns.forEach((btn) => {
     btn.addEventListener("click", () => {
       tabBtns.forEach((b) => {
-        b.classList.remove("active-tab", "text-white");
-        b.classList.add("text-slate-400");
+        b.classList.remove("active-tab", "text-black");
+        b.classList.add("text-zinc-400");
       });
-      btn.classList.add("active-tab", "text-white");
-      btn.classList.remove("text-slate-400");
+      btn.classList.add("active-tab", "text-black");
+      btn.classList.remove("text-zinc-400");
 
       const targetId = btn.getAttribute("data-tab");
       tabContents.forEach((c) => {
@@ -66,10 +66,10 @@ document.addEventListener("DOMContentLoaded", () => {
       const gpuText = document.getElementById("gpu-status-text");
 
       if (data.cuda_available) {
-        gpuBadge.className = "flex items-center space-x-2 bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-medium shadow-sm";
+        gpuBadge.className = "flex items-center space-x-1.5 bg-black border border-emerald-800 text-emerald-400 px-2.5 py-1 rounded";
         gpuText.textContent = data.gpu_name ? `GPU: ${data.gpu_name}` : "CUDA GPU Active";
       } else {
-        gpuBadge.className = "flex items-center space-x-2 bg-amber-950/80 border border-amber-800/80 text-amber-400 text-xs px-3 py-1.5 rounded-full font-medium shadow-sm";
+        gpuBadge.className = "flex items-center space-x-1.5 bg-black border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded";
         gpuText.textContent = "CPU Execution";
       }
     } catch (e) {
@@ -78,7 +78,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getTargetParams() {
-    const isTicker = ["AAPL", "NVDA", "MSFT", "TSLA", "SPY", "BTC-USD", "CL=F"].includes(
+    const isTicker = !["diversified_financials", "petroleum", "basic_metals", "non_metallic_minerals"].includes(
       sectorSelect.value
     ) || customTickerInput.value.trim() !== "";
 
@@ -91,13 +91,149 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 3. Technical Indicators & Price Chart
+  // 3. Groww-Style Stock Overview & Fundamentals
+  // -----------------------------------------------------------------------
+  async function loadStockOverview() {
+    const target = getTargetParams();
+    const sym = target.ticker || "SAMPLE";
+
+    try {
+      const res = await fetch(`/api/stock/overview/${sym}`);
+      if (!res.ok) return;
+      const data = await res.json();
+
+      // Header Identity
+      document.getElementById("stock-name").textContent = data.name;
+      document.getElementById("stock-exchange").textContent = data.exchange;
+      document.getElementById("stock-logo-box").textContent = data.ticker.substring(0, 2);
+
+      // Live Price & Change
+      const isUp = data.day_change >= 0;
+      const curr = data.currency || "$";
+      document.getElementById("live-price").textContent = `${curr}${data.current_price.toFixed(2)}`;
+      document.getElementById("live-change").className = `text-xs font-bold font-mono ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+      document.getElementById("live-change").textContent = `${isUp ? "+" : ""}${data.day_change.toFixed(2)} (${isUp ? "+" : ""}${data.day_change_pct.toFixed(2)}%) 1D`;
+
+      // Range Sliders
+      document.getElementById("today-low").textContent = `${curr}${data.today_range.low}`;
+      document.getElementById("today-high").textContent = `${curr}${data.today_range.high}`;
+      document.getElementById("today-range-bar").style.width = `${Math.min(Math.max(data.today_range.current_ratio_pct, 5), 100)}%`;
+
+      document.getElementById("year-low").textContent = `${curr}${data.year_52w_range.low}`;
+      document.getElementById("year-high").textContent = `${curr}${data.year_52w_range.high}`;
+      document.getElementById("year-range-bar").style.width = `${Math.min(Math.max(data.year_52w_range.current_ratio_pct, 5), 100)}%`;
+
+      // Technical Verdict
+      const v = data.technical_verdict;
+      const isVerdictUp = v.verdict.includes("BULLISH");
+      document.getElementById("tech-verdict-text").textContent = v.verdict;
+      document.getElementById("tech-verdict-text").className = `text-sm font-extrabold ${isVerdictUp ? "text-emerald-400" : "text-rose-400"}`;
+      document.getElementById("tech-verdict-counts").textContent = `${v.bullish_signals} Bullish • ${v.neutral_signals} Neutral • ${v.bearish_signals} Bearish`;
+      document.getElementById("verdict-icon-box").textContent = isVerdictUp ? "▲" : "▼";
+      document.getElementById("verdict-icon-box").className = `w-9 h-9 rounded bg-black border ${isVerdictUp ? "border-emerald-800 text-emerald-400" : "border-rose-800 text-rose-400"} flex items-center justify-center font-bold text-base`;
+
+      // Fundamentals
+      const f = data.fundamentals;
+      document.getElementById("fund-market-cap").textContent = f.market_cap;
+      document.getElementById("fund-pe").textContent = f.pe_ratio;
+      document.getElementById("fund-pb").textContent = f.pb_ratio;
+      document.getElementById("fund-ind-pe").textContent = f.industry_pe;
+      document.getElementById("fund-roe").textContent = `${f.roe_pct}%`;
+      document.getElementById("fund-eps").textContent = `${curr}${f.eps_ttm}`;
+      document.getElementById("fund-div").textContent = `${f.dividend_yield_pct}%`;
+      document.getElementById("fund-vol").textContent = f.volume_24h.toLocaleString();
+    } catch (e) {
+      console.warn("Could not fetch overview:", e);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 4. Real-Time WebSocket Streaming Engine
+  // -----------------------------------------------------------------------
+  function initWebSocket() {
+    if (liveWebSocket) {
+      liveWebSocket.close();
+    }
+
+    const target = getTargetParams();
+    const sym = target.ticker || "NVDA";
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const wsUrl = `${protocol}//${window.location.host}/ws/live-feed/${sym}`;
+
+    const wsStatusText = document.getElementById("ws-status-text");
+
+    liveWebSocket = new WebSocket(wsUrl);
+
+    liveWebSocket.onopen = () => {
+      wsStatusText.textContent = `WS LIVE STREAM: ${sym}`;
+    };
+
+    liveWebSocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      updateLiveStreamData(data);
+    };
+
+    liveWebSocket.onclose = () => {
+      wsStatusText.textContent = "WS RECONNECTING...";
+      setTimeout(initWebSocket, 3000);
+    };
+
+    liveWebSocket.onerror = (err) => {
+      console.error("WS Error:", err);
+    };
+  }
+
+  function updateLiveStreamData(d) {
+    // 1. Live Price Tick
+    const isUp = d.is_up;
+    const currPriceEl = document.getElementById("live-price");
+    if (currPriceEl) {
+      currPriceEl.textContent = `$${d.price.toFixed(2)}`;
+      currPriceEl.className = `text-2xl font-extrabold font-mono ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+    }
+
+    // 2. Market Depth (Groww Style)
+    if (d.order_book) {
+      const ob = d.order_book;
+      document.getElementById("depth-ratio-text").textContent = `${ob.buy_ratio_pct}% Buy / ${(100 - ob.buy_ratio_pct).toFixed(1)}% Sell`;
+      document.getElementById("depth-buy-bar").style.width = `${ob.buy_ratio_pct}%`;
+      document.getElementById("depth-sell-bar").style.width = `${100 - ob.buy_ratio_pct}%`;
+      document.getElementById("depth-total-buy").textContent = `${ob.total_buy_qty.toLocaleString()} Qty`;
+      document.getElementById("depth-total-sell").textContent = `${ob.total_sell_qty.toLocaleString()} Qty`;
+
+      const bidsBody = document.getElementById("depth-bids-body");
+      bidsBody.innerHTML = ob.bids
+        .map(
+          (b) => `
+        <tr class="hover:bg-zinc-900">
+          <td class="py-1 text-zinc-400">${b.orders}</td>
+          <td class="py-1 font-mono">${b.qty.toLocaleString()}</td>
+          <td class="py-1 text-right font-bold font-mono">$${b.price.toFixed(2)}</td>
+        </tr>
+      `
+        )
+        .join("");
+
+      const asksBody = document.getElementById("depth-asks-body");
+      asksBody.innerHTML = ob.asks
+        .map(
+          (a) => `
+        <tr class="hover:bg-zinc-900">
+          <td class="py-1 font-bold font-mono">$${a.price.toFixed(2)}</td>
+          <td class="py-1 font-mono">${a.qty.toLocaleString()}</td>
+          <td class="py-1 text-right text-zinc-400">${a.orders}</td>
+        </tr>
+      `
+        )
+        .join("");
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 5. Technical Indicators & Price Chart (Monochrome + Red/Green)
   // -----------------------------------------------------------------------
   async function loadMarketAndIndicators() {
     const payload = getTargetParams();
-    const assetName = payload.ticker || sectorSelect.options[sectorSelect.selectedIndex].text;
-    document.getElementById("asset-subtitle").textContent = `${assetName} Historical Series`;
-    document.getElementById("predict-ticker-badge").textContent = assetName;
 
     try {
       const res = await fetch("/api/indicators/compute", {
@@ -111,6 +247,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
       renderPriceChart();
       renderIndicatorCards();
+      loadStockOverview();
+      initWebSocket();
     } catch (err) {
       console.error("Failed to load indicators:", err);
     }
@@ -124,9 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const selectedOverlay = overlaySelect.value.toLowerCase();
     const overlayValues = currentIndicatorsData.map((d) => d[selectedOverlay]);
 
-    if (priceChartInstance) {
-      priceChartInstance.destroy();
-    }
+    if (priceChartInstance) priceChartInstance.destroy();
 
     priceChartInstance = new Chart(ctx, {
       type: "line",
@@ -134,27 +270,26 @@ document.addEventListener("DOMContentLoaded", () => {
         labels,
         datasets: [
           {
-            label: "Close Price",
+            label: "Close Price ($)",
             data: closePrices,
-            borderColor: "#6366f1",
-            backgroundColor: "rgba(99, 102, 241, 0.1)",
-            borderWidth: 2,
+            borderColor: "#ffffff",
+            backgroundColor: "rgba(255, 255, 255, 0.04)",
+            borderWidth: 1.8,
+            pointRadius: 0,
             fill: true,
-            tension: 0.1,
+            tension: 0.05,
             yAxisID: "y",
           },
           {
             label: `${overlaySelect.value} Indicator`,
             data: overlayValues,
-            borderColor: "#10b981",
-            borderWidth: 1.8,
-            borderDash: [4, 4],
+            borderColor: "#22c55e",
+            borderWidth: 1.5,
+            borderDash: [3, 3],
             pointRadius: 0,
             fill: false,
-            tension: 0.1,
-            yAxisID: ["rsi", "stck", "stcd", "lwr", "ado", "cci", "mom"].includes(selectedOverlay)
-              ? "y1"
-              : "y",
+            tension: 0.05,
+            yAxisID: ["rsi", "stck", "stcd", "lwr", "ado", "cci", "mom"].includes(selectedOverlay) ? "y1" : "y",
           },
         ],
       },
@@ -163,17 +298,23 @@ document.addEventListener("DOMContentLoaded", () => {
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         plugins: {
-          legend: { labels: { color: "#94a3b8" } },
-          tooltip: { backgroundColor: "#0f172a", borderColor: "#334155", borderWidth: 1 },
+          legend: { labels: { color: "#ffffff", font: { family: "monospace", size: 11 } } },
+          tooltip: {
+            backgroundColor: "#000000",
+            borderColor: "#3f3f46",
+            borderWidth: 1,
+            titleColor: "#ffffff",
+            bodyColor: "#ffffff",
+          },
         },
         scales: {
-          x: { grid: { color: "#1e293b" }, ticks: { color: "#64748b", maxTicksLimit: 12 } },
-          y: { position: "left", grid: { color: "#1e293b" }, ticks: { color: "#64748b" } },
+          x: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" }, maxTicksLimit: 14 } },
+          y: { position: "left", grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
           y1: {
             position: "right",
             display: ["rsi", "stck", "stcd", "lwr", "ado", "cci", "mom"].includes(selectedOverlay),
             grid: { drawOnChartArea: false },
-            ticks: { color: "#10b981" },
+            ticks: { color: "#22c55e", font: { family: "monospace" } },
           },
         },
       },
@@ -188,12 +329,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const indicators = [
       { name: "SMA (10)", val: latest.sma, bin: latest.binary_signals?.SMA },
       { name: "WMA (10)", val: latest.wma, bin: latest.binary_signals?.WMA },
-      { name: "Momentum", val: latest.mom, bin: latest.binary_signals?.MOM },
+      { name: "MOM", val: latest.mom, bin: latest.binary_signals?.MOM },
       { name: "Stoch %K", val: latest.stck, bin: latest.binary_signals?.STCK },
       { name: "Stoch %D", val: latest.stcd, bin: latest.binary_signals?.STCD },
       { name: "RSI (10)", val: latest.rsi, bin: latest.binary_signals?.RSI },
       { name: "MACD Sig", val: latest.sig, bin: latest.binary_signals?.SIG },
-      { name: "Larry's %R", val: latest.lwr, bin: latest.binary_signals?.LWR },
+      { name: "Larry %R", val: latest.lwr, bin: latest.binary_signals?.LWR },
       { name: "A/D Osc", val: latest.ado, bin: latest.binary_signals?.ADO },
       { name: "CCI", val: latest.cci, bin: latest.binary_signals?.CCI },
     ];
@@ -201,18 +342,16 @@ document.addEventListener("DOMContentLoaded", () => {
     grid.innerHTML = indicators
       .map((ind) => {
         const isUp = ind.bin === 1;
-        const badgeColor = isUp
-          ? "bg-emerald-950 text-emerald-400 border-emerald-800"
-          : "bg-rose-950 text-rose-400 border-rose-800";
-        const signText = isUp ? "+1 UP" : "-1 DOWN";
+        const badgeColor = isUp ? "bg-black text-emerald-400 border-emerald-800" : "bg-black text-rose-400 border-rose-800";
+        const signText = isUp ? "+1 UP" : "-1 DN";
 
         return `
-        <div class="bg-slate-900 border border-slate-800 p-3 rounded-xl shadow">
+        <div class="terminal-card p-2.5">
           <div class="flex items-center justify-between">
-            <span class="text-xs text-slate-400 font-medium">${ind.name}</span>
-            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${badgeColor}">${signText}</span>
+            <span class="text-[11px] text-zinc-400 font-mono">${ind.name}</span>
+            <span class="text-[9px] font-bold px-1 py-0.5 rounded border ${badgeColor}">${signText}</span>
           </div>
-          <p class="text-sm font-bold text-white mt-1.5 font-mono">${ind.val !== null ? ind.val : "--"}</p>
+          <p class="text-xs font-bold text-white mt-1 font-mono">${ind.val !== null ? ind.val : "--"}</p>
         </div>
       `;
       })
@@ -220,7 +359,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 4. Multi-Horizon Forecasting (1D, 3D, 5D, 10D, 20D)
+  // 6. Multi-Horizon Forecasting (1D to 20D)
   // -----------------------------------------------------------------------
   async function runMultiHorizon() {
     btnRunMultiHorizon.disabled = true;
@@ -246,8 +385,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Multi-horizon forecast failed:", err);
     } finally {
       btnRunMultiHorizon.disabled = false;
-      btnRunMultiHorizon.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Compute Multi-Horizon Forecasts</span>`;
-      lucide.createIcons();
+      btnRunMultiHorizon.textContent = "Compute Multi-Horizon Forecasts";
     }
   }
 
@@ -259,26 +397,25 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((k) => {
         const item = fcasts[k];
         const isUp = item.trend === "UP";
-        const badgeColor = isUp ? "text-emerald-400 bg-emerald-950/80 border-emerald-800" : "text-rose-400 bg-rose-950/80 border-rose-800";
-        const icon = isUp ? "trending-up" : "trending-down";
+        const badgeColor = isUp ? "text-emerald-400 bg-black border-emerald-800" : "text-rose-400 bg-black border-rose-800";
         const returnSign = item.expected_return_pct >= 0 ? "+" : "";
 
         return `
-        <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl flex flex-col justify-between">
+        <div class="terminal-card p-3 flex flex-col justify-between">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-xs uppercase font-bold text-slate-400">${item.horizon_days}-Day Horizon</span>
-            <span class="text-[10px] font-extrabold px-2 py-0.5 rounded border ${badgeColor}">${item.trend}</span>
+            <span class="text-xs uppercase font-bold text-zinc-400 font-mono">${item.horizon_days}-Day Horizon</span>
+            <span class="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded border ${badgeColor}">${item.trend}</span>
           </div>
           <div class="my-2">
-            <p class="text-2xl font-black ${isUp ? "text-emerald-400" : "text-rose-400"} font-mono">${returnSign}${item.expected_return_pct}%</p>
-            <p class="text-[11px] text-slate-400">Expected Magnitude</p>
+            <p class="text-2xl font-bold ${isUp ? "text-emerald-400" : "text-rose-400"} font-mono">${returnSign}${item.expected_return_pct}%</p>
+            <p class="text-[10px] text-zinc-500 font-mono">Expected Magnitude</p>
           </div>
           <div class="mt-2 space-y-1">
-            <div class="flex justify-between text-[10px] text-slate-400">
+            <div class="flex justify-between text-[10px] text-zinc-400 font-mono">
               <span>Up: ${item.confidence_up_pct}%</span>
               <span>Down: ${item.confidence_down_pct}%</span>
             </div>
-            <div class="w-full bg-rose-950 h-2 rounded-full overflow-hidden flex">
+            <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden flex border border-zinc-800">
               <div class="bg-emerald-500 h-full" style="width: ${item.confidence_up_pct}%;"></div>
               <div class="bg-rose-500 h-full" style="width: ${item.confidence_down_pct}%;"></div>
             </div>
@@ -287,7 +424,6 @@ document.addEventListener("DOMContentLoaded", () => {
       `;
       })
       .join("");
-    lucide.createIcons();
   }
 
   function renderMultiHorizonChart(fcasts) {
@@ -306,25 +442,25 @@ document.addEventListener("DOMContentLoaded", () => {
           {
             label: "Expected Forward Return (%)",
             data: returns,
-            backgroundColor: returns.map((r) => (r >= 0 ? "rgba(16, 185, 129, 0.85)" : "rgba(244, 63, 94, 0.85)")),
-            borderRadius: 6,
+            backgroundColor: returns.map((r) => (r >= 0 ? "#22c55e" : "#ef4444")),
+            borderRadius: 2,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        plugins: { legend: { labels: { color: "#ffffff", font: { family: "monospace" } } } },
         scales: {
-          x: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
-          y: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+          x: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
+          y: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
         },
       },
     });
   }
 
   // -----------------------------------------------------------------------
-  // 5. Explainable AI (XAI)
+  // 7. Explainable AI (XAI)
   // -----------------------------------------------------------------------
   async function runExplainability() {
     btnRunExplain.disabled = true;
@@ -350,8 +486,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Explainability extraction failed:", err);
     } finally {
       btnRunExplain.disabled = false;
-      btnRunExplain.innerHTML = `<i data-lucide="search" class="w-4 h-4"></i><span>Extract Model Attribution</span>`;
-      lucide.createIcons();
+      btnRunExplain.textContent = "Extract Model Attribution";
     }
   }
 
@@ -370,8 +505,8 @@ document.addEventListener("DOMContentLoaded", () => {
           {
             label: "Attribution Score (%)",
             data,
-            backgroundColor: "rgba(168, 85, 247, 0.85)",
-            borderRadius: 6,
+            backgroundColor: "#ffffff",
+            borderRadius: 2,
           },
         ],
       },
@@ -379,10 +514,10 @@ document.addEventListener("DOMContentLoaded", () => {
         indexAxis: "y",
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        plugins: { legend: { labels: { color: "#ffffff", font: { family: "monospace" } } } },
         scales: {
-          x: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
-          y: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+          x: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
+          y: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
         },
       },
     });
@@ -400,30 +535,30 @@ document.addEventListener("DOMContentLoaded", () => {
         labels,
         datasets: [
           {
-            label: "Temporal Attention Weight",
+            label: "Temporal Lookback Weight",
             data: tempWeights,
-            borderColor: "#a855f7",
-            backgroundColor: "rgba(168, 85, 247, 0.2)",
-            borderWidth: 2,
+            borderColor: "#ffffff",
+            backgroundColor: "rgba(255, 255, 255, 0.08)",
+            borderWidth: 1.5,
             fill: true,
-            tension: 0.3,
+            tension: 0.1,
           },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        plugins: { legend: { labels: { color: "#ffffff", font: { family: "monospace" } } } },
         scales: {
-          x: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
-          y: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+          x: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
+          y: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
         },
       },
     });
   }
 
   // -----------------------------------------------------------------------
-  // 6. Monte Carlo 1,000-Path Simulation
+  // 8. Monte Carlo 1,000-Path Simulation
   // -----------------------------------------------------------------------
   async function runMonteCarlo() {
     btnRunMonteCarlo.disabled = true;
@@ -452,8 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Monte Carlo simulation failed:", err);
     } finally {
       btnRunMonteCarlo.disabled = false;
-      btnRunMonteCarlo.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Simulate 1,000 Monte Carlo Paths</span>`;
-      lucide.createIcons();
+      btnRunMonteCarlo.textContent = "Simulate 1,000 Monte Carlo Paths";
     }
   }
 
@@ -462,16 +596,16 @@ document.addEventListener("DOMContentLoaded", () => {
     const kpis = [
       { label: "Final Portfolio Value", val: `$${m.final_portfolio_value.toLocaleString()}`, color: "text-emerald-400" },
       { label: "Strategy Return", val: `+${m.strategy_return_pct}%`, color: "text-emerald-400" },
-      { label: "95% Value at Risk (VaR)", val: `${m.var_95_pct}%`, color: "text-amber-400" },
+      { label: "95% Value at Risk (VaR)", val: `${m.var_95_pct}%`, color: "text-rose-400" },
       { label: "95% Expected Shortfall (CVaR)", val: `${m.cvar_95_pct}%`, color: "text-rose-400" },
     ];
 
     grid.innerHTML = kpis
       .map(
         (k) => `
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl">
-        <p class="text-xs text-slate-400 font-medium">${k.label}</p>
-        <h4 class="text-xl font-extrabold ${k.color} my-1 font-mono">${k.val}</h4>
+      <div class="terminal-card p-3">
+        <p class="text-[11px] text-zinc-400 font-mono">${k.label}</p>
+        <h4 class="text-xl font-bold ${k.color} my-1 font-mono">${k.val}</h4>
       </div>
     `
       )
@@ -487,27 +621,27 @@ document.addEventListener("DOMContentLoaded", () => {
       data: {
         labels: fan.steps,
         datasets: [
-          { label: "95th Percentile", data: fan.p95, borderColor: "#10b981", borderWidth: 1.5, fill: false },
-          { label: "75th Percentile", data: fan.p75, borderColor: "#34d399", borderWidth: 1.2, fill: false },
-          { label: "Median Path (50th)", data: fan.p50, borderColor: "#6366f1", borderWidth: 2.5, fill: false },
-          { label: "25th Percentile", data: fan.p25, borderColor: "#f43f5e", borderWidth: 1.2, fill: false },
-          { label: "5th Percentile (VaR)", data: fan.p5, borderColor: "#e11d48", borderWidth: 1.5, fill: false },
+          { label: "95th Percentile", data: fan.p95, borderColor: "#22c55e", borderWidth: 1.5, fill: false },
+          { label: "75th Percentile", data: fan.p75, borderColor: "#16a34a", borderWidth: 1.2, fill: false },
+          { label: "Median Path (50th)", data: fan.p50, borderColor: "#ffffff", borderWidth: 2, fill: false },
+          { label: "25th Percentile", data: fan.p25, borderColor: "#dc2626", borderWidth: 1.2, fill: false },
+          { label: "5th Percentile (VaR)", data: fan.p5, borderColor: "#ef4444", borderWidth: 1.5, fill: false },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        plugins: { legend: { labels: { color: "#ffffff", font: { family: "monospace" } } } },
         scales: {
-          x: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
-          y: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+          x: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
+          y: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
         },
       },
     });
   }
 
   // -----------------------------------------------------------------------
-  // 7. Model Benchmarking
+  // 9. Model Benchmarking Arena
   // -----------------------------------------------------------------------
   async function runModelBenchmark() {
     btnRunBenchmark.disabled = true;
@@ -531,8 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Benchmark failed:", err);
     } finally {
       btnRunBenchmark.disabled = false;
-      btnRunBenchmark.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Execute Full Benchmark Suite</span>`;
-      lucide.createIcons();
+      btnRunBenchmark.textContent = "Execute Full Benchmark Suite";
     }
   }
 
@@ -549,17 +682,17 @@ document.addEventListener("DOMContentLoaded", () => {
       data: {
         labels,
         datasets: [
-          { label: "Continuous [0, 1]", data: contF1, backgroundColor: "rgba(99, 102, 241, 0.8)", borderRadius: 6 },
-          { label: "Binary Trend (+1/-1)", data: binF1, backgroundColor: "rgba(16, 185, 129, 0.8)", borderRadius: 6 },
+          { label: "Continuous [0, 1]", data: contF1, backgroundColor: "#71717a", borderRadius: 2 },
+          { label: "Binary Trend (+1/-1)", data: binF1, backgroundColor: "#22c55e", borderRadius: 2 },
         ],
       },
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        plugins: { legend: { labels: { color: "#ffffff", font: { family: "monospace" } } } },
         scales: {
-          x: { grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
-          y: { min: 0.4, max: 1.0, grid: { color: "#1e293b" }, ticks: { color: "#94a3b8" } },
+          x: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
+          y: { min: 0.4, max: 1.0, grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
         },
       },
     });
@@ -575,19 +708,19 @@ document.addEventListener("DOMContentLoaded", () => {
       .map((r) => {
         const modeBadge =
           r.mode_label === "Binary"
-            ? '<span class="bg-emerald-950 text-emerald-400 border border-emerald-800 text-[10px] px-2 py-0.5 rounded font-bold">Binary</span>'
-            : '<span class="bg-indigo-950 text-indigo-400 border border-indigo-800 text-[10px] px-2 py-0.5 rounded font-bold">Continuous</span>';
+            ? '<span class="text-emerald-400 font-bold border border-emerald-800 bg-black text-[9px] px-1.5 py-0.5 rounded">Binary</span>'
+            : '<span class="text-zinc-300 font-bold border border-zinc-700 bg-black text-[9px] px-1.5 py-0.5 rounded">Continuous</span>';
 
         return `
-        <tr class="hover:bg-slate-800/50">
-          <td class="p-2.5 font-semibold text-white">${r.model_name}</td>
-          <td class="p-2.5 text-center">${modeBadge}</td>
-          <td class="p-2.5 text-center font-bold font-mono text-emerald-400">${(r.f1_score * 100).toFixed(1)}%</td>
-          <td class="p-2.5 text-center font-mono">${(r.accuracy * 100).toFixed(1)}%</td>
-          <td class="p-2.5 text-center font-mono">${r.roc_auc.toFixed(3)}</td>
-          <td class="p-2.5 text-center font-mono">${(r.precision * 100).toFixed(1)}%</td>
-          <td class="p-2.5 text-center font-mono">${(r.recall * 100).toFixed(1)}%</td>
-          <td class="p-2.5 text-center font-mono">${r.train_time_seconds}s</td>
+        <tr class="hover:bg-zinc-900 font-mono">
+          <td class="p-2 font-semibold text-white">${r.model_name}</td>
+          <td class="p-2 text-center">${modeBadge}</td>
+          <td class="p-2 text-center font-bold text-emerald-400">${(r.f1_score * 100).toFixed(1)}%</td>
+          <td class="p-2 text-center">${(r.accuracy * 100).toFixed(1)}%</td>
+          <td class="p-2 text-center">${r.roc_auc.toFixed(3)}</td>
+          <td class="p-2 text-center">${(r.precision * 100).toFixed(1)}%</td>
+          <td class="p-2 text-center">${(r.recall * 100).toFixed(1)}%</td>
+          <td class="p-2 text-center text-zinc-400">${r.train_time_seconds}s</td>
         </tr>
       `;
       })
@@ -595,72 +728,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 8. Live Trend Prediction
-  // -----------------------------------------------------------------------
-  async function runLivePrediction() {
-    btnRunPrediction.disabled = true;
-    btnRunPrediction.innerHTML = `<span class="spinner mr-2"></span> Running Inference...`;
-
-    const modelName = document.getElementById("predict-model-select").value;
-    const mode = document.getElementById("predict-mode-select").value;
-    const target = getTargetParams();
-
-    try {
-      const res = await fetch("/api/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ticker: target.ticker || "sample",
-          model_name: modelName,
-          data_mode: mode,
-        }),
-      });
-
-      const data = await res.json();
-      const isUp = data.prediction_signal === 1;
-
-      const iconWrapper = document.getElementById("trend-icon-wrapper");
-      const trendText = document.getElementById("trend-text");
-      const confSub = document.getElementById("confidence-subtext");
-      const confUp = document.getElementById("conf-up-label");
-      const confDown = document.getElementById("conf-down-label");
-      const barUp = document.getElementById("conf-bar-up");
-      const barDown = document.getElementById("conf-bar-down");
-
-      if (isUp) {
-        iconWrapper.className = "w-20 h-20 mx-auto rounded-full bg-emerald-950/80 border-2 border-emerald-500 flex items-center justify-center mb-3 shadow-lg shadow-emerald-500/20";
-        iconWrapper.innerHTML = '<i data-lucide="trending-up" class="w-10 h-10 text-emerald-400"></i>';
-        trendText.className = "text-3xl font-extrabold text-emerald-400 tracking-wide";
-        trendText.textContent = "UPWARD TREND (+1)";
-      } else {
-        iconWrapper.className = "w-20 h-20 mx-auto rounded-full bg-rose-950/80 border-2 border-rose-500 flex items-center justify-center mb-3 shadow-lg shadow-rose-500/20";
-        iconWrapper.innerHTML = '<i data-lucide="trending-down" class="w-10 h-10 text-rose-400"></i>';
-        trendText.className = "text-3xl font-extrabold text-rose-400 tracking-wide";
-        trendText.textContent = "DOWNWARD TREND (-1)";
-      }
-
-      confSub.textContent = `Model Confidence: ${data.confidence_up}% UP vs ${data.confidence_down}% DOWN`;
-      confUp.textContent = `Up: ${data.confidence_up}%`;
-      confDown.textContent = `Down: ${data.confidence_down}%`;
-      barUp.style.width = `${data.confidence_up}%`;
-      barDown.style.width = `${data.confidence_down}%`;
-
-      lucide.createIcons();
-    } catch (err) {
-      console.error("Live prediction failed:", err);
-    } finally {
-      btnRunPrediction.disabled = false;
-      btnRunPrediction.innerHTML = `<i data-lucide="sparkles" class="w-4 h-4"></i><span>Predict Trend Direction</span>`;
-      lucide.createIcons();
-    }
-  }
-
-  // -----------------------------------------------------------------------
-  // 9. Strategy Backtest
+  // 10. Strategy Backtest
   // -----------------------------------------------------------------------
   async function runBacktesting() {
     btnRunBacktest.disabled = true;
-    btnRunBacktest.innerHTML = `<span class="spinner mr-2"></span> Simulating Strategy...`;
+    btnRunBacktest.innerHTML = `<span class="spinner mr-2"></span> Simulating...`;
     const target = getTargetParams();
 
     try {
@@ -685,8 +757,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Backtest failed:", err);
     } finally {
       btnRunBacktest.disabled = false;
-      btnRunBacktest.innerHTML = `<i data-lucide="play" class="w-4 h-4"></i><span>Run Strategy Simulation</span>`;
-      lucide.createIcons();
+      btnRunBacktest.textContent = "Run Strategy Simulation";
     }
   }
 
@@ -694,18 +765,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const grid = document.getElementById("backtest-kpi-grid");
     const kpis = [
       { label: "Strategy Return", val: `+${m.strategy_total_return_pct}%`, sub: `Benchmark: +${m.benchmark_total_return_pct}%`, color: "text-emerald-400" },
-      { label: "Sharpe Ratio", val: m.sharpe_ratio.toFixed(2), sub: `Sortino: ${m.sortino_ratio.toFixed(2)}`, color: "text-indigo-400" },
+      { label: "Sharpe Ratio", val: m.sharpe_ratio.toFixed(2), sub: `Sortino: ${m.sortino_ratio.toFixed(2)}`, color: "text-white" },
       { label: "Max Drawdown", val: `${m.max_drawdown_pct}%`, sub: `Bench MDD: ${m.benchmark_max_drawdown_pct}%`, color: "text-rose-400" },
-      { label: "Win Rate & Trades", val: `${m.win_rate_pct}%`, sub: `${m.num_trades} Total Trades`, color: "text-amber-400" },
+      { label: "Win Rate & Trades", val: `${m.win_rate_pct}%`, sub: `${m.num_trades} Total Trades`, color: "text-zinc-300" },
     ];
 
     grid.innerHTML = kpis
       .map(
         (k) => `
-      <div class="bg-slate-900 border border-slate-800 p-4 rounded-2xl shadow-xl">
-        <p class="text-xs text-slate-400 font-medium">${k.label}</p>
-        <h4 class="text-xl font-extrabold ${k.color} my-1 font-mono">${k.val}</h4>
-        <p class="text-[11px] text-slate-500 font-mono">${k.sub}</p>
+      <div class="terminal-card p-3">
+        <p class="text-[11px] text-zinc-400 font-mono">${k.label}</p>
+        <h4 class="text-xl font-bold ${k.color} my-1 font-mono">${k.val}</h4>
+        <p class="text-[10px] text-zinc-500 font-mono">${k.sub}</p>
       </div>
     `
       )
@@ -722,22 +793,22 @@ document.addEventListener("DOMContentLoaded", () => {
         labels: eq.dates,
         datasets: [
           {
-            label: "ML/DL Strategy Portfolio ($)",
+            label: "ML Strategy Portfolio ($)",
             data: eq.strategy_wealth,
-            borderColor: "#10b981",
-            backgroundColor: "rgba(16, 185, 129, 0.1)",
-            borderWidth: 2,
+            borderColor: "#22c55e",
+            backgroundColor: "rgba(34, 197, 94, 0.06)",
+            borderWidth: 1.8,
             fill: true,
-            tension: 0.1,
+            tension: 0.05,
           },
           {
             label: "Buy & Hold Benchmark ($)",
             data: eq.benchmark_wealth,
-            borderColor: "#64748b",
-            borderWidth: 1.5,
+            borderColor: "#71717a",
+            borderWidth: 1.2,
             borderDash: [3, 3],
             fill: false,
-            tension: 0.1,
+            tension: 0.05,
           },
         ],
       },
@@ -745,10 +816,10 @@ document.addEventListener("DOMContentLoaded", () => {
         responsive: true,
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
-        plugins: { legend: { labels: { color: "#cbd5e1" } } },
+        plugins: { legend: { labels: { color: "#ffffff", font: { family: "monospace" } } } },
         scales: {
-          x: { grid: { color: "#1e293b" }, ticks: { color: "#64748b", maxTicksLimit: 12 } },
-          y: { grid: { color: "#1e293b" }, ticks: { color: "#64748b" } },
+          x: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" }, maxTicksLimit: 14 } },
+          y: { grid: { color: "#18181b" }, ticks: { color: "#71717a", font: { family: "monospace" } } },
         },
       },
     });
@@ -765,14 +836,12 @@ document.addEventListener("DOMContentLoaded", () => {
   customTickerInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") loadMarketAndIndicators();
   });
-  btnRefreshData.addEventListener("click", loadMarketAndIndicators);
   overlaySelect.addEventListener("change", renderPriceChart);
 
   btnRunMultiHorizon.addEventListener("click", runMultiHorizon);
   btnRunExplain.addEventListener("click", runExplainability);
   btnRunMonteCarlo.addEventListener("click", runMonteCarlo);
   btnRunBenchmark.addEventListener("click", runModelBenchmark);
-  btnRunPrediction.addEventListener("click", runLivePrediction);
   btnRunBacktest.addEventListener("click", runBacktesting);
 
   // Bootstrap

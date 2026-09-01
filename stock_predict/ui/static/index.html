@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockTrend AI | Next-Gen Quantitative Intelligence Platform</title>
+  <title>StockTrend AI | Real-Time Financial Machine Learning & Market Intelligence</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
@@ -12,119 +12,219 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col font-sans antialiased">
+<body class="bg-black text-white min-h-screen flex flex-col font-sans antialiased selection:bg-white selection:text-black">
 
-  <!-- Top Navigation Bar -->
-  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-      <div class="flex items-center space-x-3">
-        <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/30">
-          <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
+  <!-- ========================================================================= -->
+  <!-- 1. FULL-WIDTH TOP NAVIGATION BAR -->
+  <!-- ========================================================================= -->
+  <header class="border-b border-zinc-800 bg-black w-full sticky top-0 z-50 px-4 py-2">
+    <div class="w-full flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Stock Directory Selector -->
+      <div class="flex items-center space-x-3 flex-wrap gap-y-2">
+        <div class="w-8 h-8 rounded bg-white text-black flex items-center justify-center font-bold text-sm">
+          ST
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <h1 class="text-lg font-bold text-white tracking-tight">StockTrend AI</h1>
-            <span class="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">PRO QUANT</span>
+            <h1 class="text-sm font-bold tracking-wider uppercase text-white">StockTrend AI &bull; Real-Time Terminal</h1>
+            <span class="bg-zinc-900 text-zinc-300 text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-800">GROWW-STYLE INTEL</span>
           </div>
-          <p class="text-xs text-slate-400">Deep Learning &bull; Multi-Horizon &bull; Explainable AI &bull; Monte Carlo Risk</p>
+          <p class="text-[11px] text-zinc-400">WebSocket Live Feed &bull; 15 ML/DL Models &bull; Multi-Horizon Forecaster &bull; Monte Carlo Risk</p>
+        </div>
+
+        <!-- Global Asset & Stock Selector Dropdown -->
+        <div class="flex items-center space-x-2 ml-2">
+          <select id="sector-select" class="bg-black border border-zinc-700 text-white text-xs rounded px-3 py-1.5 focus:border-white focus:outline-none max-w-xs font-mono">
+            <optgroup label="🔥 US Tech & Mega-Cap Leaders">
+              <option value="NVDA" selected>NVDA - NVIDIA Corporation</option>
+              <option value="AAPL">AAPL - Apple Inc</option>
+              <option value="MSFT">MSFT - Microsoft Corporation</option>
+              <option value="AMZN">AMZN - Amazon.com Inc</option>
+              <option value="GOOGL">GOOGL - Alphabet Inc</option>
+              <option value="META">META - Meta Platforms</option>
+              <option value="TSLA">TSLA - Tesla Inc</option>
+              <option value="AMD">AMD - Advanced Micro Devices</option>
+              <option value="PLTR">PLTR - Palantir Technologies</option>
+              <option value="COIN">COIN - Coinbase Global</option>
+            </optgroup>
+
+            <optgroup label="🇮🇳 Indian Blue-Chip Equities (NSE/BSE)">
+              <option value="TCS.NS">TCS - Tata Consultancy Services</option>
+              <option value="RELIANCE.NS">RELIANCE - Reliance Industries</option>
+              <option value="INFY.NS">INFY - Infosys Limited</option>
+              <option value="HDFCBANK.NS">HDFCBANK - HDFC Bank</option>
+              <option value="TATAMOTORS.NS">TATAMOTORS - Tata Motors</option>
+            </optgroup>
+
+            <optgroup label="📊 Major Indices & Global ETFs">
+              <option value="SPY">SPY - S&P 500 Index ETF</option>
+              <option value="QQQ">QQQ - Nasdaq 100 Tech ETF</option>
+              <option value="GLD">GLD - SPDR Gold Trust</option>
+              <option value="CL=F">CL=F - Crude Oil Futures</option>
+              <option value="BTC-USD">BTC-USD - Bitcoin Real-Time</option>
+              <option value="ETH-USD">ETH-USD - Ethereum Real-Time</option>
+            </optgroup>
+
+            <optgroup label="📜 IEEE Paper TSE 10-Year Datasets">
+              <option value="diversified_financials">TSE Diversified Financials</option>
+              <option value="petroleum">TSE Petroleum Sector</option>
+              <option value="basic_metals">TSE Basic Metals Sector</option>
+              <option value="non_metallic_minerals">TSE Non-metallic Minerals</option>
+            </optgroup>
+          </select>
+
+          <!-- Any Stock / Ticker Search Input -->
+          <input type="text" id="custom-ticker-input" placeholder="Type ANY Ticker..." class="bg-black border border-zinc-700 text-white text-xs rounded px-2.5 py-1.5 w-36 focus:border-white focus:outline-none uppercase font-mono">
+          <button id="btn-custom-ticker" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-2.5 py-1.5 rounded border border-zinc-700 font-medium">
+            Search
+          </button>
         </div>
       </div>
 
-      <!-- System Diagnostic Badges -->
-      <div class="flex items-center space-x-3">
-        <div id="gpu-badge" class="flex items-center space-x-2 bg-emerald-950/80 border border-emerald-800/80 text-emerald-400 text-xs px-3 py-1.5 rounded-full font-medium shadow-sm">
-          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-          <span id="gpu-status-text">GPU / CUDA Active</span>
+      <!-- Real-Time WebSocket Connection & Diagnostics Status -->
+      <div class="flex items-center space-x-2 text-xs font-mono">
+        <div id="ws-status-badge" class="flex items-center space-x-1.5 bg-black border border-emerald-800 text-emerald-400 px-2.5 py-1 rounded">
+          <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span id="ws-status-text">WS LIVE STREAMING</span>
         </div>
-        <div class="hidden sm:flex items-center space-x-2 bg-slate-800/80 border border-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-full font-mono">
-          <span>v2.0 Advanced</span>
+        <div id="gpu-badge" class="flex items-center space-x-1.5 bg-black border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+          <span id="gpu-status-text">CUDA GPU Active</span>
         </div>
       </div>
+
     </div>
   </header>
 
-  <!-- Control & Asset Selection Toolbar -->
-  <section class="bg-slate-900/50 border-b border-slate-800 px-4 sm:px-6 lg:px-8 py-3">
-    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
-      <div class="flex items-center space-x-3 flex-wrap gap-y-2">
-        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Asset:</label>
-        <select id="sector-select" class="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-          <optgroup label="IEEE Paper TSE Sectors">
-            <option value="diversified_financials" selected>Diversified Financials</option>
-            <option value="petroleum">Petroleum</option>
-            <option value="basic_metals">Basic Metals</option>
-            <option value="non_metallic_minerals">Non-metallic Minerals</option>
-          </optgroup>
-          <optgroup label="Global Live Markets">
-            <option value="AAPL">Apple Inc. (AAPL)</option>
-            <option value="NVDA">NVIDIA Corp. (NVDA)</option>
-            <option value="MSFT">Microsoft (MSFT)</option>
-            <option value="TSLA">Tesla Inc. (TSLA)</option>
-            <option value="SPY">S&P 500 ETF (SPY)</option>
-            <option value="BTC-USD">Bitcoin (BTC-USD)</option>
-            <option value="CL=F">Crude Oil (CL=F)</option>
-          </optgroup>
-        </select>
-
-        <div class="relative">
-          <input type="text" id="custom-ticker-input" placeholder="Or ticker..." class="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg pl-3 pr-8 py-1.5 w-32 focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase">
-          <button id="btn-custom-ticker" class="absolute right-1.5 top-1.5 text-slate-400 hover:text-white">
-            <i data-lucide="arrow-right" class="w-4 h-4"></i>
-          </button>
+  <!-- ========================================================================= -->
+  <!-- 2. GROWW-STYLE LIVE STOCK BANNER & PERFORMANCE RANGE -->
+  <!-- ========================================================================= -->
+  <section class="border-b border-zinc-800 bg-zinc-950 w-full px-4 py-3">
+    <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+      
+      <!-- Company Identity & Live Streaming Price (Groww Style) -->
+      <div class="lg:col-span-4 flex items-center space-x-4">
+        <div id="stock-logo-box" class="w-12 h-12 rounded bg-white text-black font-black text-lg flex items-center justify-center">
+          NV
         </div>
-
-        <button id="btn-refresh-data" class="flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-3 py-2 rounded-lg font-medium transition shadow">
-          <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
-          <span>Fetch Data</span>
-        </button>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h2 id="stock-name" class="text-base font-bold text-white tracking-wide">NVIDIA Corporation</h2>
+            <span id="stock-exchange" class="text-[10px] font-mono px-1.5 py-0.2 rounded border border-zinc-700 text-zinc-400">NASDAQ</span>
+          </div>
+          
+          <div class="flex items-baseline space-x-2 mt-1">
+            <span id="live-price" class="text-2xl font-extrabold font-mono text-white">$132.85</span>
+            <span id="live-change" class="text-xs font-bold font-mono text-emerald-400">+3.45 (+2.67%) 1D</span>
+          </div>
+        </div>
       </div>
 
-      <!-- Navigation Tabs -->
-      <nav class="flex space-x-1 bg-slate-800/80 p-1 rounded-xl border border-slate-700/60 overflow-x-auto text-xs sm:text-sm">
-        <button data-tab="tab-indicators" class="tab-btn active-tab px-3 py-1.5 rounded-lg font-medium transition">
-          10 Indicators
+      <!-- Groww-Style Performance Range Sliders (Today's Low/High & 52W Low/High) -->
+      <div class="lg:col-span-5 grid grid-cols-2 gap-3 text-xs font-mono">
+        <!-- Today's Range Slider -->
+        <div class="terminal-card p-2.5 space-y-1">
+          <div class="flex justify-between text-zinc-400 text-[11px]">
+            <span>Today's Low</span>
+            <span class="font-bold text-white">Today's Range</span>
+            <span>Today's High</span>
+          </div>
+          <div class="flex justify-between text-white font-bold text-[11px]">
+            <span id="today-low">$129.40</span>
+            <span id="today-high">$134.10</span>
+          </div>
+          <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden relative border border-zinc-800">
+            <div id="today-range-bar" class="bg-emerald-500 h-full" style="width: 72%;"></div>
+          </div>
+        </div>
+
+        <!-- 52-Week Range Slider -->
+        <div class="terminal-card p-2.5 space-y-1">
+          <div class="flex justify-between text-zinc-400 text-[11px]">
+            <span>52W Low</span>
+            <span class="font-bold text-white">52-Week Range</span>
+            <span>52W High</span>
+          </div>
+          <div class="flex justify-between text-white font-bold text-[11px]">
+            <span id="year-low">$45.20</span>
+            <span id="year-high">$140.75</span>
+          </div>
+          <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden relative border border-zinc-800">
+            <div id="year-range-bar" class="bg-white h-full" style="width: 88%;"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Groww-Style Technical Verdict Badge -->
+      <div class="lg:col-span-3 terminal-card p-2.5 flex items-center justify-between font-mono">
+        <div>
+          <span class="text-[10px] text-zinc-400 uppercase tracking-wider block">Technical Overview</span>
+          <span id="tech-verdict-text" class="text-sm font-extrabold text-emerald-400">STRONG BULLISH</span>
+          <span id="tech-verdict-counts" class="text-[10px] text-zinc-500 block">14 Bullish &bull; 2 Neutral &bull; 0 Bearish</span>
+        </div>
+        <div id="verdict-icon-box" class="w-9 h-9 rounded bg-black border border-emerald-800 text-emerald-400 flex items-center justify-center font-bold text-base">
+          ▲
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ========================================================================= -->
+  <!-- 3. NAVIGATION TABS (Strict Black, White, Red, Green) -->
+  <!-- ========================================================================= -->
+  <section class="border-b border-zinc-800 bg-black w-full px-4 py-2">
+    <div class="w-full flex items-center justify-between overflow-x-auto">
+      <nav class="flex space-x-1 text-xs font-medium">
+        <button data-tab="tab-overview" class="tab-btn active-tab px-3 py-1.5 rounded">
+          Stock Overview & Chart
         </button>
-        <button data-tab="tab-multi-horizon" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Multi-Horizon (1D-20D)
+        <button data-tab="tab-multi-horizon" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
+          Multi-Horizon Forecaster (1D-20D)
         </button>
-        <button data-tab="tab-explain" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
+        <button data-tab="tab-depth" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
+          Live Market Depth & Orders
+        </button>
+        <button data-tab="tab-explain" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
           Explainable AI (XAI)
         </button>
-        <button data-tab="tab-monte-carlo" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Monte Carlo & Risk
+        <button data-tab="tab-monte-carlo" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
+          Monte Carlo Risk (1,000 Paths)
         </button>
-        <button data-tab="tab-benchmark" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          15 Models Benchmark
+        <button data-tab="tab-benchmark" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
+          15-Model Arena
         </button>
-        <button data-tab="tab-predict" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Live Predict
-        </button>
-        <button data-tab="tab-backtest" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Strategy Backtest
+        <button data-tab="tab-backtest" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
+          Strategy Backtester
         </button>
       </nav>
     </div>
   </section>
 
-  <!-- Main Content Area -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
+  <!-- ========================================================================= -->
+  <!-- 4. FULL-PAGE MAIN WORKSPACE -->
+  <!-- ========================================================================= -->
+  <main class="w-full px-4 py-4 flex-1 space-y-4">
 
     <!-- ========================================================================= -->
-    <!-- TAB 1: 10 TECHNICAL INDICATORS -->
+    <!-- TAB 1: STOCK OVERVIEW & INTERACTIVE CHART (Groww Style) -->
     <!-- ========================================================================= -->
-    <div id="tab-indicators" class="tab-content space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div class="flex flex-wrap items-center justify-between pb-4 border-b border-slate-800 gap-3">
-          <div>
-            <h2 class="text-base font-bold text-white flex items-center gap-2">
-              <i data-lucide="candlestick-chart" class="w-5 h-5 text-indigo-400"></i>
-              Asset Price History & Technical Indicator Overlay
-            </h2>
-            <p class="text-xs text-slate-400" id="asset-subtitle">Daily Historical Series</p>
-          </div>
+    <div id="tab-overview" class="tab-content space-y-4">
+      
+      <!-- Interactive Chart Section with Timeframes -->
+      <div class="terminal-card p-4">
+        <div class="flex flex-wrap items-center justify-between pb-3 border-b border-zinc-800 gap-2 font-mono">
           <div class="flex items-center space-x-2">
-            <label class="text-xs text-slate-400 font-medium">Overlay:</label>
-            <select id="indicator-overlay-select" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 focus:outline-none">
+            <span class="text-xs font-bold uppercase tracking-wider text-white">Price Action & Indicator Overlays</span>
+            <span class="text-xs text-zinc-500">|</span>
+            <span id="chart-timeframe-label" class="text-xs text-emerald-400">1-Year Daily</span>
+          </div>
+
+          <!-- Indicator Overlay Selector -->
+          <div class="flex items-center space-x-3 text-xs">
+            <span class="text-zinc-400">Overlay:</span>
+            <select id="indicator-overlay-select" class="bg-black border border-zinc-700 text-xs text-white rounded px-2 py-1 focus:outline-none font-mono">
               <option value="SMA">SMA (10-day)</option>
               <option value="WMA">WMA (10-day)</option>
               <option value="MOM">Momentum (MOM)</option>
@@ -138,77 +238,150 @@
           </div>
         </div>
 
-        <div class="h-80 w-full pt-4">
+        <div class="h-96 w-full pt-3">
           <canvas id="price-chart"></canvas>
         </div>
       </div>
 
-      <!-- 10 Indicator Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="indicator-cards-grid"></div>
+      <!-- Groww-Style Fundamentals & Technical Indicators Grid -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <!-- Fundamentals Table (Groww Style) -->
+        <div class="lg:col-span-4 terminal-card p-4 space-y-3 font-mono">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-white border-b border-zinc-800 pb-2">
+            Company Fundamentals
+          </h3>
+          <div class="space-y-2 text-xs">
+            <div class="flex justify-between text-zinc-400"><span>Market Cap</span><span id="fund-market-cap" class="text-white font-bold">$1.24T</span></div>
+            <div class="flex justify-between text-zinc-400"><span>P/E Ratio</span><span id="fund-pe" class="text-white font-bold">34.8</span></div>
+            <div class="flex justify-between text-zinc-400"><span>P/B Ratio</span><span id="fund-pb" class="text-white font-bold">6.2</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Industry P/E</span><span id="fund-ind-pe" class="text-white font-bold">28.4</span></div>
+            <div class="flex justify-between text-zinc-400"><span>ROE (%)</span><span id="fund-roe" class="text-emerald-400 font-bold">24.6%</span></div>
+            <div class="flex justify-between text-zinc-400"><span>EPS (TTM)</span><span id="fund-eps" class="text-white font-bold">$3.82</span></div>
+            <div class="flex justify-between text-zinc-400"><span>Dividend Yield</span><span id="fund-div" class="text-white font-bold">0.65%</span></div>
+            <div class="flex justify-between text-zinc-400"><span>24h Volume</span><span id="fund-vol" class="text-white font-bold">45,210,000</span></div>
+          </div>
+        </div>
+
+        <!-- 10 IEEE Indicator Snapshot Cards -->
+        <div class="lg:col-span-8 space-y-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400">
+            10 IEEE Paper Technical Signals (Continuous & Binary &plusmn;1)
+          </h3>
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="indicator-cards-grid"></div>
+        </div>
+
+      </div>
+
     </div>
 
     <!-- ========================================================================= -->
     <!-- TAB 2: MULTI-HORIZON FORECASTING (1D, 3D, 5D, 10D, 20D) -->
     <!-- ========================================================================= -->
-    <div id="tab-multi-horizon" class="tab-content hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div id="tab-multi-horizon" class="tab-content hidden space-y-4">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="git-branch" class="w-5 h-5 text-indigo-400"></i>
-            Multi-Horizon Deep Neural Forecasting Engine
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white">
+            Multi-Horizon Deep Neural Forecaster (1D, 3D, 5D, 10D, 20D)
           </h2>
-          <p class="text-xs text-slate-400">Simultaneous probability and expected magnitude predictions across 1D, 3D, 5D, 10D, 20D</p>
+          <p class="text-[11px] text-zinc-400">Simultaneous probability and magnitude forecasts across multiple forward investment horizons</p>
         </div>
-        <button id="btn-run-multi-horizon" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-600/30 transition">
-          <i data-lucide="sparkles" class="w-4 h-4"></i>
-          <span>Compute Multi-Horizon Forecasts</span>
+        <button id="btn-run-multi-horizon" class="bg-white hover:bg-zinc-200 text-black text-xs px-4 py-2 rounded font-bold transition">
+          Compute Multi-Horizon Forecasts
         </button>
       </div>
 
-      <!-- Horizon Cards Matrix -->
-      <div class="grid grid-cols-1 sm:grid-cols-5 gap-4" id="multi-horizon-grid">
-        <!-- Dynamically injected horizon cards -->
-      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-3" id="multi-horizon-grid"></div>
 
-      <!-- Multi-Horizon Trajectory Chart -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h3 class="text-sm font-bold text-white mb-3">Projected Expected Return Profile Across Time Horizons</h3>
-        <div class="h-64 w-full">
+      <div class="terminal-card p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Expected Forward Return Trajectory (%)</h3>
+        <div class="h-72 w-full">
           <canvas id="multi-horizon-chart"></canvas>
         </div>
       </div>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 3: EXPLAINABLE AI (XAI) -->
+    <!-- TAB 3: LIVE MARKET DEPTH & ORDER BOOK (Groww Style) -->
     <!-- ========================================================================= -->
-    <div id="tab-explain" class="tab-content hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="eye" class="w-5 h-5 text-purple-400"></i>
-            Explainable AI (XAI) & Temporal Attention Heatmaps
-          </h2>
-          <p class="text-xs text-slate-400">Gradient saliency and temporal attention attribution showing why the model predicts trends</p>
+    <div id="tab-depth" class="tab-content hidden space-y-4 font-mono">
+      <div class="terminal-card p-4">
+        <div class="flex flex-wrap items-center justify-between border-b border-zinc-800 pb-3 mb-3">
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-white">Real-Time Market Depth & Order Book (Groww Style)</h2>
+            <p class="text-[11px] text-zinc-400">Live streaming buyer bids vs seller asks updating every second via WebSocket</p>
+          </div>
+          <div class="flex items-center space-x-2 text-xs">
+            <span class="text-zinc-400">Buy/Sell Ratio:</span>
+            <span id="depth-ratio-text" class="text-emerald-400 font-bold">58% Buy / 42% Sell</span>
+          </div>
         </div>
-        <button id="btn-run-explain" class="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-purple-600/30 transition">
-          <i data-lucide="search" class="w-4 h-4"></i>
-          <span>Extract Model Attribution</span>
+
+        <!-- Buy / Sell Ratio Progress Bar -->
+        <div class="w-full bg-zinc-900 h-2.5 rounded overflow-hidden flex border border-zinc-800 mb-4">
+          <div id="depth-buy-bar" class="bg-emerald-500 h-full" style="width: 58%;"></div>
+          <div id="depth-sell-bar" class="bg-rose-500 h-full" style="width: 42%;"></div>
+        </div>
+
+        <!-- Depth Tables Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <!-- Bids (Buy Orders) -->
+          <div class="border border-emerald-900/60 rounded p-3 bg-black">
+            <h4 class="text-emerald-400 font-bold mb-2 pb-1 border-b border-emerald-950 flex justify-between">
+              <span>BUY BIDS</span>
+              <span>TOTAL: <span id="depth-total-buy">24,500 Qty</span></span>
+            </h4>
+            <table class="w-full text-left">
+              <thead class="text-zinc-500 text-[10px]">
+                <tr><th>Orders</th><th>Quantity</th><th class="text-right">Bid Price</th></tr>
+              </thead>
+              <tbody id="depth-bids-body" class="divide-y divide-zinc-900 text-emerald-400"></tbody>
+            </table>
+          </div>
+
+          <!-- Asks (Sell Orders) -->
+          <div class="border border-rose-900/60 rounded p-3 bg-black">
+            <h4 class="text-rose-400 font-bold mb-2 pb-1 border-b border-rose-950 flex justify-between">
+              <span>SELL ASKS</span>
+              <span>TOTAL: <span id="depth-total-sell">18,200 Qty</span></span>
+            </h4>
+            <table class="w-full text-left">
+              <thead class="text-zinc-500 text-[10px]">
+                <tr><th>Ask Price</th><th>Quantity</th><th class="text-right">Orders</th></tr>
+              </thead>
+              <tbody id="depth-asks-body" class="divide-y divide-zinc-900 text-rose-400"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: EXPLAINABLE AI (XAI) -->
+    <!-- ========================================================================= -->
+    <div id="tab-explain" class="tab-content hidden space-y-4">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white">
+            Explainable AI (XAI) & Saliency Attribution
+          </h2>
+          <p class="text-[11px] text-zinc-400">Gradient saliency and temporal attention weights explaining model decision pathways</p>
+        </div>
+        <button id="btn-run-explain" class="bg-white hover:bg-zinc-200 text-black text-xs px-4 py-2 rounded font-bold transition">
+          Extract Model Attribution
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <!-- Feature Importance Bar Chart -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <h3 class="text-sm font-bold text-white mb-3">Technical Indicator Importance Attribution (%)</h3>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="terminal-card p-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Technical Indicator Importance Attribution (%)</h3>
           <div class="h-72 w-full">
             <canvas id="feature-importance-chart"></canvas>
           </div>
         </div>
 
-        <!-- Temporal Attention Lookback Weights -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-          <h3 class="text-sm font-bold text-white mb-3">Historical Lookback Temporal Attention (Days t-20 to t-1)</h3>
+        <div class="terminal-card p-4">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Historical Lookback Temporal Attention (t-20 to t-1)</h3>
           <div class="h-72 w-full">
             <canvas id="temporal-attention-chart"></canvas>
           </div>
@@ -217,28 +390,25 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 4: MONTE CARLO & RISK MANAGEMENT -->
+    <!-- TAB 5: MONTE CARLO RISK (1,000 PATHS) -->
     <!-- ========================================================================= -->
-    <div id="tab-monte-carlo" class="tab-content hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div id="tab-monte-carlo" class="tab-content hidden space-y-4">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="shield-alert" class="w-5 h-5 text-emerald-400"></i>
-            Monte Carlo Risk Simulation (1,000 Paths) & Volatility Targeting
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white">
+            Monte Carlo Risk Simulator (1,000 Paths) & 95% VaR
           </h2>
-          <p class="text-xs text-slate-400">Dynamic Kelly sizing, trailing stop loss, and 95% Value at Risk (VaR / CVaR)</p>
+          <p class="text-[11px] text-zinc-400">Dynamic Kelly sizing, trailing stop-losses, and 95% Value at Risk / Expected Shortfall</p>
         </div>
-        <button id="btn-run-monte-carlo" class="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-600/30 transition">
-          <i data-lucide="play" class="w-4 h-4"></i>
-          <span>Simulate 1,000 Monte Carlo Paths</span>
+        <button id="btn-run-monte-carlo" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded font-bold transition">
+          Simulate 1,000 Monte Carlo Paths
         </button>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="monte-carlo-kpis"></div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="monte-carlo-kpis"></div>
 
-      <!-- Fan Chart -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h3 class="text-sm font-bold text-white mb-3">1,000-Path Monte Carlo Portfolio Fan Chart (5th, 25th, Median, 75th, 95th Percentiles)</h3>
+      <div class="terminal-card p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">1,000-Path Monte Carlo Portfolio Fan Chart</h3>
         <div class="h-80 w-full">
           <canvas id="monte-carlo-chart"></canvas>
         </div>
@@ -246,32 +416,31 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 5: 15 MODELS BENCHMARK -->
+    <!-- TAB 6: 15-MODEL ARENA -->
     <!-- ========================================================================= -->
-    <div id="tab-benchmark" class="tab-content hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div id="tab-benchmark" class="tab-content hidden space-y-4">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i>
-            15-Model Benchmark Arena (Continuous vs Binary)
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white">
+            15-Model Comparative Benchmark Arena (Continuous vs Binary)
           </h2>
-          <p class="text-xs text-slate-400">Tree Ensembles, Kernel Models, and PyTorch CUDA DL (TCN, TFT, LSTM, GRU, BiLSTM, Transformer)</p>
+          <p class="text-[11px] text-zinc-400">Trees, Kernels, and PyTorch CUDA DL (TCN, TFT, LSTM, GRU, BiLSTM, Transformer)</p>
         </div>
-        <button id="btn-run-benchmark" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-600/30 transition">
-          <i data-lucide="play" class="w-4 h-4"></i>
-          <span>Execute Full Benchmark Suite</span>
+        <button id="btn-run-benchmark" class="bg-white hover:bg-zinc-200 text-black text-xs px-4 py-2 rounded font-bold transition">
+          Execute Full Benchmark Suite
         </button>
       </div>
 
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+      <div class="terminal-card p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">F1-Score Comparison</h3>
         <div class="h-80 w-full">
           <canvas id="benchmark-chart"></canvas>
         </div>
       </div>
 
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-x-auto">
-        <table class="w-full text-xs text-left text-slate-300">
-          <thead class="text-slate-400 bg-slate-800">
+      <div class="terminal-card p-4 overflow-x-auto">
+        <table class="w-full text-xs text-left text-zinc-300 font-mono">
+          <thead class="text-zinc-400 bg-zinc-900 border-b border-zinc-800">
             <tr>
               <th class="p-2.5">Model</th>
               <th class="p-2.5 text-center">Data Mode</th>
@@ -280,102 +449,34 @@
               <th class="p-2.5 text-center">ROC-AUC</th>
               <th class="p-2.5 text-center">Precision</th>
               <th class="p-2.5 text-center">Recall</th>
-              <th class="p-2.5 text-center">Train Time (s)</th>
+              <th class="p-2.5 text-center">Train Time</th>
             </tr>
           </thead>
-          <tbody id="benchmark-table-body" class="divide-y divide-slate-800"></tbody>
+          <tbody id="benchmark-table-body" class="divide-y divide-zinc-800"></tbody>
         </table>
-      </div>
-    </div>
-
-    <!-- ========================================================================= -->
-    <!-- TAB 6: LIVE PREDICT -->
-    <!-- ========================================================================= -->
-    <div id="tab-predict" class="tab-content hidden space-y-6">
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
-          <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i>
-            Inference Architecture
-          </h3>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Target Model:</label>
-            <select id="predict-model-select" class="w-full bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-2 focus:outline-none">
-              <option value="tcn">TCN (Temporal Convolutional Network)</option>
-              <option value="tft">TFT (Temporal Fusion Transformer)</option>
-              <option value="lstm" selected>LSTM (Long Short-Term Memory)</option>
-              <option value="bilstm_attention">BiLSTM + Attention</option>
-              <option value="transformer">Transformer Classifier</option>
-              <option value="xgboost">XGBoost Classifier</option>
-              <option value="ensemble">Soft-Voting Meta Ensemble</option>
-            </select>
-          </div>
-
-          <div>
-            <label class="text-xs font-semibold text-slate-400 block mb-1">Data Representation:</label>
-            <select id="predict-mode-select" class="w-full bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-2 focus:outline-none">
-              <option value="binary" selected>Binary Trend Preprocessing</option>
-              <option value="continuous">Continuous Normalized [0, 1]</option>
-            </select>
-          </div>
-
-          <button id="btn-run-prediction" class="w-full flex items-center justify-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-600/30 transition">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
-            <span>Predict Trend Direction</span>
-          </button>
-        </div>
-
-        <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
-          <div class="flex items-center justify-between">
-            <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Directional Forecast</span>
-            <span id="predict-ticker-badge" class="text-xs bg-slate-800 text-slate-300 font-mono px-2.5 py-1 rounded-full">AAPL</span>
-          </div>
-
-          <div class="my-6 text-center">
-            <div id="trend-icon-wrapper" class="w-20 h-20 mx-auto rounded-full bg-emerald-950/80 border-2 border-emerald-500 flex items-center justify-center mb-3 shadow-lg shadow-emerald-500/20">
-              <i data-lucide="trending-up" id="trend-icon" class="w-10 h-10 text-emerald-400"></i>
-            </div>
-            <h2 id="trend-text" class="text-3xl font-extrabold text-emerald-400 tracking-wide">UPWARD TREND (+1)</h2>
-            <p id="confidence-subtext" class="text-xs text-slate-400 mt-1">Confidence: 89.4% UP vs 10.6% DOWN</p>
-          </div>
-
-          <div class="space-y-1">
-            <div class="flex justify-between text-xs font-semibold">
-              <span class="text-emerald-400" id="conf-up-label">Up: 89%</span>
-              <span class="text-rose-400" id="conf-down-label">Down: 11%</span>
-            </div>
-            <div class="w-full bg-rose-950 h-3 rounded-full overflow-hidden flex">
-              <div id="conf-bar-up" class="bg-emerald-500 h-full transition-all duration-500" style="width: 89%;"></div>
-              <div id="conf-bar-down" class="bg-rose-500 h-full transition-all duration-500" style="width: 11%;"></div>
-            </div>
-          </div>
-        </div>
       </div>
     </div>
 
     <!-- ========================================================================= -->
     <!-- TAB 7: STRATEGY BACKTEST -->
     <!-- ========================================================================= -->
-    <div id="tab-backtest" class="tab-content hidden space-y-6">
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+    <div id="tab-backtest" class="tab-content hidden space-y-4">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 class="text-base font-bold text-white flex items-center gap-2">
-            <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
-            Quantitative Strategy Backtester
+          <h2 class="text-xs font-bold uppercase tracking-wider text-white">
+            Quantitative Strategy Simulation Engine
           </h2>
-          <p class="text-xs text-slate-400">Simulate model execution with transaction friction & risk metrics</p>
+          <p class="text-[11px] text-zinc-400">Simulate model-driven execution with transaction friction and risk metrics</p>
         </div>
-        <button id="btn-run-backtest" class="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-600/30 transition">
-          <i data-lucide="play" class="w-4 h-4"></i>
-          <span>Run Strategy Simulation</span>
+        <button id="btn-run-backtest" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded font-bold transition">
+          Run Strategy Simulation
         </button>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="backtest-kpi-grid"></div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="backtest-kpi-grid"></div>
 
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h3 class="text-sm font-bold text-white mb-4">Portfolio Equity Growth vs Buy & Hold Benchmark</h3>
+      <div class="terminal-card p-4">
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Portfolio Equity Growth vs Benchmark</h3>
         <div class="h-80 w-full">
           <canvas id="equity-chart"></canvas>
         </div>
@@ -384,8 +485,9 @@
 
   </main>
 
-  <footer class="border-t border-slate-800 py-4 bg-slate-950 text-center text-xs text-slate-500">
-    StockTrend AI &bull; Next-Gen Quantitative Intelligence Platform &bull; Production GPU Accelerated
+  <!-- Full-Width Footer -->
+  <footer class="border-t border-zinc-800 py-3 bg-black text-center text-xs text-zinc-500 font-mono w-full">
+    StockTrend AI &bull; Real-Time Quantitative Intelligence Platform &bull; Production GPU Accelerated &bull; Zero Glow
   </footer>
 
   <script src="/static/app.js"></script>
