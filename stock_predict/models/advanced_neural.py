@@ -348,19 +348,25 @@ class MultiHorizonForecaster:
             dir_targets[f"h_{h}"] = torch.tensor(dir_label, dtype=torch.long)
             mag_targets[f"h_{h}"] = torch.tensor(ret * 100.0, dtype=torch.float32).unsqueeze(1)
 
-        dataset = TensorDataset(X_train)
+        # Create matched tensor dataset with all horizon targets
+        tensors = [X_train]
+        for h in self.horizons:
+            tensors.append(dir_targets[f"h_{h}"])
+            tensors.append(mag_targets[f"h_{h}"])
+
+        dataset = TensorDataset(*tensors)
         loader = DataLoader(dataset, batch_size=self.batch_size, shuffle=True)
 
         for epoch in range(self.epochs):
-            for (bx,) in loader:
-                bx = bx.to(self.device)
+            for batch in loader:
+                bx = batch[0].to(self.device)
                 optimizer.zero_grad()
                 out = self.model(bx)
 
                 total_loss = 0.0
-                for h in self.horizons:
-                    b_dir = dir_targets[f"h_{h}"][:len(bx)].to(self.device)
-                    b_mag = mag_targets[f"h_{h}"][:len(bx)].to(self.device)
+                for idx, h in enumerate(self.horizons):
+                    b_dir = batch[1 + idx * 2].to(self.device)
+                    b_mag = batch[2 + idx * 2].to(self.device)
 
                     l_logits = out[f"horizon_{h}d"]["logits"]
                     l_mag = out[f"horizon_{h}d"]["magnitude"]

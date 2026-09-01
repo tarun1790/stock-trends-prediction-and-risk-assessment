@@ -480,6 +480,8 @@ class PyTorchModelWrapper(BaseModelWrapper):
 
                 optimizer.zero_grad()
                 outputs = self.torch_model(batch_x)
+                if isinstance(outputs, tuple):
+                    outputs = outputs[0]
                 loss = self.criterion(outputs, batch_y)
                 loss.backward()
                 optimizer.step()
@@ -496,6 +498,8 @@ class PyTorchModelWrapper(BaseModelWrapper):
                         val_x = val_x.to(self.device)
                         val_y = val_y.to(self.device)
                         val_outputs = self.torch_model(val_x)
+                        if isinstance(val_outputs, tuple):
+                            val_outputs = val_outputs[0]
                         v_loss = self.criterion(val_outputs, val_y)
                         val_loss += v_loss.item() * val_x.size(0)
 
@@ -525,6 +529,8 @@ class PyTorchModelWrapper(BaseModelWrapper):
         with torch.no_grad():
             tensor_x = torch.tensor(X, dtype=torch.float32).to(self.device)
             logits = self.torch_model(tensor_x)
+            if isinstance(logits, tuple):
+                logits = logits[0]
             probs = torch.softmax(logits, dim=-1)
             return probs.cpu().numpy()
 
