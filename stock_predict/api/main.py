@@ -46,7 +46,11 @@ from stock_predict.models import (
 )
 from stock_predict.evaluation.metrics import evaluate_predictions
 from stock_predict.evaluation.benchmark import BenchmarkRunner
+from stock_predict.evaluation.explainability import compute_feature_saliency
 from stock_predict.backtest.backtester import BacktestEngine
+from stock_predict.backtest.advanced_backtester import AdvancedRiskBacktester
+from stock_predict.models.advanced_neural import MultiHorizonForecaster, PyTorchTCN, PyTorchTFT
+from stock_predict.core.advanced_indicators import compute_full_quant_features
 from stock_predict.api.schemas import (
     SystemStatusResponse,
     DataFetchRequest,
@@ -398,6 +402,152 @@ def run_backtest_api(req: BacktestRequest):
         raise HTTPException(status_code=500, detail=str(ex))
 
 
+@app.post("/api/predict/multi-horizon")
+def predict_multi_horizon_api(req: LivePredictRequest):
+    """
+    Multi-Horizon Forecasting Engine.
+    Simultaneously forecasts 1D, 3D, 5D, 10D, and 20D forward price trends and magnitude.
+    """
+    try:
+        df = data_loader.fetch_live_data(req.ticker) if req.ticker != "sample" else data_loader.load_sector_data("diversified_financials")
+        data = prepare_dataset(df, mode=req.data_mode, sequence_length=20)
+
+        forecaster = MultiHorizonForecaster(input_dim=10, epochs=40)
+        forecaster.fit(data["X_seq_train"], data["raw_df"]["Close"].values)
+
+        latest_x = data["X_seq_test"][-1:] if "X_seq_test" in data else data["X_seq_train"][-1:]
+        forecasts = forecaster.predict_multi_horizon(latest_x)
+
+        return {
+            "ticker": req.ticker,
+            "data_mode": req.data_mode,
+            "last_price": round(float(df["Close"].iloc[-1]), 2),
+            "forecasts": forecasts,
+        }
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
+
+
+@app.post("/api/explain")
+def explain_prediction_api(req: LivePredictRequest):
+    """
+    Explainable AI (XAI) Engine.
+    Returns Temporal Attention Heatmaps and Indicator Importance Attribution.
+    """
+    try:
+        df = data_loader.fetch_live_data(req.ticker) if req.ticker != "sample" else data_loader.load_sector_data("diversified_financials")
+        data = prepare_dataset(df, mode=req.data_mode, sequence_length=20)
+
+        model = _instantiate_model(req.model_name, epochs=40)
+        is_seq = req.model_name.lower() in [
+            "rnn", "lstm", "gru", "bilstm_attention", "transformer", "tcn", "tft"
+        ]
+
+        if is_seq and "X_seq_train" in data:
+            model.fit(data["X_seq_train"], data["y_seq_train"])
+            sample_x = data["X_seq_test"][-1:]
+        else:
+            model.fit(data["X_train"], data["y_train"])
+            sample_x = data["X_test"][-1:]
+
+        from stock_predict.evaluation.explainability import compute_feature_saliency
+        explanation = compute_feature_saliency(
+            model_wrapper=model,
+            input_sample=sample_x,
+            feature_names=INDICATOR_COLUMNS,
+        )
+
+        return {
+            "ticker": req.ticker,
+            "model_name": req.model_name,
+            "data_mode": req.data_mode,
+            "explanation": explanation,
+        }
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
+
+
+@app.post("/api/backtest/monte-carlo")
+def monte_carlo_backtest_api(req: BacktestRequest):
+    """
+    Institutional Risk Backtester with 1,000-Path Monte Carlo Simulation (VaR / CVaR 95%).
+    """
+    try:
+        df = _load_requested_data(req)
+        data = prepare_dataset(df, mode=req.data_mode, sequence_length=20, test_size=0.40)
+
+        model = _instantiate_model(req.model_name, epochs=50)
+        is_seq = req.model_name.lower() in [
+            "rnn", "lstm", "gru", "bilstm_attention", "transformer", "tcn", "tft"
+        ]
+
+        if is_seq and "X_seq_train" in data:
+            model.fit(data["X_seq_train"], data["y_seq_train"])
+            X_eval = data["X_seq_test"]
+        else:
+            model.fit(data["X_train"], data["y_train"])
+            X_eval = data["X_test"]
+
+        preds = model.predict(X_eval)
+        probas = model.predict_proba(X_eval)[:, 1]
+
+        clean_df = data["raw_df"]
+        n_eval = len(preds)
+        test_prices = clean_df["Close"].iloc[-n_eval:].values
+        test_dates = clean_df.index[-n_eval:]
+
+        from stock_predict.backtest.advanced_backtester import AdvancedRiskBacktester
+        adv_engine = AdvancedRiskBacktester(
+            initial_capital=req.initial_capital,
+            transaction_cost_pct=req.transaction_cost_pct,
+            target_annual_vol=0.15,
+            trailing_stop_pct=0.03,
+        )
+        res = adv_engine.run_risk_managed_backtest(
+            prices=test_prices,
+            signals=preds,
+            confidence_probs=probas,
+            dates=test_dates,
+        )
+
+        return res
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
+
+
+@app.post("/api/indicators/advanced")
+def advanced_indicators_api(req: DataFetchRequest):
+    """
+    25+ Institutional Quantitative Features with Volatility & Ternary Regime Filters.
+    """
+    try:
+        df = _load_requested_data(req)
+        from stock_predict.core.advanced_indicators import compute_full_quant_features
+        quant_df = compute_full_quant_features(df)
+
+        preview = []
+        for dt, row in quant_df.tail(50).iterrows():
+            preview.append({
+                "date": str(dt)[:10],
+                "close": round(float(row["Close"]), 2),
+                "atr": round(float(row["ATR"]), 2) if not pd.isna(row["ATR"]) else None,
+                "adx": round(float(row["ADX"]), 2) if not pd.isna(row["ADX"]) else None,
+                "cmf": round(float(row["CMF"]), 4) if not pd.isna(row["CMF"]) else None,
+                "bb_pct_b": round(float(row["BB_PCT_B"]), 2) if not pd.isna(row["BB_PCT_B"]) else None,
+                "park_vol": round(float(row["PARK_VOL"]), 3) if not pd.isna(row["PARK_VOL"]) else None,
+                "reg_sma": int(row.get("REG_SMA", 0)),
+                "reg_rsi": int(row.get("REG_RSI", 0)),
+                "reg_adx": int(row.get("REG_ADX", 0)),
+            })
+
+        return {
+            "total_records": len(quant_df),
+            "records": preview,
+        }
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
+
+
 # Static frontend serving
 if UI_DIR.exists():
     app.mount("/static", StaticFiles(directory=str(UI_DIR)), name="static")
@@ -405,3 +555,4 @@ if UI_DIR.exists():
     @app.get("/")
     def serve_dashboard():
         return FileResponse(str(UI_DIR / "index.html"))
+

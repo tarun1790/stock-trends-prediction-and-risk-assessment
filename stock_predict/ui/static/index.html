@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Stock Market Trend Prediction Platform | IEEE Quantitative Analysis</title>
+  <title>StockTrend AI | Next-Gen Quantitative Intelligence Platform</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
@@ -22,8 +22,11 @@
           <i data-lucide="trending-up" class="w-6 h-6 text-white"></i>
         </div>
         <div>
-          <h1 class="text-lg font-bold text-white tracking-tight">StockTrend AI</h1>
-          <p class="text-xs text-slate-400">Continuous & Binary Trend Prediction Engine</p>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-lg font-bold text-white tracking-tight">StockTrend AI</h1>
+            <span class="bg-indigo-500/20 text-indigo-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-indigo-500/30">PRO QUANT</span>
+          </div>
+          <p class="text-xs text-slate-400">Deep Learning &bull; Multi-Horizon &bull; Explainable AI &bull; Monte Carlo Risk</p>
         </div>
       </div>
 
@@ -34,7 +37,7 @@
           <span id="gpu-status-text">GPU / CUDA Active</span>
         </div>
         <div class="hidden sm:flex items-center space-x-2 bg-slate-800/80 border border-slate-700 text-slate-300 text-xs px-3 py-1.5 rounded-full font-mono">
-          <span>v1.0.0</span>
+          <span>v2.0 Advanced</span>
         </div>
       </div>
     </div>
@@ -44,7 +47,7 @@
   <section class="bg-slate-900/50 border-b border-slate-800 px-4 sm:px-6 lg:px-8 py-3">
     <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
       <div class="flex items-center space-x-3 flex-wrap gap-y-2">
-        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Data Source:</label>
+        <label class="text-xs font-semibold uppercase tracking-wider text-slate-400">Asset:</label>
         <select id="sector-select" class="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
           <optgroup label="IEEE Paper TSE Sectors">
             <option value="diversified_financials" selected>Diversified Financials</option>
@@ -64,7 +67,7 @@
         </select>
 
         <div class="relative">
-          <input type="text" id="custom-ticker-input" placeholder="Or type ticker..." class="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg pl-3 pr-8 py-1.5 w-36 focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase">
+          <input type="text" id="custom-ticker-input" placeholder="Or ticker..." class="bg-slate-800 border border-slate-700 text-white text-sm rounded-lg pl-3 pr-8 py-1.5 w-32 focus:ring-2 focus:ring-indigo-500 focus:outline-none uppercase">
           <button id="btn-custom-ticker" class="absolute right-1.5 top-1.5 text-slate-400 hover:text-white">
             <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
@@ -81,17 +84,23 @@
         <button data-tab="tab-indicators" class="tab-btn active-tab px-3 py-1.5 rounded-lg font-medium transition">
           10 Indicators
         </button>
-        <button data-tab="tab-preprocessing" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Continuous vs Binary
+        <button data-tab="tab-multi-horizon" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
+          Multi-Horizon (1D-20D)
+        </button>
+        <button data-tab="tab-explain" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
+          Explainable AI (XAI)
+        </button>
+        <button data-tab="tab-monte-carlo" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
+          Monte Carlo & Risk
         </button>
         <button data-tab="tab-benchmark" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Model Benchmarks
+          15 Models Benchmark
         </button>
         <button data-tab="tab-predict" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Live Prediction
+          Live Predict
         </button>
         <button data-tab="tab-backtest" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition text-slate-400 hover:text-white">
-          Backtesting P&L
+          Strategy Backtest
         </button>
       </nav>
     </div>
@@ -104,18 +113,17 @@
     <!-- TAB 1: 10 TECHNICAL INDICATORS -->
     <!-- ========================================================================= -->
     <div id="tab-indicators" class="tab-content space-y-6">
-      <!-- Price & Indicator Chart -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <div class="flex flex-wrap items-center justify-between pb-4 border-b border-slate-800 gap-3">
           <div>
             <h2 class="text-base font-bold text-white flex items-center gap-2">
               <i data-lucide="candlestick-chart" class="w-5 h-5 text-indigo-400"></i>
-              Asset Price History & Indicator Overlay
+              Asset Price History & Technical Indicator Overlay
             </h2>
-            <p class="text-xs text-slate-400" id="asset-subtitle">10-Year Daily Time Series</p>
+            <p class="text-xs text-slate-400" id="asset-subtitle">Daily Historical Series</p>
           </div>
           <div class="flex items-center space-x-2">
-            <label class="text-xs text-slate-400 font-medium">Indicator Overlay:</label>
+            <label class="text-xs text-slate-400 font-medium">Overlay:</label>
             <select id="indicator-overlay-select" class="bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-2.5 py-1.5 focus:outline-none">
               <option value="SMA">SMA (10-day)</option>
               <option value="WMA">WMA (10-day)</option>
@@ -135,126 +143,119 @@
         </div>
       </div>
 
-      <!-- 10 Indicators Cards Grid -->
-      <div>
-        <h3 class="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
-          <i data-lucide="activity" class="w-4 h-4 text-indigo-400"></i>
-          Latest Values for the 10 IEEE Technical Indicators
-        </h3>
-        <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="indicator-cards-grid">
-          <!-- Dynamically populated -->
+      <!-- 10 Indicator Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="indicator-cards-grid"></div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 2: MULTI-HORIZON FORECASTING (1D, 3D, 5D, 10D, 20D) -->
+    <!-- ========================================================================= -->
+    <div id="tab-multi-horizon" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="git-branch" class="w-5 h-5 text-indigo-400"></i>
+            Multi-Horizon Deep Neural Forecasting Engine
+          </h2>
+          <p class="text-xs text-slate-400">Simultaneous probability and expected magnitude predictions across 1D, 3D, 5D, 10D, 20D</p>
         </div>
+        <button id="btn-run-multi-horizon" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-600/30 transition">
+          <i data-lucide="sparkles" class="w-4 h-4"></i>
+          <span>Compute Multi-Horizon Forecasts</span>
+        </button>
       </div>
 
-      <!-- Data Table -->
+      <!-- Horizon Cards Matrix -->
+      <div class="grid grid-cols-1 sm:grid-cols-5 gap-4" id="multi-horizon-grid">
+        <!-- Dynamically injected horizon cards -->
+      </div>
+
+      <!-- Multi-Horizon Trajectory Chart -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h3 class="text-sm font-semibold text-slate-300 mb-3">Historical Feature Records</h3>
-        <div class="overflow-x-auto max-h-72">
-          <table class="w-full text-xs text-left text-slate-300">
-            <thead class="text-slate-400 bg-slate-800/80 sticky top-0">
-              <tr>
-                <th class="p-2">Date</th>
-                <th class="p-2">Close</th>
-                <th class="p-2">SMA</th>
-                <th class="p-2">WMA</th>
-                <th class="p-2">MOM</th>
-                <th class="p-2">STCK</th>
-                <th class="p-2">STCD</th>
-                <th class="p-2">RSI</th>
-                <th class="p-2">SIG</th>
-                <th class="p-2">LWR</th>
-                <th class="p-2">ADO</th>
-                <th class="p-2">CCI</th>
-              </tr>
-            </thead>
-            <tbody id="indicator-table-body" class="divide-y divide-slate-800">
-              <!-- Rows -->
-            </tbody>
-          </table>
+        <h3 class="text-sm font-bold text-white mb-3">Projected Expected Return Profile Across Time Horizons</h3>
+        <div class="h-64 w-full">
+          <canvas id="multi-horizon-chart"></canvas>
         </div>
       </div>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 2: CONTINUOUS VS BINARY PREPROCESSING -->
+    <!-- TAB 3: EXPLAINABLE AI (XAI) -->
     <!-- ========================================================================= -->
-    <div id="tab-preprocessing" class="tab-content hidden space-y-6">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Continuous Explanation Card -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-          <div class="flex items-center space-x-2 text-indigo-400 font-semibold text-sm">
-            <i data-lucide="sliders" class="w-5 h-5"></i>
-            <h4>Approach 1: Continuous Representation [0, 1]</h4>
-          </div>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Raw indicator values computed via mathematical formulas (Table 10) and normalized via MinMax scaling into the range $[0, 1]$:
-            $$x_{\text{norm}} = \frac{x - x_{\min}}{x_{\max} - x_{\min}}$$
-          </p>
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 space-y-1">
-            <p>• Features: Non-stationary continuous values</p>
-            <p>• Baseline Paper F1: ~68% (Traditional ML) / ~86% (DL)</p>
-          </div>
+    <div id="tab-explain" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="eye" class="w-5 h-5 text-purple-400"></i>
+            Explainable AI (XAI) & Temporal Attention Heatmaps
+          </h2>
+          <p class="text-xs text-slate-400">Gradient saliency and temporal attention attribution showing why the model predicts trends</p>
         </div>
-
-        <!-- Binary Explanation Card -->
-        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-3">
-          <div class="flex items-center space-x-2 text-emerald-400 font-semibold text-sm">
-            <i data-lucide="binary" class="w-5 h-5"></i>
-            <h4>Approach 2: Binary Trend-Deterministic (+1 / -1)</h4>
-          </div>
-          <p class="text-xs text-slate-400 leading-relaxed">
-            Converts continuous oscillators into directional signals (+1 Upward / -1 Downward) based on indicator nature and momentum crossovers (Section II-B):
-          </p>
-          <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs font-mono text-slate-300 space-y-1">
-            <p>• SMA/WMA: +1 if Close &ge; MA else -1</p>
-            <p>• RSI: -1 if &gt;70, +1 if &lt;30, else sign(&Delta;RSI)</p>
-            <p>• Baseline Paper F1: ~85% (Traditional ML) / ~90% (DL)</p>
-          </div>
-        </div>
+        <button id="btn-run-explain" class="flex items-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-purple-600/30 transition">
+          <i data-lucide="search" class="w-4 h-4"></i>
+          <span>Extract Model Attribution</span>
+        </button>
       </div>
 
-      <!-- Binary Heatmap / Signal Status -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h3 class="text-sm font-bold text-white mb-4 flex items-center gap-2">
-          <i data-lucide="layout-grid" class="w-5 h-5 text-indigo-400"></i>
-          Recent Indicator Binary Trend States (+1 Up vs -1 Down)
-        </h3>
-        <div class="overflow-x-auto max-h-72">
-          <table class="w-full text-xs text-center text-slate-300">
-            <thead class="text-slate-400 bg-slate-800 sticky top-0">
-              <tr>
-                <th class="p-2 text-left">Date</th>
-                <th class="p-2">SMA</th>
-                <th class="p-2">WMA</th>
-                <th class="p-2">MOM</th>
-                <th class="p-2">STCK</th>
-                <th class="p-2">STCD</th>
-                <th class="p-2">RSI</th>
-                <th class="p-2">SIG</th>
-                <th class="p-2">LWR</th>
-                <th class="p-2">ADO</th>
-                <th class="p-2">CCI</th>
-              </tr>
-            </thead>
-            <tbody id="binary-table-body" class="divide-y divide-slate-800">
-              <!-- Rows -->
-            </tbody>
-          </table>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Feature Importance Bar Chart -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h3 class="text-sm font-bold text-white mb-3">Technical Indicator Importance Attribution (%)</h3>
+          <div class="h-72 w-full">
+            <canvas id="feature-importance-chart"></canvas>
+          </div>
+        </div>
+
+        <!-- Temporal Attention Lookback Weights -->
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+          <h3 class="text-sm font-bold text-white mb-3">Historical Lookback Temporal Attention (Days t-20 to t-1)</h3>
+          <div class="h-72 w-full">
+            <canvas id="temporal-attention-chart"></canvas>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 3: MODEL TRAINING & BENCHMARK ARENA -->
+    <!-- TAB 4: MONTE CARLO & RISK MANAGEMENT -->
+    <!-- ========================================================================= -->
+    <div id="tab-monte-carlo" class="tab-content hidden space-y-6">
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <h2 class="text-base font-bold text-white flex items-center gap-2">
+            <i data-lucide="shield-alert" class="w-5 h-5 text-emerald-400"></i>
+            Monte Carlo Risk Simulation (1,000 Paths) & Volatility Targeting
+          </h2>
+          <p class="text-xs text-slate-400">Dynamic Kelly sizing, trailing stop loss, and 95% Value at Risk (VaR / CVaR)</p>
+        </div>
+        <button id="btn-run-monte-carlo" class="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-600/30 transition">
+          <i data-lucide="play" class="w-4 h-4"></i>
+          <span>Simulate 1,000 Monte Carlo Paths</span>
+        </button>
+      </div>
+
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="monte-carlo-kpis"></div>
+
+      <!-- Fan Chart -->
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+        <h3 class="text-sm font-bold text-white mb-3">1,000-Path Monte Carlo Portfolio Fan Chart (5th, 25th, Median, 75th, 95th Percentiles)</h3>
+        <div class="h-80 w-full">
+          <canvas id="monte-carlo-chart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 5: 15 MODELS BENCHMARK -->
     <!-- ========================================================================= -->
     <div id="tab-benchmark" class="tab-content hidden space-y-6">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
         <div>
           <h2 class="text-base font-bold text-white flex items-center gap-2">
             <i data-lucide="trophy" class="w-5 h-5 text-amber-400"></i>
-            Comparative Model Benchmark Suite
+            15-Model Benchmark Arena (Continuous vs Binary)
           </h2>
-          <p class="text-xs text-slate-400">Compare 11 IEEE Baseline Classifiers + Advanced PyTorch DL Architectures</p>
+          <p class="text-xs text-slate-400">Tree Ensembles, Kernel Models, and PyTorch CUDA DL (TCN, TFT, LSTM, GRU, BiLSTM, Transformer)</p>
         </div>
         <button id="btn-run-benchmark" class="flex items-center space-x-2 bg-indigo-600 hover:bg-indigo-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-indigo-600/30 transition">
           <i data-lucide="play" class="w-4 h-4"></i>
@@ -262,66 +263,51 @@
         </button>
       </div>
 
-      <!-- Benchmark Results Chart (Replicating Paper Fig 16) -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-sm font-bold text-white flex items-center gap-2">
-            <i data-lucide="bar-chart-2" class="w-4 h-4 text-indigo-400"></i>
-            F1-Score Comparison: Continuous vs Binary Data (IEEE Fig. 16)
-          </h3>
-        </div>
         <div class="h-80 w-full">
           <canvas id="benchmark-chart"></canvas>
         </div>
       </div>
 
-      <!-- Comparative Data Table -->
-      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
-        <h3 class="text-sm font-bold text-white mb-3">Model Performance Matrix (Continuous vs Binary)</h3>
-        <div class="overflow-x-auto">
-          <table class="w-full text-xs text-left text-slate-300">
-            <thead class="text-slate-400 bg-slate-800">
-              <tr>
-                <th class="p-2.5">Model</th>
-                <th class="p-2.5 text-center">Data Mode</th>
-                <th class="p-2.5 text-center">F1-Score</th>
-                <th class="p-2.5 text-center">Accuracy</th>
-                <th class="p-2.5 text-center">ROC-AUC</th>
-                <th class="p-2.5 text-center">Precision</th>
-                <th class="p-2.5 text-center">Recall</th>
-                <th class="p-2.5 text-center">Train Time (s)</th>
-                <th class="p-2.5 text-center">Latency / Sample</th>
-              </tr>
-            </thead>
-            <tbody id="benchmark-table-body" class="divide-y divide-slate-800">
-              <!-- Dynamically populated -->
-            </tbody>
-          </table>
-        </div>
+      <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl overflow-x-auto">
+        <table class="w-full text-xs text-left text-slate-300">
+          <thead class="text-slate-400 bg-slate-800">
+            <tr>
+              <th class="p-2.5">Model</th>
+              <th class="p-2.5 text-center">Data Mode</th>
+              <th class="p-2.5 text-center">F1-Score</th>
+              <th class="p-2.5 text-center">Accuracy</th>
+              <th class="p-2.5 text-center">ROC-AUC</th>
+              <th class="p-2.5 text-center">Precision</th>
+              <th class="p-2.5 text-center">Recall</th>
+              <th class="p-2.5 text-center">Train Time (s)</th>
+            </tr>
+          </thead>
+          <tbody id="benchmark-table-body" class="divide-y divide-slate-800"></tbody>
+        </table>
       </div>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 4: REAL-TIME LIVE PREDICTION -->
+    <!-- TAB 6: LIVE PREDICT -->
     <!-- ========================================================================= -->
     <div id="tab-predict" class="tab-content hidden space-y-6">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Prediction Config & Trigger -->
         <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
           <h3 class="text-sm font-bold text-white flex items-center gap-2">
             <i data-lucide="cpu" class="w-4 h-4 text-indigo-400"></i>
-            Inference Configuration
+            Inference Architecture
           </h3>
 
           <div>
             <label class="text-xs font-semibold text-slate-400 block mb-1">Target Model:</label>
             <select id="predict-model-select" class="w-full bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-2 focus:outline-none">
+              <option value="tcn">TCN (Temporal Convolutional Network)</option>
+              <option value="tft">TFT (Temporal Fusion Transformer)</option>
               <option value="lstm" selected>LSTM (Long Short-Term Memory)</option>
               <option value="bilstm_attention">BiLSTM + Attention</option>
-              <option value="transformer">Time-Series Transformer</option>
-              <option value="rnn">RNN (Recurrent Neural Net)</option>
+              <option value="transformer">Transformer Classifier</option>
               <option value="xgboost">XGBoost Classifier</option>
-              <option value="random_forest">Random Forest</option>
               <option value="ensemble">Soft-Voting Meta Ensemble</option>
             </select>
           </div>
@@ -340,14 +326,13 @@
           </button>
         </div>
 
-        <!-- Trend Output Card -->
         <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl flex flex-col justify-between">
           <div class="flex items-center justify-between">
-            <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Forecast Signal</span>
+            <span class="text-xs uppercase font-bold tracking-wider text-slate-400">Directional Forecast</span>
             <span id="predict-ticker-badge" class="text-xs bg-slate-800 text-slate-300 font-mono px-2.5 py-1 rounded-full">AAPL</span>
           </div>
 
-          <div class="my-6 text-center" id="prediction-result-container">
+          <div class="my-6 text-center">
             <div id="trend-icon-wrapper" class="w-20 h-20 mx-auto rounded-full bg-emerald-950/80 border-2 border-emerald-500 flex items-center justify-center mb-3 shadow-lg shadow-emerald-500/20">
               <i data-lucide="trending-up" id="trend-icon" class="w-10 h-10 text-emerald-400"></i>
             </div>
@@ -355,7 +340,6 @@
             <p id="confidence-subtext" class="text-xs text-slate-400 mt-1">Confidence: 89.4% UP vs 10.6% DOWN</p>
           </div>
 
-          <!-- Confidence Progress Bar -->
           <div class="space-y-1">
             <div class="flex justify-between text-xs font-semibold">
               <span class="text-emerald-400" id="conf-up-label">Up: 89%</span>
@@ -371,7 +355,7 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 5: QUANTITATIVE BACKTESTING & STRATEGY SIMULATOR -->
+    <!-- TAB 7: STRATEGY BACKTEST -->
     <!-- ========================================================================= -->
     <div id="tab-backtest" class="tab-content hidden space-y-6">
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-wrap items-center justify-between gap-4">
@@ -380,7 +364,7 @@
             <i data-lucide="shield-check" class="w-5 h-5 text-emerald-400"></i>
             Quantitative Strategy Backtester
           </h2>
-          <p class="text-xs text-slate-400">Simulate execution of predicted signals with transaction friction & risk metrics</p>
+          <p class="text-xs text-slate-400">Simulate model execution with transaction friction & risk metrics</p>
         </div>
         <button id="btn-run-backtest" class="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2.5 rounded-xl font-semibold shadow-lg shadow-emerald-600/30 transition">
           <i data-lucide="play" class="w-4 h-4"></i>
@@ -388,12 +372,8 @@
         </button>
       </div>
 
-      <!-- KPI Summary Cards -->
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="backtest-kpi-grid">
-        <!-- Cards -->
-      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="backtest-kpi-grid"></div>
 
-      <!-- Equity Curve & Drawdown Chart -->
       <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
         <h3 class="text-sm font-bold text-white mb-4">Portfolio Equity Growth vs Buy & Hold Benchmark</h3>
         <div class="h-80 w-full">
@@ -405,7 +385,7 @@
   </main>
 
   <footer class="border-t border-slate-800 py-4 bg-slate-950 text-center text-xs text-slate-500">
-    Stock Market Trend Prediction Platform &bull; Production SDLC Quantitative Trading Engine
+    StockTrend AI &bull; Next-Gen Quantitative Intelligence Platform &bull; Production GPU Accelerated
   </footer>
 
   <script src="/static/app.js"></script>

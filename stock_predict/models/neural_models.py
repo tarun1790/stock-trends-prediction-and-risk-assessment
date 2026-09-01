@@ -414,6 +414,19 @@ class PyTorchModelWrapper(BaseModelWrapper):
                 num_layers=self.kwargs.get("num_layers", 2),
                 dropout=self.kwargs.get("dropout", 0.2),
             )
+        elif mtype == "tcn":
+            from stock_predict.models.advanced_neural import PyTorchTCN
+            return PyTorchTCN(
+                input_dim=self.input_dim,
+                dropout=self.kwargs.get("dropout", 0.2),
+            )
+        elif mtype == "tft":
+            from stock_predict.models.advanced_neural import PyTorchTFT
+            return PyTorchTFT(
+                input_dim=self.input_dim,
+                hidden_dim=self.kwargs.get("hidden_dim", 64),
+                dropout=self.kwargs.get("dropout", 0.1),
+            )
         else:
             raise ValueError(f"Unknown neural model type: '{self.model_type}'")
 

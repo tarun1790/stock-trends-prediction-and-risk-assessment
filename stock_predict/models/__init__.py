@@ -25,7 +25,33 @@ from stock_predict.models.neural_models import (
     create_bilstm_attention_model,
     create_transformer_model,
 )
+from stock_predict.models.advanced_neural import (
+    PyTorchTCN,
+    PyTorchTFT,
+    MultiHorizonForecaster,
+)
 from stock_predict.models.ensemble import VotingEnsembleModel, StackingEnsembleModel
+
+
+def create_tcn_model(input_dim: int = 10, epochs: int = 60, **kwargs):
+    return PyTorchModelWrapper(
+        model_type="tcn",
+        name="TCN",
+        input_dim=input_dim,
+        epochs=epochs,
+        **kwargs,
+    )
+
+
+def create_tft_model(input_dim: int = 10, epochs: int = 60, **kwargs):
+    return PyTorchModelWrapper(
+        model_type="tft",
+        name="TFT",
+        input_dim=input_dim,
+        epochs=epochs,
+        **kwargs,
+    )
+
 
 # Map model keys to factory constructors
 MODEL_REGISTRY = {
@@ -44,6 +70,8 @@ MODEL_REGISTRY = {
     "gru": create_gru_model,
     "bilstm_attention": create_bilstm_attention_model,
     "transformer": create_transformer_model,
+    "tcn": create_tcn_model,
+    "tft": create_tft_model,
 }
 
 __all__ = [
