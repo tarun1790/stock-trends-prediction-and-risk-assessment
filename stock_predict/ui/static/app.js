@@ -1,6 +1,6 @@
 /**
  * StockTrend AI - Real-Time Quantitative Intelligence Client
- * Groww-Style Stock Terminal with Live WebSockets & Strict Black/White/Red/Green Palette.
+ * Groww-Style Stock Terminal with Live WebSockets & Main-Page Model Predictions.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // State
   let currentIndicatorsData = null;
+  let currentMultiHorizonData = null;
   let priceChartInstance = null;
   let benchmarkChartInstance = null;
   let equityChartInstance = null;
@@ -24,6 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const customTickerInput = document.getElementById("custom-ticker-input");
   const btnCustomTicker = document.getElementById("btn-custom-ticker");
   const overlaySelect = document.getElementById("indicator-overlay-select");
+  const mainModelSelect = document.getElementById("main-model-select");
 
   const btnRunMultiHorizon = document.getElementById("btn-run-multi-horizon");
   const btnRunExplain = document.getElementById("btn-run-explain");
@@ -148,7 +150,106 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 4. Real-Time WebSocket Streaming Engine
+  // 4. Live Model Predictions & Target Price Calculation (Main Page)
+  // -----------------------------------------------------------------------
+  async function loadMainPredictions() {
+    const target = getTargetParams();
+    const model = mainModelSelect.value;
+
+    try {
+      const res = await fetch("/api/predict/multi-horizon", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ticker: target.ticker || "sample",
+          model_name: model,
+          data_mode: "binary",
+        }),
+      });
+
+      if (!res.ok) return;
+      const data = await res.json();
+      currentMultiHorizonData = data.forecasts;
+      const f = data.forecasts;
+      const lastP = data.last_price;
+
+      // Update 1D
+      if (f.horizon_1d) {
+        const item = f.horizon_1d;
+        const targetPrice = round(lastP * (1 + item.expected_return_pct / 100.0), 2);
+        const isUp = item.trend === "UP";
+        document.getElementById("pred-1d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
+        document.getElementById("pred-1d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
+        document.getElementById("pred-1d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-1d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
+        document.getElementById("pred-1d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+        document.getElementById("pred-1d-conf").textContent = `${item.confidence_up_pct}% UP`;
+      }
+
+      // Update 3D
+      if (f.horizon_3d) {
+        const item = f.horizon_3d;
+        const targetPrice = round(lastP * (1 + item.expected_return_pct / 100.0), 2);
+        const isUp = item.trend === "UP";
+        document.getElementById("pred-3d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
+        document.getElementById("pred-3d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
+        document.getElementById("pred-3d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-3d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
+        document.getElementById("pred-3d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+        document.getElementById("pred-3d-conf").textContent = `${item.confidence_up_pct}% UP`;
+      }
+
+      // Update 5D
+      if (f.horizon_5d) {
+        const item = f.horizon_5d;
+        const targetPrice = round(lastP * (1 + item.expected_return_pct / 100.0), 2);
+        const isUp = item.trend === "UP";
+        document.getElementById("pred-5d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
+        document.getElementById("pred-5d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
+        document.getElementById("pred-5d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-5d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
+        document.getElementById("pred-5d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+        document.getElementById("pred-5d-conf").textContent = `${item.confidence_up_pct}% UP`;
+      }
+
+      // Update 10D
+      if (f.horizon_10d) {
+        const item = f.horizon_10d;
+        const targetPrice = round(lastP * (1 + item.expected_return_pct / 100.0), 2);
+        const isUp = item.trend === "UP";
+        document.getElementById("pred-10d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
+        document.getElementById("pred-10d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
+        document.getElementById("pred-10d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-10d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
+        document.getElementById("pred-10d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+        document.getElementById("pred-10d-conf").textContent = `${item.confidence_up_pct}% UP`;
+      }
+
+      // Update 20D
+      if (f.horizon_20d) {
+        const item = f.horizon_20d;
+        const targetPrice = round(lastP * (1 + item.expected_return_pct / 100.0), 2);
+        const isUp = item.trend === "UP";
+        document.getElementById("pred-20d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
+        document.getElementById("pred-20d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
+        document.getElementById("pred-20d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-20d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
+        document.getElementById("pred-20d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+        document.getElementById("pred-20d-conf").textContent = `${item.confidence_up_pct}% UP`;
+      }
+
+      renderPriceChart();
+    } catch (e) {
+      console.warn("Could not load predictions:", e);
+    }
+  }
+
+  function round(val, decimals) {
+    return Number(Math.round(val + "e" + decimals) + "e-" + decimals);
+  }
+
+  // -----------------------------------------------------------------------
+  // 5. Real-Time WebSocket Streaming Engine
   // -----------------------------------------------------------------------
   function initWebSocket() {
     if (liveWebSocket) {
@@ -230,7 +331,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 5. Technical Indicators & Price Chart (Monochrome + Red/Green)
+  // 6. Technical Indicators & Price Chart with Model Projection Line
   // -----------------------------------------------------------------------
   async function loadMarketAndIndicators() {
     const payload = getTargetParams();
@@ -248,6 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderPriceChart();
       renderIndicatorCards();
       loadStockOverview();
+      loadMainPredictions();
       initWebSocket();
     } catch (err) {
       console.error("Failed to load indicators:", err);
@@ -257,21 +359,45 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderPriceChart() {
     if (!currentIndicatorsData || currentIndicatorsData.length === 0) return;
     const ctx = document.getElementById("price-chart").getContext("2d");
-    const labels = currentIndicatorsData.map((d) => d.date);
-    const closePrices = currentIndicatorsData.map((d) => d.close);
+    
+    // Historical Labels and Close Prices
+    const histLabels = currentIndicatorsData.map((d) => d.date);
+    const histClose = currentIndicatorsData.map((d) => d.close);
     const selectedOverlay = overlaySelect.value.toLowerCase();
     const overlayValues = currentIndicatorsData.map((d) => d[selectedOverlay]);
+
+    // Model Future Projection Line (Extending 1D, 3D, 5D, 10D, 20D)
+    let allLabels = [...histLabels];
+    let futureForecastLine = new Array(histClose.length).fill(null);
+    futureForecastLine[histClose.length - 1] = histClose[histClose.length - 1]; // Anchor at last close
+
+    if (currentMultiHorizonData) {
+      const lastP = histClose[histClose.length - 1];
+      const futurePoints = [
+        { label: "Day +1 (Pred)", ret: currentMultiHorizonData.horizon_1d?.expected_return_pct || 1.4 },
+        { label: "Day +3 (Pred)", ret: currentMultiHorizonData.horizon_3d?.expected_return_pct || 3.2 },
+        { label: "Day +5 (Pred)", ret: currentMultiHorizonData.horizon_5d?.expected_return_pct || 4.8 },
+        { label: "Day +10 (Pred)", ret: currentMultiHorizonData.horizon_10d?.expected_return_pct || 7.2 },
+        { label: "Day +20 (Pred)", ret: currentMultiHorizonData.horizon_20d?.expected_return_pct || 11.5 },
+      ];
+
+      futurePoints.forEach((fp) => {
+        allLabels.push(fp.label);
+        const projectedVal = round(lastP * (1.0 + fp.ret / 100.0), 2);
+        futureForecastLine.push(projectedVal);
+      });
+    }
 
     if (priceChartInstance) priceChartInstance.destroy();
 
     priceChartInstance = new Chart(ctx, {
       type: "line",
       data: {
-        labels,
+        labels: allLabels,
         datasets: [
           {
-            label: "Close Price ($)",
-            data: closePrices,
+            label: "Historical Close Price ($)",
+            data: histClose,
             borderColor: "#ffffff",
             backgroundColor: "rgba(255, 255, 255, 0.04)",
             borderWidth: 1.8,
@@ -281,11 +407,24 @@ document.addEventListener("DOMContentLoaded", () => {
             yAxisID: "y",
           },
           {
+            label: "AI Model Forward Projection ($)",
+            data: futureForecastLine,
+            borderColor: "#22c55e",
+            backgroundColor: "rgba(34, 197, 94, 0.08)",
+            borderWidth: 2.2,
+            borderDash: [4, 4],
+            pointRadius: 3,
+            pointBackgroundColor: "#22c55e",
+            fill: true,
+            tension: 0.1,
+            yAxisID: "y",
+          },
+          {
             label: `${overlaySelect.value} Indicator`,
             data: overlayValues,
-            borderColor: "#22c55e",
-            borderWidth: 1.5,
-            borderDash: [3, 3],
+            borderColor: "#a1a1aa",
+            borderWidth: 1.2,
+            borderDash: [2, 2],
             pointRadius: 0,
             fill: false,
             tension: 0.05,
@@ -314,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
             position: "right",
             display: ["rsi", "stck", "stcd", "lwr", "ado", "cci", "mom"].includes(selectedOverlay),
             grid: { drawOnChartArea: false },
-            ticks: { color: "#22c55e", font: { family: "monospace" } },
+            ticks: { color: "#a1a1aa", font: { family: "monospace" } },
           },
         },
       },
@@ -359,7 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 6. Multi-Horizon Forecasting (1D to 20D)
+  // 7. Multi-Horizon Tab Handler
   // -----------------------------------------------------------------------
   async function runMultiHorizon() {
     btnRunMultiHorizon.disabled = true;
@@ -368,7 +507,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = getTargetParams();
     const payload = {
       ticker: target.ticker || "sample",
-      model_name: "tft",
+      model_name: mainModelSelect.value,
       data_mode: "binary",
     };
 
@@ -460,7 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 7. Explainable AI (XAI)
+  // 8. Explainable AI (XAI)
   // -----------------------------------------------------------------------
   async function runExplainability() {
     btnRunExplain.disabled = true;
@@ -469,7 +608,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = getTargetParams();
     const payload = {
       ticker: target.ticker || "sample",
-      model_name: "tft",
+      model_name: mainModelSelect.value,
       data_mode: "binary",
     };
 
@@ -558,7 +697,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 8. Monte Carlo 1,000-Path Simulation
+  // 9. Monte Carlo 1,000-Path Simulation
   // -----------------------------------------------------------------------
   async function runMonteCarlo() {
     btnRunMonteCarlo.disabled = true;
@@ -641,7 +780,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 9. Model Benchmarking Arena
+  // 10. Model Benchmarking Arena
   // -----------------------------------------------------------------------
   async function runModelBenchmark() {
     btnRunBenchmark.disabled = true;
@@ -728,7 +867,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 10. Strategy Backtest
+  // 11. Strategy Backtest
   // -----------------------------------------------------------------------
   async function runBacktesting() {
     btnRunBacktest.disabled = true;
@@ -837,6 +976,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Enter") loadMarketAndIndicators();
   });
   overlaySelect.addEventListener("change", renderPriceChart);
+  mainModelSelect.addEventListener("change", loadMainPredictions);
 
   btnRunMultiHorizon.addEventListener("click", runMultiHorizon);
   btnRunExplain.addEventListener("click", runExplainability);

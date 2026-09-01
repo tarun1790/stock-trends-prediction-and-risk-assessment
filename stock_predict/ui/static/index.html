@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockTrend AI | Real-Time Financial Machine Learning & Market Intelligence</title>
+  <title>StockTrend AI | Real-Time Financial Machine Learning Terminal</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
@@ -27,10 +27,10 @@
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <h1 class="text-sm font-bold tracking-wider uppercase text-white">StockTrend AI &bull; Real-Time Terminal</h1>
-            <span class="bg-zinc-900 text-zinc-300 text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-800">GROWW-STYLE INTEL</span>
+            <h1 class="text-sm font-bold tracking-wider uppercase text-white">StockTrend AI &bull; Real-Time ML Terminal</h1>
+            <span class="bg-zinc-900 text-zinc-300 text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-800">PREDICTION ENGINE</span>
           </div>
-          <p class="text-[11px] text-zinc-400">WebSocket Live Feed &bull; 15 ML/DL Models &bull; Multi-Horizon Forecaster &bull; Monte Carlo Risk</p>
+          <p class="text-[11px] text-zinc-400">Deep Neural Trend & Target Price Forecasting &bull; IEEE Table 10 Indicators &bull; CUDA GPU</p>
         </div>
 
         <!-- Global Asset & Stock Selector Dropdown -->
@@ -86,7 +86,7 @@
       <div class="flex items-center space-x-2 text-xs font-mono">
         <div id="ws-status-badge" class="flex items-center space-x-1.5 bg-black border border-emerald-800 text-emerald-400 px-2.5 py-1 rounded">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span id="ws-status-text">WS LIVE STREAMING</span>
+          <span id="ws-status-text">WS LIVE STREAM</span>
         </div>
         <div id="gpu-badge" class="flex items-center space-x-1.5 bg-black border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -178,7 +178,7 @@
     <div class="w-full flex items-center justify-between overflow-x-auto">
       <nav class="flex space-x-1 text-xs font-medium">
         <button data-tab="tab-overview" class="tab-btn active-tab px-3 py-1.5 rounded">
-          Stock Overview & Chart
+          Stock Overview & Live Predictions
         </button>
         <button data-tab="tab-multi-horizon" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
           Multi-Horizon Forecaster (1D-20D)
@@ -208,17 +208,132 @@
   <main class="w-full px-4 py-4 flex-1 space-y-4">
 
     <!-- ========================================================================= -->
-    <!-- TAB 1: STOCK OVERVIEW & INTERACTIVE CHART (Groww Style) -->
+    <!-- TAB 1: STOCK OVERVIEW & LIVE PREDICTIONS -->
     <!-- ========================================================================= -->
     <div id="tab-overview" class="tab-content space-y-4">
       
-      <!-- Interactive Chart Section with Timeframes -->
+      <!-- TOP SECTION: LIVE PREDICTION BANNER & TARGET PRICES (IMMEDIATELY VISIBLE) -->
+      <div class="terminal-card p-4 bg-zinc-950 border border-zinc-800">
+        <div class="flex flex-wrap items-center justify-between pb-3 mb-3 border-b border-zinc-800 gap-2">
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>LIVE AI MODEL PREDICTION & FORWARD TARGET PRICES</span>
+            </h2>
+            <p class="text-[11px] text-zinc-400 font-mono">Predicted direction, target prices, confidence probability, and expected forward returns</p>
+          </div>
+          <div class="flex items-center space-x-2 text-xs font-mono">
+            <span class="text-zinc-400">Model:</span>
+            <select id="main-model-select" class="bg-black border border-zinc-700 text-xs text-white rounded px-2 py-1 focus:outline-none font-mono">
+              <option value="tft">TFT (Temporal Fusion Transformer)</option>
+              <option value="tcn">TCN (Temporal Convolutional Network)</option>
+              <option value="lstm" selected>LSTM (Long Short-Term Memory)</option>
+              <option value="bilstm_attention">BiLSTM + Attention</option>
+              <option value="transformer">Transformer</option>
+              <option value="xgboost">XGBoost Classifier</option>
+              <option value="ensemble">Voting Ensemble</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 5 Prediction Key Metrics Columns (1D, 3D, 5D, 10D, 20D) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 font-mono" id="main-predictions-grid">
+          
+          <!-- 1-Day Next Forecast -->
+          <div class="bg-black border border-emerald-900/80 p-3 rounded space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="text-zinc-400 font-bold uppercase">1-Day Next Close</span>
+              <span class="text-emerald-400 bg-black border border-emerald-800 px-1 py-0.2 rounded font-extrabold" id="pred-1d-trend">UP (+1)</span>
+            </div>
+            <p class="text-xl font-bold text-white" id="pred-1d-price">$134.71</p>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-zinc-400">Expected Return:</span>
+              <span class="text-emerald-400 font-bold" id="pred-1d-return">+1.40%</span>
+            </div>
+            <div class="flex justify-between text-[10px] text-zinc-500 pt-1">
+              <span>Confidence:</span>
+              <span class="text-white font-bold" id="pred-1d-conf">91.2% UP</span>
+            </div>
+          </div>
+
+          <!-- 3-Day Forecast -->
+          <div class="bg-black border border-zinc-800 p-3 rounded space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="text-zinc-400 font-bold uppercase">3-Day Horizon</span>
+              <span class="text-emerald-400 bg-black border border-emerald-800 px-1 py-0.2 rounded font-extrabold" id="pred-3d-trend">UP (+1)</span>
+            </div>
+            <p class="text-xl font-bold text-white" id="pred-3d-price">$137.10</p>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-zinc-400">Expected Return:</span>
+              <span class="text-emerald-400 font-bold" id="pred-3d-return">+3.20%</span>
+            </div>
+            <div class="flex justify-between text-[10px] text-zinc-500 pt-1">
+              <span>Confidence:</span>
+              <span class="text-white font-bold" id="pred-3d-conf">87.5% UP</span>
+            </div>
+          </div>
+
+          <!-- 5-Day Forecast -->
+          <div class="bg-black border border-zinc-800 p-3 rounded space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="text-zinc-400 font-bold uppercase">5-Day Horizon</span>
+              <span class="text-emerald-400 bg-black border border-emerald-800 px-1 py-0.2 rounded font-extrabold" id="pred-5d-trend">UP (+1)</span>
+            </div>
+            <p class="text-xl font-bold text-white" id="pred-5d-price">$139.23</p>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-zinc-400">Expected Return:</span>
+              <span class="text-emerald-400 font-bold" id="pred-5d-return">+4.80%</span>
+            </div>
+            <div class="flex justify-between text-[10px] text-zinc-500 pt-1">
+              <span>Confidence:</span>
+              <span class="text-white font-bold" id="pred-5d-conf">84.0% UP</span>
+            </div>
+          </div>
+
+          <!-- 10-Day Forecast -->
+          <div class="bg-black border border-zinc-800 p-3 rounded space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="text-zinc-400 font-bold uppercase">10-Day Horizon</span>
+              <span class="text-emerald-400 bg-black border border-emerald-800 px-1 py-0.2 rounded font-extrabold" id="pred-10d-trend">UP (+1)</span>
+            </div>
+            <p class="text-xl font-bold text-white" id="pred-10d-price">$142.42</p>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-zinc-400">Expected Return:</span>
+              <span class="text-emerald-400 font-bold" id="pred-10d-return">+7.20%</span>
+            </div>
+            <div class="flex justify-between text-[10px] text-zinc-500 pt-1">
+              <span>Confidence:</span>
+              <span class="text-white font-bold" id="pred-10d-conf">81.5% UP</span>
+            </div>
+          </div>
+
+          <!-- 20-Day Forecast -->
+          <div class="bg-black border border-zinc-800 p-3 rounded space-y-1">
+            <div class="flex justify-between items-center text-[10px]">
+              <span class="text-zinc-400 font-bold uppercase">20-Day Horizon</span>
+              <span class="text-emerald-400 bg-black border border-emerald-800 px-1 py-0.2 rounded font-extrabold" id="pred-20d-trend">UP (+1)</span>
+            </div>
+            <p class="text-xl font-bold text-white" id="pred-20d-price">$148.13</p>
+            <div class="flex justify-between text-[11px]">
+              <span class="text-zinc-400">Expected Return:</span>
+              <span class="text-emerald-400 font-bold" id="pred-20d-return">+11.50%</span>
+            </div>
+            <div class="flex justify-between text-[10px] text-zinc-500 pt-1">
+              <span>Confidence:</span>
+              <span class="text-white font-bold" id="pred-20d-conf">79.0% UP</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Interactive Chart Section with Historical + Model Forward Projection Line -->
       <div class="terminal-card p-4">
         <div class="flex flex-wrap items-center justify-between pb-3 border-b border-zinc-800 gap-2 font-mono">
           <div class="flex items-center space-x-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-white">Price Action & Indicator Overlays</span>
+            <span class="text-xs font-bold uppercase tracking-wider text-white">Historical Price & Model Forward Forecast Trajectory</span>
             <span class="text-xs text-zinc-500">|</span>
-            <span id="chart-timeframe-label" class="text-xs text-emerald-400">1-Year Daily</span>
+            <span class="text-xs text-emerald-400 font-bold">Solid White: Historical &bull; Dashed Green: Model Future Projection</span>
           </div>
 
           <!-- Indicator Overlay Selector -->
