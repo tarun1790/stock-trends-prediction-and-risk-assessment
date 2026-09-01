@@ -1,6 +1,6 @@
 /**
  * StockTrend AI - Real-Time Quantitative Intelligence Client
- * Groww-Style Stock Terminal with Live WebSockets & Main-Page Model Predictions.
+ * Groww-Style Stock Terminal with Trade Execution Plan, 15-Model Consensus & Explanations.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -9,6 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // State
   let currentIndicatorsData = null;
   let currentMultiHorizonData = null;
+  let currentTradePlanData = null;
   let priceChartInstance = null;
   let benchmarkChartInstance = null;
   let equityChartInstance = null;
@@ -150,7 +151,89 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 4. Live Model Predictions & Target Price Calculation (Main Page)
+  // 4. Institutional Trade Action Plan, Consensus & Indicators Guide
+  // -----------------------------------------------------------------------
+  async function loadTradePlanAndConsensus() {
+    const target = getTargetParams();
+    const sym = target.ticker || "SAMPLE";
+
+    try {
+      const res = await fetch(`/api/stock/trade-signals/${sym}`);
+      if (!res.ok) return;
+      const data = await res.json();
+      currentTradePlanData = data;
+
+      // 1. Trade Action Setup
+      const tp = data.trade_plan;
+      document.getElementById("tp-action-badge").textContent = tp.action;
+      document.getElementById("tp-action-badge").className = `px-3 py-1 rounded text-xs font-black uppercase ${tp.action_badge}`;
+      document.getElementById("tp-entry-price").textContent = `$${tp.entry_price.toFixed(2)}`;
+      document.getElementById("tp-stop-loss").textContent = `$${tp.stop_loss.toFixed(2)}`;
+      document.getElementById("tp-stop-loss-pct").textContent = `${tp.stop_loss_pct}% Max Risk`;
+      document.getElementById("tp-tp1").textContent = `$${tp.take_profit_1.toFixed(2)}`;
+      document.getElementById("tp-tp1-pct").textContent = `+${tp.take_profit_1_pct}% (2x ATR)`;
+      document.getElementById("tp-tp2").textContent = `$${tp.take_profit_2.toFixed(2)}`;
+      document.getElementById("tp-tp2-pct").textContent = `+${tp.take_profit_2_pct}% (3.8x ATR)`;
+      document.getElementById("tp-rr").textContent = tp.risk_reward_ratio;
+      document.getElementById("tp-kelly").textContent = `${tp.kelly_position_size_pct}%`;
+
+      // 2. Market Regime
+      const mr = data.market_regime;
+      document.getElementById("mr-regime-title").textContent = mr.regime;
+      document.getElementById("mr-regime-desc").textContent = mr.description;
+      document.getElementById("mr-vol").textContent = `${mr.annualized_volatility_pct}%`;
+      document.getElementById("mr-ret").textContent = `${mr.trailing_20d_return_pct >= 0 ? "+" : ""}${mr.trailing_20d_return_pct}%`;
+
+      // 3. Consensus Matrix
+      const con = data.consensus;
+      document.getElementById("consensus-verdict-tag").textContent = `${con.bullish_models} / 15 Bullish (${con.consensus_pct}%)`;
+      document.getElementById("consensus-bar-bull").style.width = `${con.consensus_pct}%`;
+      document.getElementById("consensus-bar-bear").style.width = `${100 - con.consensus_pct}%`;
+
+      const votesBody = document.getElementById("consensus-votes-body");
+      votesBody.innerHTML = con.model_votes
+        .map((m) => {
+          const isBull = m.vote.includes("BULLISH");
+          const badgeClass = isBull ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+          return `
+          <tr class="hover:bg-zinc-900">
+            <td class="p-1.5 font-bold text-white">${m.model_name}</td>
+            <td class="p-1.5 text-center ${badgeClass}">${m.vote}</td>
+            <td class="p-1.5 text-center text-zinc-300">${m.confidence_pct}%</td>
+            <td class="p-1.5 text-right text-zinc-500">${m.hardware}</td>
+          </tr>
+        `;
+        })
+        .join("");
+
+      // 4. Indicator Glossary & Math Breakdown
+      const glossBody = document.getElementById("indicators-glossary-body");
+      glossBody.innerHTML = data.indicator_glossary
+        .map((ind) => {
+          const isUp = ind.signal === 1;
+          const signBadge = isUp
+            ? '<span class="text-emerald-400 font-bold border border-emerald-800 bg-black text-[9px] px-1.5 py-0.5 rounded">+1 UP</span>'
+            : '<span class="text-rose-400 font-bold border border-rose-800 bg-black text-[9px] px-1.5 py-0.5 rounded">-1 DOWN</span>';
+
+          return `
+          <tr class="hover:bg-zinc-900">
+            <td class="p-2.5 font-bold text-white font-mono">${ind.symbol}</td>
+            <td class="p-2.5 text-zinc-300 font-medium">${ind.name}</td>
+            <td class="p-2.5 text-center font-mono font-bold text-white">${ind.val}</td>
+            <td class="p-2.5 font-mono text-zinc-400 text-[11px]">${ind.condition}</td>
+            <td class="p-2.5 text-center">${signBadge}</td>
+            <td class="p-2.5 text-zinc-400 text-xs">${ind.meaning}</td>
+          </tr>
+        `;
+        })
+        .join("");
+    } catch (e) {
+      console.warn("Could not load trade plan:", e);
+    }
+  }
+
+  // -----------------------------------------------------------------------
+  // 5. Live Model Predictions & Target Price Calculation (Main Page)
   // -----------------------------------------------------------------------
   async function loadMainPredictions() {
     const target = getTargetParams();
@@ -249,7 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 5. Real-Time WebSocket Streaming Engine
+  // 6. Real-Time WebSocket Streaming Engine
   // -----------------------------------------------------------------------
   function initWebSocket() {
     if (liveWebSocket) {
@@ -331,7 +414,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 6. Technical Indicators & Price Chart with Model Projection Line
+  // 7. Technical Indicators & Price Chart with Model Projection Line
   // -----------------------------------------------------------------------
   async function loadMarketAndIndicators() {
     const payload = getTargetParams();
@@ -350,6 +433,7 @@ document.addEventListener("DOMContentLoaded", () => {
       renderIndicatorCards();
       loadStockOverview();
       loadMainPredictions();
+      loadTradePlanAndConsensus();
       initWebSocket();
     } catch (err) {
       console.error("Failed to load indicators:", err);
@@ -498,7 +582,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 7. Multi-Horizon Tab Handler
+  // 8. Multi-Horizon Tab Handler
   // -----------------------------------------------------------------------
   async function runMultiHorizon() {
     btnRunMultiHorizon.disabled = true;
@@ -599,7 +683,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 8. Explainable AI (XAI)
+  // 9. Explainable AI (XAI)
   // -----------------------------------------------------------------------
   async function runExplainability() {
     btnRunExplain.disabled = true;
@@ -697,7 +781,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 9. Monte Carlo 1,000-Path Simulation
+  // 10. Monte Carlo 1,000-Path Simulation
   // -----------------------------------------------------------------------
   async function runMonteCarlo() {
     btnRunMonteCarlo.disabled = true;
@@ -780,7 +864,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 10. Model Benchmarking Arena
+  // 11. Model Benchmarking Arena
   // -----------------------------------------------------------------------
   async function runModelBenchmark() {
     btnRunBenchmark.disabled = true;
@@ -867,7 +951,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------------------------------------
-  // 11. Strategy Backtest
+  // 12. Strategy Backtest
   // -----------------------------------------------------------------------
   async function runBacktesting() {
     btnRunBacktest.disabled = true;

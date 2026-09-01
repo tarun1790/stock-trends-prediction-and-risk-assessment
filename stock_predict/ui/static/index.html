@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>StockTrend AI | Real-Time Financial Machine Learning Terminal</title>
+  <title>StockTrend AI | Real-Time Quantitative Machine Learning Trading Terminal</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
@@ -27,10 +27,10 @@
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <h1 class="text-sm font-bold tracking-wider uppercase text-white">StockTrend AI &bull; Real-Time ML Terminal</h1>
-            <span class="bg-zinc-900 text-zinc-300 text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-800">PREDICTION ENGINE</span>
+            <h1 class="text-sm font-bold tracking-wider uppercase text-white">StockTrend AI &bull; Pro Terminal</h1>
+            <span class="bg-zinc-900 text-zinc-300 text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-800">EXECUTION INTELLIGENCE</span>
           </div>
-          <p class="text-[11px] text-zinc-400">Deep Neural Trend & Target Price Forecasting &bull; IEEE Table 10 Indicators &bull; CUDA GPU</p>
+          <p class="text-[11px] text-zinc-400">Institutional Trade Signals &bull; 15-Model Consensus &bull; Multi-Horizon Targets &bull; CUDA GPU</p>
         </div>
 
         <!-- Global Asset & Stock Selector Dropdown -->
@@ -178,13 +178,19 @@
     <div class="w-full flex items-center justify-between overflow-x-auto">
       <nav class="flex space-x-1 text-xs font-medium">
         <button data-tab="tab-overview" class="tab-btn active-tab px-3 py-1.5 rounded">
-          Stock Overview & Live Predictions
+          Overview & Live Predictions
+        </button>
+        <button data-tab="tab-trade-plan" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
+          Institutional Trade Plan & Consensus
         </button>
         <button data-tab="tab-multi-horizon" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
           Multi-Horizon Forecaster (1D-20D)
         </button>
         <button data-tab="tab-depth" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
           Live Market Depth & Orders
+        </button>
+        <button data-tab="tab-indicators-guide" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
+          10 Indicators Breakdown & Math
         </button>
         <button data-tab="tab-explain" class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white">
           Explainable AI (XAI)
@@ -391,10 +397,152 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 2: MULTI-HORIZON FORECASTING (1D, 3D, 5D, 10D, 20D) -->
+    <!-- TAB 2: INSTITUTIONAL TRADE PLAN & 15-MODEL CONSENSUS -->
+    <!-- ========================================================================= -->
+    <div id="tab-trade-plan" class="tab-content hidden space-y-4 font-mono">
+      
+      <!-- Action Setup Card -->
+      <div class="terminal-card p-5 bg-zinc-950 border border-zinc-800">
+        <div class="flex flex-wrap items-center justify-between border-b border-zinc-800 pb-3 mb-4">
+          <div>
+            <h2 class="text-xs font-bold uppercase tracking-wider text-white">Quantitative Trade Action Setup & Risk Plan</h2>
+            <p class="text-[11px] text-zinc-400">Automated entry, ATR stop-loss, profit targets, and Kelly position sizing</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="text-xs text-zinc-400">Recommendation:</span>
+            <span id="tp-action-badge" class="px-3 py-1 rounded text-xs font-black uppercase bg-emerald-500 text-black">STRONG BUY</span>
+          </div>
+        </div>
+
+        <!-- Trade Parameters Matrix -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+          <div class="bg-black border border-zinc-800 p-3 rounded">
+            <p class="text-[10px] text-zinc-400 uppercase font-bold">Recommended Entry</p>
+            <h3 class="text-lg font-bold text-white mt-1" id="tp-entry-price">$132.85</h3>
+            <p class="text-[10px] text-zinc-500">Current Market Price</p>
+          </div>
+
+          <div class="bg-black border border-rose-900/80 p-3 rounded">
+            <p class="text-[10px] text-zinc-400 uppercase font-bold">Stop Loss (2x ATR)</p>
+            <h3 class="text-lg font-bold text-rose-400 mt-1" id="tp-stop-loss">$127.40</h3>
+            <p class="text-[10px] text-rose-400/80" id="tp-stop-loss-pct">-4.10% Max Risk</p>
+          </div>
+
+          <div class="bg-black border border-emerald-900/80 p-3 rounded">
+            <p class="text-[10px] text-zinc-400 uppercase font-bold">Take Profit Target 1</p>
+            <h3 class="text-lg font-bold text-emerald-400 mt-1" id="tp-tp1">$139.50</h3>
+            <p class="text-[10px] text-emerald-400/80" id="tp-tp1-pct">+5.00% (2x ATR)</p>
+          </div>
+
+          <div class="bg-black border border-emerald-900/80 p-3 rounded">
+            <p class="text-[10px] text-zinc-400 uppercase font-bold">Take Profit Target 2</p>
+            <h3 class="text-lg font-bold text-emerald-400 mt-1" id="tp-tp2">$145.20</h3>
+            <p class="text-[10px] text-emerald-400/80" id="tp-tp2-pct">+9.30% (3.8x ATR)</p>
+          </div>
+
+          <div class="bg-black border border-zinc-800 p-3 rounded">
+            <p class="text-[10px] text-zinc-400 uppercase font-bold">Risk : Reward Ratio</p>
+            <h3 class="text-lg font-bold text-white mt-1" id="tp-rr">1 : 2.50</h3>
+            <p class="text-[10px] text-emerald-400">Asymmetric Upside</p>
+          </div>
+
+          <div class="bg-black border border-zinc-800 p-3 rounded">
+            <p class="text-[10px] text-zinc-400 uppercase font-bold">Kelly Position Size</p>
+            <h3 class="text-lg font-bold text-white mt-1" id="tp-kelly">12.5%</h3>
+            <p class="text-[10px] text-zinc-500">Max Portfolio Allocation</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Market Regime & Consensus Matrix -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
+        
+        <!-- Market Regime Description -->
+        <div class="lg:col-span-5 terminal-card p-4 space-y-2">
+          <h3 class="text-xs font-bold uppercase tracking-wider text-white border-b border-zinc-800 pb-2">
+            Market Regime State & Volatility
+          </h3>
+          <div>
+            <span id="mr-regime-title" class="text-sm font-extrabold text-emerald-400 uppercase block">STRONG BULLISH MOMENTUM</span>
+            <p id="mr-regime-desc" class="text-xs text-zinc-300 mt-1">Asset in steady upward structural trend with controlled institutional volatility.</p>
+          </div>
+          <div class="pt-2 grid grid-cols-2 gap-2 text-xs border-t border-zinc-800/80">
+            <div>
+              <span class="text-zinc-500 block text-[10px]">Annualized Volatility:</span>
+              <span id="mr-vol" class="text-white font-bold">24.5%</span>
+            </div>
+            <div>
+              <span class="text-zinc-500 block text-[10px]">20-Day Trailing Return:</span>
+              <span id="mr-ret" class="text-emerald-400 font-bold">+8.40%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 15-Model Voting Consensus -->
+        <div class="lg:col-span-7 terminal-card p-4 space-y-3">
+          <div class="flex justify-between items-center border-b border-zinc-800 pb-2">
+            <h3 class="text-xs font-bold uppercase tracking-wider text-white">
+              15-Model Voting Consensus Matrix
+            </h3>
+            <span id="consensus-verdict-tag" class="text-xs font-bold text-emerald-400">13 / 15 Bullish (86.7%)</span>
+          </div>
+
+          <!-- Consensus Progress Bar -->
+          <div class="w-full bg-zinc-900 h-2.5 rounded overflow-hidden flex border border-zinc-800">
+            <div id="consensus-bar-bull" class="bg-emerald-500 h-full" style="width: 86.7%;"></div>
+            <div id="consensus-bar-bear" class="bg-rose-500 h-full" style="width: 13.3%;"></div>
+          </div>
+
+          <!-- Per-Model Votes Table -->
+          <div class="overflow-x-auto max-h-48">
+            <table class="w-full text-xs text-left">
+              <thead class="text-zinc-500 text-[10px] bg-zinc-900 border-b border-zinc-800">
+                <tr><th class="p-1.5">Model Architecture</th><th class="p-1.5 text-center">Vote</th><th class="p-1.5 text-center">Confidence</th><th class="p-1.5 text-right">Execution Hardware</th></tr>
+              </thead>
+              <tbody id="consensus-votes-body" class="divide-y divide-zinc-900"></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 3: 10 INDICATORS BREAKDOWN & MATH EXPLANATION -->
+    <!-- ========================================================================= -->
+    <div id="tab-indicators-guide" class="tab-content hidden space-y-4 font-mono">
+      <div class="terminal-card p-4">
+        <h2 class="text-xs font-bold uppercase tracking-wider text-white pb-2 mb-3 border-b border-zinc-800">
+          IEEE Table 10 Technical Indicators Deep-Dive & Mathematical Signal Rules
+        </h2>
+        <p class="text-xs text-zinc-400 mb-4">
+          This table explains the exact values, binary threshold conditions, and financial rationale for every indicator extracted from raw OHLCV market series.
+        </p>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-xs text-left">
+            <thead class="text-zinc-400 bg-zinc-900 border-b border-zinc-800">
+              <tr>
+                <th class="p-2.5">Symbol</th>
+                <th class="p-2.5">Indicator Name</th>
+                <th class="p-2.5 text-center">Current Value</th>
+                <th class="p-2.5">Binary Signal Rule</th>
+                <th class="p-2.5 text-center">Signal (&plusmn;1)</th>
+                <th class="p-2.5">Financial Meaning</th>
+              </tr>
+            </thead>
+            <tbody id="indicators-glossary-body" class="divide-y divide-zinc-800"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- TAB 4: MULTI-HORIZON FORECASTING (1D, 3D, 5D, 10D, 20D) -->
     <!-- ========================================================================= -->
     <div id="tab-multi-horizon" class="tab-content hidden space-y-4">
-      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3 font-mono">
         <div>
           <h2 class="text-xs font-bold uppercase tracking-wider text-white">
             Multi-Horizon Deep Neural Forecaster (1D, 3D, 5D, 10D, 20D)
@@ -409,7 +557,7 @@
       <div class="grid grid-cols-1 sm:grid-cols-5 gap-3" id="multi-horizon-grid"></div>
 
       <div class="terminal-card p-4">
-        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Expected Forward Return Trajectory (%)</h3>
+        <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2 font-mono">Expected Forward Return Trajectory (%)</h3>
         <div class="h-72 w-full">
           <canvas id="multi-horizon-chart"></canvas>
         </div>
@@ -417,7 +565,7 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 3: LIVE MARKET DEPTH & ORDER BOOK (Groww Style) -->
+    <!-- TAB 5: LIVE MARKET DEPTH & ORDER BOOK (Groww Style) -->
     <!-- ========================================================================= -->
     <div id="tab-depth" class="tab-content hidden space-y-4 font-mono">
       <div class="terminal-card p-4">
@@ -472,10 +620,10 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 4: EXPLAINABLE AI (XAI) -->
+    <!-- TAB 6: EXPLAINABLE AI (XAI) -->
     <!-- ========================================================================= -->
     <div id="tab-explain" class="tab-content hidden space-y-4">
-      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3 font-mono">
         <div>
           <h2 class="text-xs font-bold uppercase tracking-wider text-white">
             Explainable AI (XAI) & Saliency Attribution
@@ -487,7 +635,7 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 font-mono">
         <div class="terminal-card p-4">
           <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">Technical Indicator Importance Attribution (%)</h3>
           <div class="h-72 w-full">
@@ -505,10 +653,10 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 5: MONTE CARLO RISK (1,000 PATHS) -->
+    <!-- TAB 7: MONTE CARLO RISK (1,000 PATHS) -->
     <!-- ========================================================================= -->
     <div id="tab-monte-carlo" class="tab-content hidden space-y-4">
-      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3 font-mono">
         <div>
           <h2 class="text-xs font-bold uppercase tracking-wider text-white">
             Monte Carlo Risk Simulator (1,000 Paths) & 95% VaR
@@ -520,9 +668,9 @@
         </button>
       </div>
 
-      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3" id="monte-carlo-kpis"></div>
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono" id="monte-carlo-kpis"></div>
 
-      <div class="terminal-card p-4">
+      <div class="terminal-card p-4 font-mono">
         <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">1,000-Path Monte Carlo Portfolio Fan Chart</h3>
         <div class="h-80 w-full">
           <canvas id="monte-carlo-chart"></canvas>
@@ -531,10 +679,10 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 6: 15-MODEL ARENA -->
+    <!-- TAB 8: 15-MODEL ARENA -->
     <!-- ========================================================================= -->
     <div id="tab-benchmark" class="tab-content hidden space-y-4">
-      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
+      <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3 font-mono">
         <div>
           <h2 class="text-xs font-bold uppercase tracking-wider text-white">
             15-Model Comparative Benchmark Arena (Continuous vs Binary)
@@ -546,7 +694,7 @@
         </button>
       </div>
 
-      <div class="terminal-card p-4">
+      <div class="terminal-card p-4 font-mono">
         <h3 class="text-xs font-bold uppercase tracking-wider text-zinc-400 mb-2">F1-Score Comparison</h3>
         <div class="h-80 w-full">
           <canvas id="benchmark-chart"></canvas>
@@ -573,9 +721,9 @@
     </div>
 
     <!-- ========================================================================= -->
-    <!-- TAB 7: STRATEGY BACKTEST -->
+    <!-- TAB 9: STRATEGY BACKTEST -->
     <!-- ========================================================================= -->
-    <div id="tab-backtest" class="tab-content hidden space-y-4">
+    <div id="tab-backtest" class="tab-content hidden space-y-4 font-mono">
       <div class="terminal-card p-4 flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 class="text-xs font-bold uppercase tracking-wider text-white">
@@ -602,7 +750,7 @@
 
   <!-- Full-Width Footer -->
   <footer class="border-t border-zinc-800 py-3 bg-black text-center text-xs text-zinc-500 font-mono w-full">
-    StockTrend AI &bull; Real-Time Quantitative Intelligence Platform &bull; Production GPU Accelerated &bull; Zero Glow
+    StockTrend AI &bull; Production Quantitative Platform &bull; CUDA GPU Accelerated &bull; Zero Glow High-Density Terminal
   </footer>
 
   <script src="/static/app.js"></script>
