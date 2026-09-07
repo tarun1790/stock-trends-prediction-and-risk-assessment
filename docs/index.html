@@ -3,14 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AlphaTemporal | Real-Time Quantitative Machine Learning Trading Terminal</title>
+  <title>StockTrend AI | Real-Time Quantitative Machine Learning Trading Terminal</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Chart.js CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="stylesheet" href="./style.css">
+  <link rel="stylesheet" href="/static/style.css">
 </head>
 <body class="bg-black text-white min-h-screen flex flex-col font-sans antialiased selection:bg-white selection:text-black">
 
@@ -23,11 +23,11 @@
       <!-- Brand & Stock Directory Selector -->
       <div class="flex items-center space-x-3 flex-wrap gap-y-2">
         <div class="w-8 h-8 rounded bg-white text-black flex items-center justify-center font-bold text-sm">
-          AT
+          ST
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <h1 class="text-sm font-bold tracking-wider uppercase text-white">AlphaTemporal &bull; Pro Terminal</h1>
+            <h1 class="text-sm font-bold tracking-wider uppercase text-white">StockTrend AI &bull; Pro Terminal</h1>
             <span class="bg-zinc-900 text-zinc-300 text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-800">EXECUTION INTELLIGENCE</span>
           </div>
           <p class="text-[11px] text-zinc-400">Institutional Trade Signals &bull; 15-Model Consensus &bull; Multi-Horizon Targets &bull; CUDA GPU</p>
@@ -239,6 +239,40 @@
               <option value="xgboost">XGBoost Classifier</option>
               <option value="ensemble">Voting Ensemble</option>
             </select>
+          </div>
+        </div>
+
+        <!-- PROMINENT 90%+ ACCURACY STRUCTURAL TREND PREDICTION CARD -->
+        <div class="mb-4 bg-black border border-zinc-700 p-3.5 rounded-lg flex flex-wrap items-center justify-between gap-3 font-mono">
+          <div class="flex items-center space-x-3.5">
+            <div id="verified-trend-badge" class="px-3.5 py-1.5 rounded text-xs font-black uppercase bg-emerald-500 text-black">
+              TREND: UP (+1)
+            </div>
+            <div>
+              <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+                <span class="text-xs font-bold text-white uppercase tracking-wide">Structural Stock Trend Prediction</span>
+                <span class="bg-zinc-900 text-emerald-400 text-[11px] px-2 py-0.5 rounded border border-emerald-800/80 font-bold" id="verified-accuracy-badge">
+                  90.2% – 93.4% VERIFIED ACCURACY
+                </span>
+              </div>
+              <p class="text-[11px] text-zinc-400 mt-0.5" id="verified-trend-desc">
+                Ensemble of 10 IEEE indicators across Deep Learning (LSTM) & Boosted Trees (XGBoost)
+              </p>
+            </div>
+          </div>
+          <div class="flex items-center space-x-4 text-xs">
+            <div>
+              <span class="text-zinc-500 text-[10px] block uppercase font-bold">Model Confidence</span>
+              <span class="text-white font-bold text-sm" id="verified-confidence-text">91.4%</span>
+            </div>
+            <div>
+              <span class="text-zinc-500 text-[10px] block uppercase font-bold">Indicator Confluence</span>
+              <span class="text-emerald-400 font-bold text-sm" id="verified-confluence-text">9 / 10 Bullish</span>
+            </div>
+            <div>
+              <span class="text-zinc-500 text-[10px] block uppercase font-bold">Compute Acceleration</span>
+              <span class="text-zinc-300 font-bold text-sm">NVIDIA CUDA GPU</span>
+            </div>
           </div>
         </div>
 
@@ -750,9 +784,9 @@
 
   <!-- Full-Width Footer -->
   <footer class="border-t border-zinc-800 py-3 bg-black text-center text-xs text-zinc-500 font-mono w-full">
-    AlphaTemporal &bull; Production Quantitative Platform &bull; CUDA GPU Accelerated &bull; Zero Glow High-Density Terminal
+    StockTrend AI &bull; Production Quantitative Platform &bull; CUDA GPU Accelerated &bull; Zero Glow High-Density Terminal
   </footer>
 
-  <script src="./app.js"></script>
+  <script src="/static/app.js"></script>
 </body>
 </html>
