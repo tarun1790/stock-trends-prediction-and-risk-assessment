@@ -1441,11 +1441,11 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  btnRunMultiHorizon.addEventListener("click", runMultiHorizon);
-  btnRunExplain.addEventListener("click", runExplainability);
-  btnRunMonteCarlo.addEventListener("click", runMonteCarlo);
-  btnRunBenchmark.addEventListener("click", runModelBenchmark);
-  btnRunBacktest.addEventListener("click", runBacktesting);
+  if (btnRunMultiHorizon) btnRunMultiHorizon.addEventListener("click", runMultiHorizon);
+  if (btnRunExplain) btnRunExplain.addEventListener("click", runExplainability);
+  if (btnRunMonteCarlo) btnRunMonteCarlo.addEventListener("click", runMonteCarlo);
+  if (btnRunBenchmark) btnRunBenchmark.addEventListener("click", runModelBenchmark);
+  if (btnRunBacktest) btnRunBacktest.addEventListener("click", runBacktesting);
 
   // Bootstrap
   checkSystemStatus();
