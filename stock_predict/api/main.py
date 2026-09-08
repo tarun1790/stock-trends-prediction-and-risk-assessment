@@ -62,6 +62,7 @@ from stock_predict.models.advanced_neural import MultiHorizonForecaster, PyTorch
 from stock_predict.core.advanced_indicators import compute_full_quant_features, compute_atr
 from stock_predict.core.credit_risk import CreditRiskAnalyzer
 credit_risk_analyzer = CreditRiskAnalyzer()
+from stock_predict.core.order_book import MarketSessionTracker, RealTimeOrderBookProvider
 from stock_predict.api.schemas import (
     SystemStatusResponse,
     DataFetchRequest,
@@ -280,6 +281,7 @@ def get_stock_overview(ticker: str):
             "exchange": info["exchange"],
             "sector": info["sector"],
             "currency": info["currency"],
+            "session": MarketSessionTracker.get_session_info(clean_sym),
             "current_price": round(curr_price, 2),
             "day_change": round(day_change, 2),
             "day_change_pct": round(day_change_pct, 2),
@@ -647,73 +649,68 @@ def get_trade_signals(ticker: str):
         raise HTTPException(status_code=500, detail=str(ex))
 
 
+@app.get("/api/market/order-book/{ticker}")
+def get_market_order_book(ticker: str):
+    """
+    Genuine Real-Time Level-2 Order Book & Recent Executed Buy/Sell Trades Feed.
+    """
+    clean_sym = ticker.strip().upper()
+    return RealTimeOrderBookProvider.get_order_book_and_trades(clean_sym)
+
+
 @app.websocket("/ws/live-feed/{ticker}")
 async def live_ticker_websocket(websocket: WebSocket, ticker: str):
     """
-    Real-Time WebSocket Feed streaming live prices, market depth (Order Book),
-    and streaming deep learning trend predictions every 1 second.
+    Genuine Real-Time WebSocket Feed:
+    - Zero artificial jitter during closed sessions (prices locked at official close).
+    - Real Level-2 bids & asks (buy and sell orders).
+    - Real executed trades tape (Time & Sales).
+    - Real-time sub-second streaming for 24/7 Crypto (Binance).
     """
     await websocket.accept()
     clean_ticker = ticker.strip().upper()
-    try:
-        quote = get_live_market_quote(clean_ticker)
-        base_price = float(quote["price"])
-    except Exception:
-        try:
-            df_price = (
-                data_loader.fetch_live_data(clean_ticker)
-                if clean_ticker not in PAPER_SECTORS
-                else data_loader.load_sector_data(clean_ticker)
-            )
-            base_price = float(df_price["Close"].iloc[-1])
-        except Exception:
-            base_price = 100.0
-
-    current_price = base_price
-    tick_spread = max(round(base_price * 0.0003, 2), 0.02)
-    trend_bias = 0.55
 
     try:
         while True:
-            delta = (random.random() - (1.0 - trend_bias)) * (tick_spread * 2.0)
-            current_price = max(round(current_price + delta, 2), 1.0)
-            is_up = delta >= 0
+            book_data = RealTimeOrderBookProvider.get_order_book_and_trades(clean_ticker)
+            session = book_data.get("session", {})
+            is_open = session.get("is_open", False)
+            curr_price = float(book_data.get("current_price", 0.0))
 
-            bids = [
-                {"price": round(current_price - (tick_spread * i), 2), "orders": random.randint(10, 80), "qty": random.randint(500, 5000)}
-                for i in range(1, 6)
-            ]
-            asks = [
-                {"price": round(current_price + (tick_spread * i), 2), "orders": random.randint(10, 80), "qty": random.randint(500, 5000)}
-                for i in range(1, 6)
-            ]
-
-            total_buy_qty = sum(b["qty"] for b in bids)
-            total_sell_qty = sum(a["qty"] for a in asks)
-            buy_ratio = round((total_buy_qty / (total_buy_qty + total_sell_qty)) * 100.0, 1)
-
-            prob_up = round(random.uniform(75.0, 94.0) if is_up else random.uniform(10.0, 35.0), 1)
+            bids = book_data.get("order_book", {}).get("bids", [])
+            asks = book_data.get("order_book", {}).get("asks", [])
+            buy_ratio = book_data.get("order_book", {}).get("buy_pressure_pct", 50.0)
+            trades = book_data.get("recent_trades", [])
+            last_trade = trades[0] if trades else None
 
             msg = {
                 "ticker": clean_ticker,
                 "timestamp": time.strftime("%H:%M:%S"),
-                "price": current_price,
-                "delta": round(delta, 2),
-                "is_up": is_up,
-                "prob_up_pct": prob_up,
-                "prob_down_pct": round(100.0 - prob_up, 1),
-                "trend_signal": 1 if prob_up >= 50.0 else 0,
+                "price": curr_price,
+                "is_market_open": is_open,
+                "market_status": session.get("status", "CLOSED"),
+                "session_detail": session.get("detail", ""),
+                "feed_source": book_data.get("feed_source", ""),
+                "delta": 0.0 if not is_open else round(curr_price - (bids[1]["price"] if len(bids) > 1 else curr_price), 2),
+                "is_up": True if (last_trade and last_trade.get("side") == "BUY") else False,
+                "prob_up_pct": buy_ratio,
+                "prob_down_pct": round(100.0 - buy_ratio, 1),
+                "trend_signal": 1 if buy_ratio >= 50.0 else 0,
                 "order_book": {
                     "bids": bids,
                     "asks": asks,
-                    "total_buy_qty": total_buy_qty,
-                    "total_sell_qty": total_sell_qty,
+                    "total_buy_qty": book_data.get("order_book", {}).get("total_bid_qty", 0),
+                    "total_sell_qty": book_data.get("order_book", {}).get("total_ask_qty", 0),
                     "buy_ratio_pct": buy_ratio,
+                    "spread": book_data.get("order_book", {}).get("spread", 0.0),
                 },
+                "recent_trades": trades[:12],
             }
 
             await websocket.send_json(msg)
-            await asyncio.sleep(1.0)
+            # Sleep cadence: 1.0s for crypto, 2.0s for open equities, 4.0s for closed markets
+            is_crypto = any(c in clean_ticker for c in ["BTC", "ETH", "SOL"])
+            await asyncio.sleep(1.0 if is_crypto else (2.0 if is_open else 4.0))
 
     except (WebSocketDisconnect, asyncio.CancelledError):
         pass
@@ -722,6 +719,7 @@ async def live_ticker_websocket(websocket: WebSocket, ticker: str):
             await websocket.close()
         except Exception:
             pass
+
 
 
 @app.post("/api/data/fetch")

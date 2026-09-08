@@ -555,41 +555,57 @@
 
     </div>
 
-    <!-- SECTION D: REAL-TIME LEVEL 2 DEPTH BOOK & ORDER FLOW -->
+    <!-- SECTION D: REAL-TIME LEVEL 2 DEPTH BOOK & TIME-AND-SALES TRADE TAPE -->
     <div class="terminal-card p-4 space-y-3 bg-zinc-950 border border-zinc-800 font-mono">
-      <div class="flex items-center justify-between border-b border-zinc-800 pb-2">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800 pb-2 gap-2">
         <div class="flex items-center space-x-2">
-          <div class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></div>
+          <div id="market-status-dot" class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
           <h3 class="text-xs font-bold uppercase tracking-wider text-white">
-            Level 2 Real-Time Order Flow & Market Depth
+            Level 2 Order Book & Real-Time Trade Prints
           </h3>
+          <span id="market-status-pill" class="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-400 border border-emerald-800">
+            CONNECTING...
+          </span>
         </div>
         <div class="flex items-center space-x-3 text-xs">
-          <span class="text-zinc-400">Order Pressure:</span>
-          <span id="depth-ratio-text" class="text-emerald-400 font-bold">52% Buy / 48% Sell</span>
+          <span id="market-session-desc" class="text-[10px] text-zinc-400">Loading Session...</span>
+          <span class="text-zinc-500">|</span>
+          <span class="text-zinc-400">Pressure:</span>
+          <span id="depth-ratio-text" class="text-emerald-400 font-bold">50% Buy / 50% Sell</span>
         </div>
+      </div>
+
+      <!-- Market Status Notice Banner (Appears when market is closed) -->
+      <div id="market-closed-banner" class="hidden bg-amber-950/30 border border-amber-800/60 rounded p-2 text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+        <div class="flex items-center space-x-2">
+          <span class="text-amber-400 text-sm">🔒</span>
+          <span id="market-closed-msg" class="text-amber-300 font-semibold text-[11px]">
+            Market is currently CLOSED. Price is locked at official exchange close. Active orders represent final closing cross tape.
+          </span>
+        </div>
+        <span id="market-reopen-time" class="text-[10px] text-amber-400 font-mono">Reopens Tomorrow 09:15 IST</span>
       </div>
 
       <!-- Depth Buy/Sell Ratio Progress Bar -->
       <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden flex border border-zinc-800">
-        <div id="depth-buy-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 52%;"></div>
-        <div id="depth-sell-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 48%;"></div>
+        <div id="depth-buy-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 50%;"></div>
+        <div id="depth-sell-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 50%;"></div>
       </div>
 
-      <!-- Live Bids & Asks Two-Column Table -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+      <!-- Three-Column Layout: Bids (Buy Orders) | Asks (Sell Orders) | Executed Trade Prints (Time & Sales) -->
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
         <!-- Bids (Buyers) -->
         <div class="border border-zinc-800 rounded p-2 bg-black">
           <div class="flex justify-between text-[10px] text-emerald-400 uppercase font-bold border-b border-zinc-800 pb-1">
             <span>Bid Price (Buy)</span>
-            <span>Volume</span>
-            <span>Total</span>
+            <span>Quantity</span>
+            <span>Total Value</span>
           </div>
           <div id="depth-bids-body" class="space-y-1 mt-1 text-[11px]">
             <div class="text-center text-zinc-500 py-2">Streaming live bids...</div>
           </div>
           <div class="flex justify-between text-[10px] text-zinc-400 border-t border-zinc-800 pt-1 mt-1 font-bold">
-            <span>Total Buy Liquidity</span>
+            <span>Total Buy Volume</span>
             <span id="depth-total-buy" class="text-emerald-400 font-bold">--</span>
           </div>
         </div>
@@ -598,19 +614,37 @@
         <div class="border border-zinc-800 rounded p-2 bg-black">
           <div class="flex justify-between text-[10px] text-rose-400 uppercase font-bold border-b border-zinc-800 pb-1">
             <span>Ask Price (Sell)</span>
-            <span>Volume</span>
-            <span>Total</span>
+            <span>Quantity</span>
+            <span>Total Value</span>
           </div>
           <div id="depth-asks-body" class="space-y-1 mt-1 text-[11px]">
             <div class="text-center text-zinc-500 py-2">Streaming live asks...</div>
           </div>
           <div class="flex justify-between text-[10px] text-zinc-400 border-t border-zinc-800 pt-1 mt-1 font-bold">
-            <span>Total Sell Liquidity</span>
+            <span>Total Sell Volume</span>
             <span id="depth-total-sell" class="text-rose-400 font-bold">--</span>
+          </div>
+        </div>
+
+        <!-- Latest Executed Buy/Sell Trades (Time & Sales Tape) -->
+        <div class="border border-zinc-800 rounded p-2 bg-black">
+          <div class="flex justify-between text-[10px] text-blue-400 uppercase font-bold border-b border-zinc-800 pb-1">
+            <span>Execution Time</span>
+            <span>Side</span>
+            <span>Price</span>
+            <span>Volume</span>
+          </div>
+          <div id="trades-tape-body" class="space-y-1 mt-1 text-[11px] max-h-48 overflow-y-auto scrollbar-none">
+            <div class="text-center text-zinc-500 py-2">Streaming executed trades...</div>
+          </div>
+          <div class="flex justify-between text-[10px] text-zinc-400 border-t border-zinc-800 pt-1 mt-1 font-bold">
+            <span>Feed Source</span>
+            <span id="trades-feed-source" class="text-blue-400 font-bold text-[9px]">Exchange Real-Time</span>
           </div>
         </div>
       </div>
     </div>
+
 
     <!-- SECTION E: QUANTITATIVE WORKSPACE TABS -->
     <div class="terminal-card p-4 space-y-4 bg-zinc-950 border border-zinc-800 font-mono">
