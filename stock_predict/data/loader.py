@@ -45,6 +45,38 @@ class DataLoader:
         df.to_csv(cache_file)
         return df
 
+    def fetch_binance_live_klines(
+        self,
+        symbol: str = "BTCUSDT",
+        interval: str = "1d",
+        limit: int = 365,
+    ) -> pd.DataFrame:
+        """
+        Fetch high-speed zero-auth live market klines directly from Binance public API.
+        Zero credentials required, sub-second latency.
+        """
+        import urllib.request
+        import json
+        clean_sym = symbol.replace("-", "").replace("USD", "USDT").upper()
+        if not clean_sym.endswith("USDT") and clean_sym in ["BTC", "ETH", "SOL", "BNB"]:
+            clean_sym += "USDT"
+
+        url = f"https://api.binance.com/api/v3/klines?symbol={clean_sym}&interval={interval}&limit={limit}"
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        with urllib.request.urlopen(req, timeout=8) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+
+        cols = ["open_time", "open", "high", "low", "close", "volume", "close_time", "quote_vol", "trades", "tb_base", "tb_quote", "ignore"]
+        df_raw = pd.DataFrame(data, columns=cols)
+        df = pd.DataFrame(index=pd.to_datetime(df_raw["open_time"], unit="ms"))
+        df.index.name = "Date"
+        df["Open"] = df_raw["open"].astype(float).values
+        df["High"] = df_raw["high"].astype(float).values
+        df["Low"] = df_raw["low"].astype(float).values
+        df["Close"] = df_raw["close"].astype(float).values
+        df["Volume"] = df_raw["volume"].astype(float).values
+        return df
+
     def fetch_live_data(
         self,
         ticker: str,
@@ -54,7 +86,7 @@ class DataLoader:
         interval: str = "1d",
     ) -> pd.DataFrame:
         """
-        Fetch live or historical stock data from Yahoo Finance.
+        Fetch live or historical stock data from Yahoo Finance or Binance.
 
         Args:
             ticker: Stock symbol (e.g. 'AAPL', 'MSFT', 'NVDA', 'SPY', 'BTC-USD').
@@ -66,12 +98,23 @@ class DataLoader:
         Returns:
             Standardized DataFrame with ['Open', 'High', 'Low', 'Close', 'Volume'].
         """
+        clean_ticker = ticker.strip().upper()
+
+        # Direct zero-auth high-speed Binance feed for Crypto
+        if clean_ticker in ["BTC-USD", "BTCUSDT", "ETH-USD", "ETHUSDT", "BTC", "ETH"]:
+            try:
+                df = self.fetch_binance_live_klines(symbol=clean_ticker, interval=interval, limit=365)
+                cache_file = self.cache_dir / f"{clean_ticker}_{interval}.csv"
+                df.to_csv(cache_file)
+                return df
+            except Exception:
+                pass  # Fallback to Yahoo Finance below
+
         try:
             import yfinance as yf
         except ImportError:
             raise ImportError("yfinance package is required for live market data fetching.")
 
-        clean_ticker = ticker.strip().upper()
         cache_file = self.cache_dir / f"{clean_ticker}_{interval}.csv"
 
         try:

@@ -90,9 +90,27 @@
         <div id="gpu-badge" class="flex items-center space-x-1.5 bg-black border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded">
           <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
           <span id="gpu-status-text">CUDA GPU Active</span>
-        </div>
       </div>
 
+      <!-- Quick Ticker Chips Bar (TradingView Style) -->
+      <div class="w-full flex items-center space-x-2 pt-2 border-t border-zinc-900 overflow-x-auto text-xs font-mono scrollbar-none">
+        <span class="text-[10px] text-zinc-500 uppercase font-bold tracking-wider whitespace-nowrap">Live Feeds:</span>
+        <button class="quick-chip px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-bold transition hover:border-zinc-500 whitespace-nowrap" data-ticker="SPY">SPY (S&P 500)</button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-bold transition hover:border-zinc-500 whitespace-nowrap" data-ticker="NVDA">NVDA</button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-bold transition hover:border-zinc-500 whitespace-nowrap" data-ticker="AAPL">AAPL</button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-bold transition hover:border-zinc-500 whitespace-nowrap" data-ticker="MSFT">MSFT</button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-bold transition hover:border-zinc-500 whitespace-nowrap" data-ticker="TSLA">TSLA</button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800 text-[11px] font-bold transition flex items-center gap-1.5 whitespace-nowrap" data-ticker="BTC-USD">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>BTC-USD (Binance Live)</span>
+        </button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800 text-[11px] font-bold transition flex items-center gap-1.5 whitespace-nowrap" data-ticker="ETH-USD">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+          <span>ETH-USD (Binance Live)</span>
+        </button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-bold transition hover:border-zinc-500 whitespace-nowrap" data-ticker="RELIANCE.NS">RELIANCE.NS (NSE)</button>
+        <button class="quick-chip px-2.5 py-1 rounded bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 text-[11px] font-bold transition hover:border-zinc-500 whitespace-nowrap" data-ticker="TCS.NS">TCS.NS (NSE)</button>
+      </div>
     </div>
   </header>
 
@@ -200,6 +218,12 @@
             <button data-tf="all" class="tf-btn px-2 py-0.5 rounded text-[10px] font-bold text-zinc-400 hover:text-white transition">ALL</button>
           </div>
 
+          <!-- Chart Mode Toggle (TradingView Style) -->
+          <div class="flex items-center space-x-1 bg-black border border-zinc-800 p-0.5 rounded text-[10px] font-bold">
+            <button id="btn-chart-mode-line" class="px-2 py-0.5 rounded bg-zinc-800 text-emerald-400 border border-emerald-800 transition">Line Glow</button>
+            <button id="btn-chart-mode-candle" class="px-2 py-0.5 rounded text-zinc-400 hover:text-white transition">Candlestick</button>
+          </div>
+
           <!-- Indicator Overlay Selector -->
           <div class="flex items-center space-x-1.5">
             <span class="text-zinc-500 text-[11px]">Overlay:</span>
@@ -248,6 +272,22 @@
             <span id="chart-20d-target" class="text-emerald-400 font-extrabold text-base">$777.89</span>
             <span id="chart-20d-ret" class="text-[10px] font-bold text-emerald-400">+1.00%</span>
           </div>
+        </div>
+      </div>
+
+      <!-- Interactive Crosshair OHLC HUD (TradingView Style) -->
+      <div id="chart-crosshair-hud" class="flex flex-wrap items-center justify-between text-[11px] font-mono text-zinc-400 py-1.5 px-2.5 mb-1 bg-black border border-zinc-900 rounded">
+        <div class="flex items-center space-x-3 flex-wrap">
+          <span>Date: <span id="hud-date" class="text-zinc-200">Latest</span></span>
+          <span>O: <span id="hud-open" class="text-white font-bold">--</span></span>
+          <span>H: <span id="hud-high" class="text-emerald-400 font-bold">--</span></span>
+          <span>L: <span id="hud-low" class="text-rose-400 font-bold">--</span></span>
+          <span>C: <span id="hud-close" class="text-white font-bold">--</span></span>
+          <span>Vol: <span id="hud-volume" class="text-zinc-300 font-bold">--</span></span>
+        </div>
+        <div class="flex items-center space-x-2 text-[10px] text-emerald-400 font-bold">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Sub-Second Live Tick Engine Active</span>
         </div>
       </div>
 

@@ -317,6 +317,61 @@ def get_stock_overview(ticker: str):
         raise HTTPException(status_code=500, detail=str(ex))
 
 
+@app.get("/api/market/live-quote/{ticker}")
+def get_live_market_quote(ticker: str):
+    clean_sym = ticker.strip().upper()
+    # Crypto: fetch Binance real-time price
+    if clean_sym in ["BTC-USD", "BTCUSDT", "BTC", "ETH-USD", "ETHUSDT", "ETH"]:
+        pair = "BTCUSDT" if "BTC" in clean_sym else "ETHUSDT"
+        try:
+            import urllib.request
+            import json
+            url = f"https://api.binance.com/api/v3/ticker/24hr?symbol={pair}"
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+            with urllib.request.urlopen(req, timeout=4) as resp:
+                data = json.loads(resp.read().decode())
+            price = float(data["lastPrice"])
+            change = float(data["priceChange"])
+            change_pct = float(data["priceChangePercent"])
+            high = float(data["highPrice"])
+            low = float(data["lowPrice"])
+            vol = float(data["volume"])
+            return {
+                "ticker": clean_sym,
+                "price": round(price, 2),
+                "change": round(change, 2),
+                "change_pct": round(change_pct, 2),
+                "high_24h": round(high, 2),
+                "low_24h": round(low, 2),
+                "volume": vol,
+                "source": "Binance Live Feed (Zero-Auth)",
+                "is_up": change >= 0,
+            }
+        except Exception:
+            pass
+
+    # Equities: fetch via DataLoader
+    try:
+        df = data_loader.fetch_live_data(clean_sym)
+        curr_price = float(df["Close"].iloc[-1])
+        prev_price = float(df["Close"].iloc[-2]) if len(df) > 1 else curr_price
+        change = curr_price - prev_price
+        change_pct = (change / prev_price) * 100.0 if prev_price > 0 else 0.0
+        return {
+            "ticker": clean_sym,
+            "price": round(curr_price, 2),
+            "change": round(change, 2),
+            "change_pct": round(change_pct, 2),
+            "high_24h": round(float(df["High"].iloc[-1]), 2),
+            "low_24h": round(float(df["Low"].iloc[-1]), 2),
+            "volume": float(df["Volume"].iloc[-1]),
+            "source": "Yahoo Finance Real-Time",
+            "is_up": change >= 0,
+        }
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
+
+
 @app.get("/api/stock/trade-signals/{ticker}")
 def get_trade_signals(ticker: str):
     """

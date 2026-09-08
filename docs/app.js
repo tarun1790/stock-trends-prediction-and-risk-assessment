@@ -20,6 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let monteCarloChartInstance = null;
   let liveWebSocket = null;
   let currentTimeframeDays = 60; // Default 3 Months (60 trading days)
+  let currentChartMode = "line"; // 'line' or 'candle' (TradingView style)
 
   // Institutional Stock Database for Real-Time & Offline Consistency
   const STOCK_DATABASE = {
@@ -91,6 +92,35 @@ document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
     });
   });
+
+  // Quick Ticker Feeds Bar (TradingView Style)
+  const quickChips = document.querySelectorAll(".quick-chip");
+  quickChips.forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const sym = chip.getAttribute("data-ticker");
+      if (customTickerInput) customTickerInput.value = sym;
+      if (sectorSelect) sectorSelect.value = sym;
+      loadMarketAndIndicators();
+    });
+  });
+
+  // Chart Display Mode Toggle (Line Glow vs Candlestick)
+  const btnModeLine = document.getElementById("btn-chart-mode-line");
+  const btnModeCandle = document.getElementById("btn-chart-mode-candle");
+  if (btnModeLine && btnModeCandle) {
+    btnModeLine.addEventListener("click", () => {
+      currentChartMode = "line";
+      btnModeLine.className = "px-2 py-0.5 rounded bg-zinc-800 text-emerald-400 border border-emerald-800 transition";
+      btnModeCandle.className = "px-2 py-0.5 rounded text-zinc-400 hover:text-white transition";
+      renderPriceChart();
+    });
+    btnModeCandle.addEventListener("click", () => {
+      currentChartMode = "candle";
+      btnModeCandle.className = "px-2 py-0.5 rounded bg-zinc-800 text-emerald-400 border border-emerald-800 transition";
+      btnModeLine.className = "px-2 py-0.5 rounded text-zinc-400 hover:text-white transition";
+      renderPriceChart();
+    });
+  }
 
   // -----------------------------------------------------------------------
   // 2. Hardware Diagnostics
@@ -522,36 +552,57 @@ document.addEventListener("DOMContentLoaded", () => {
   // 6. Real-Time WebSocket Streaming Engine
   // -----------------------------------------------------------------------
   function initWebSocket() {
-    if (window.location.hostname.includes("github.io")) {
-      return; // GitHub Pages is a static CDN host without WebSocket backend
-    }
     if (liveWebSocket) {
-      liveWebSocket.close();
+      try { liveWebSocket.close(); } catch (_) {}
     }
 
     const target = getTargetParams();
-    const sym = target.ticker || "NVDA";
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws/live-feed/${sym}`;
-
+    const sym = (target.ticker || "SPY").toUpperCase();
+    const isCrypto = ["BTC-USD", "BTCUSDT", "ETH-USD", "ETHUSDT", "BTC", "ETH"].includes(sym);
     const wsStatusText = document.getElementById("ws-status-text");
+
+    let wsUrl = "";
+    if (isCrypto) {
+      // Direct connection to Binance 100% Free Public Zero-Auth Live WebSocket
+      const pair = sym.includes("ETH") ? "ethusdt" : "btcusdt";
+      wsUrl = `wss://stream.binance.com:9443/ws/${pair}@ticker`;
+    } else if (!window.location.hostname.includes("github.io")) {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      wsUrl = `${protocol}//${window.location.host}/ws/live-feed/${sym}`;
+    } else {
+      return; // Static fallback host
+    }
 
     try {
       liveWebSocket = new WebSocket(wsUrl);
 
       liveWebSocket.onopen = () => {
-        if (wsStatusText) wsStatusText.textContent = `WS LIVE STREAM: ${sym}`;
+        if (wsStatusText) {
+          wsStatusText.textContent = isCrypto ? `BINANCE LIVE WS: ${sym}` : `WS LIVE STREAM: ${sym}`;
+        }
       };
 
       liveWebSocket.onmessage = (event) => {
-        const data = JSON.parse(event.data);
-        updateLiveStreamData(data);
+        const raw = JSON.parse(event.data);
+        if (isCrypto && raw.c) {
+          // Binance format: c = last price, p = 24h change, P = 24h % change
+          const p = parseFloat(raw.c);
+          const chg = parseFloat(raw.p);
+          updateLiveStreamData({
+            ticker: sym,
+            price: p,
+            delta: chg,
+            is_up: chg >= 0,
+          });
+        } else {
+          updateLiveStreamData(raw);
+        }
       };
 
       liveWebSocket.onclose = () => {
         if (wsStatusText && !window.location.hostname.includes("github.io")) {
           wsStatusText.textContent = "WS RECONNECTING...";
-          setTimeout(initWebSocket, 5000);
+          setTimeout(initWebSocket, 4000);
         }
       };
 
@@ -883,21 +934,86 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     }
 
+    // Populate Initial Crosshair HUD with latest session
+    const lastBar = dataSlice[dataSlice.length - 1];
+    if (lastBar) {
+      const hudDate = document.getElementById("hud-date");
+      const hudOpen = document.getElementById("hud-open");
+      const hudHigh = document.getElementById("hud-high");
+      const hudLow = document.getElementById("hud-low");
+      const hudClose = document.getElementById("hud-close");
+      const hudVol = document.getElementById("hud-volume");
+      if (hudDate) hudDate.textContent = lastBar.date || "Latest";
+      if (hudOpen) hudOpen.textContent = `$${(lastBar.open !== undefined ? lastBar.open : lastBar.close).toFixed(2)}`;
+      if (hudHigh) hudHigh.textContent = `$${(lastBar.high !== undefined ? lastBar.high : lastBar.close).toFixed(2)}`;
+      if (hudLow) hudLow.textContent = `$${(lastBar.low !== undefined ? lastBar.low : lastBar.close).toFixed(2)}`;
+      if (hudClose) hudClose.textContent = `$${lastBar.close.toFixed(2)}`;
+      if (hudVol) hudVol.textContent = lastBar.volume ? Number(lastBar.volume).toLocaleString() : "N/A";
+    }
+
     if (priceChartInstance) priceChartInstance.destroy();
+
+    // Custom Japanese Candlestick Renderer (TradingView Style)
+    const candlestickPlugin = {
+      id: "candlestickRenderer",
+      afterDatasetsDraw(chart) {
+        if (currentChartMode !== "candle") return;
+        const ctx = chart.ctx;
+        const meta = chart.getDatasetMeta(0);
+        if (!meta || !meta.data) return;
+
+        ctx.save();
+        dataSlice.forEach((d, i) => {
+          const pt = meta.data[i];
+          if (!pt) return;
+          const x = pt.x;
+          const openV = d.open !== undefined ? d.open : d.close;
+          const highV = d.high !== undefined ? d.high : Math.max(openV, d.close);
+          const lowV = d.low !== undefined ? d.low : Math.min(openV, d.close);
+          const closeV = d.close;
+
+          const yOpen = chart.scales.y.getPixelForValue(openV);
+          const yClose = chart.scales.y.getPixelForValue(closeV);
+          const yHigh = chart.scales.y.getPixelForValue(highV);
+          const yLow = chart.scales.y.getPixelForValue(lowV);
+
+          const isBull = closeV >= openV;
+          const color = isBull ? "#10b981" : "#f43f5e";
+
+          // High-Low Center Wick Line
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(x, yHigh);
+          ctx.lineTo(x, yLow);
+          ctx.stroke();
+
+          // Candlestick Body Rectangle
+          const candleW = Math.max(Math.min(chart.width / (dataSlice.length * 1.5), 14), 3.5);
+          ctx.fillStyle = isBull ? "rgba(16, 185, 129, 0.9)" : "rgba(244, 63, 94, 0.9)";
+          const topY = Math.min(yOpen, yClose);
+          const bodyH = Math.max(Math.abs(yClose - yOpen), 2.0);
+
+          ctx.fillRect(x - candleW / 2, topY, candleW, bodyH);
+          ctx.strokeRect(x - candleW / 2, topY, candleW, bodyH);
+        });
+        ctx.restore();
+      },
+    };
 
     const datasets = [
       {
-        label: "Historical Close Price ($)",
+        label: currentChartMode === "candle" ? "Candlestick OHLC ($)" : "Historical Close Price ($)",
         data: histClose,
-        borderColor: "#ffffff",
-        backgroundColor: "rgba(255, 255, 255, 0.03)",
-        borderWidth: 2.0,
-        pointRadius: (ctx) => (ctx.dataIndex === histClose.length - 1 ? 6 : (dataSlice.length <= 40 ? 3 : 0)),
-        pointHoverRadius: (ctx) => (ctx.dataIndex === histClose.length - 1 ? 9 : 6),
+        borderColor: currentChartMode === "candle" ? "transparent" : "#ffffff",
+        backgroundColor: currentChartMode === "candle" ? "transparent" : "rgba(255, 255, 255, 0.03)",
+        borderWidth: currentChartMode === "candle" ? 0 : 2.0,
+        pointRadius: currentChartMode === "candle" ? 0 : ((ctx) => (ctx.dataIndex === histClose.length - 1 ? 6 : (dataSlice.length <= 40 ? 3 : 0))),
+        pointHoverRadius: currentChartMode === "candle" ? 0 : ((ctx) => (ctx.dataIndex === histClose.length - 1 ? 9 : 6)),
         pointBackgroundColor: (ctx) => (ctx.dataIndex === histClose.length - 1 ? "#10b981" : "#ffffff"),
         pointBorderColor: (ctx) => (ctx.dataIndex === histClose.length - 1 ? "#000000" : "#ffffff"),
         pointBorderWidth: (ctx) => (ctx.dataIndex === histClose.length - 1 ? 2 : 1),
-        fill: true,
+        fill: currentChartMode !== "candle",
         tension: 0.05,
         yAxisID: "y",
       },
@@ -962,6 +1078,7 @@ document.addEventListener("DOMContentLoaded", () => {
         labels: allLabels,
         datasets: datasets,
       },
+      plugins: [candlestickPlugin],
       options: {
         responsive: true,
         maintainAspectRatio: false,
@@ -976,6 +1093,21 @@ document.addEventListener("DOMContentLoaded", () => {
             bodyColor: "#ffffff",
             callbacks: {
               label: function (context) {
+                if (context.datasetIndex === 0 && dataSlice[context.dataIndex]) {
+                  const d = dataSlice[context.dataIndex];
+                  const hudDate = document.getElementById("hud-date");
+                  const hudOpen = document.getElementById("hud-open");
+                  const hudHigh = document.getElementById("hud-high");
+                  const hudLow = document.getElementById("hud-low");
+                  const hudClose = document.getElementById("hud-close");
+                  const hudVol = document.getElementById("hud-volume");
+                  if (hudDate) hudDate.textContent = d.date || "Latest";
+                  if (hudOpen) hudOpen.textContent = `$${(d.open !== undefined ? d.open : d.close).toFixed(2)}`;
+                  if (hudHigh) hudHigh.textContent = `$${(d.high !== undefined ? d.high : Math.max(d.open ?? d.close, d.close)).toFixed(2)}`;
+                  if (hudLow) hudLow.textContent = `$${(d.low !== undefined ? d.low : Math.min(d.open ?? d.close, d.close)).toFixed(2)}`;
+                  if (hudClose) hudClose.textContent = `$${d.close.toFixed(2)}`;
+                  if (hudVol) hudVol.textContent = d.volume ? Number(d.volume).toLocaleString() : "N/A";
+                }
                 if (context.parsed.y !== null && context.parsed.y !== undefined) {
                   return `${context.dataset.label}: $${context.parsed.y.toFixed(2)}`;
                 }
