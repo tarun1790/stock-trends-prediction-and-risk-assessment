@@ -96,21 +96,39 @@ document.addEventListener("DOMContentLoaded", () => {
   // 2. Hardware Diagnostics
   // -----------------------------------------------------------------------
   async function checkSystemStatus() {
+    const wsBadge = document.getElementById("ws-status-badge");
+    const wsText = document.getElementById("ws-status-text");
+    const gpuBadge = document.getElementById("gpu-badge");
+    const gpuText = document.getElementById("gpu-status-text");
+
     try {
       const res = await fetch("/api/status");
+      if (!res.ok) throw new Error("Backend offline");
       const data = await res.json();
-      const gpuBadge = document.getElementById("gpu-badge");
-      const gpuText = document.getElementById("gpu-status-text");
 
-      if (data.cuda_available) {
-        gpuBadge.className = "flex items-center space-x-1.5 bg-black border border-emerald-800 text-emerald-400 px-2.5 py-1 rounded";
-        gpuText.textContent = data.gpu_name ? `GPU: ${data.gpu_name}` : "CUDA GPU Active";
-      } else {
-        gpuBadge.className = "flex items-center space-x-1.5 bg-black border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded";
-        gpuText.textContent = "CPU Execution";
+      if (wsBadge && wsText) {
+        wsBadge.className = "flex items-center space-x-1.5 bg-black border border-emerald-800 text-emerald-400 px-2.5 py-1 rounded";
+        wsText.textContent = "LIVE BACKEND (100% Real-Time)";
+      }
+
+      if (gpuBadge && gpuText) {
+        if (data.cuda_available) {
+          gpuBadge.className = "flex items-center space-x-1.5 bg-black border border-emerald-800 text-emerald-400 px-2.5 py-1 rounded";
+          gpuText.textContent = data.gpu_name ? `GPU: ${data.gpu_name}` : "CUDA GPU Active";
+        } else {
+          gpuBadge.className = "flex items-center space-x-1.5 bg-black border border-zinc-800 text-zinc-300 px-2.5 py-1 rounded";
+          gpuText.textContent = "CPU Execution";
+        }
       }
     } catch (e) {
-      console.warn("Status check error:", e);
+      if (wsBadge && wsText) {
+        wsBadge.className = "flex items-center space-x-1.5 bg-black border border-amber-800 text-amber-400 px-2.5 py-1 rounded";
+        wsText.textContent = "STANDALONE DEMO (Static Fallback)";
+      }
+      if (gpuBadge && gpuText) {
+        gpuBadge.className = "flex items-center space-x-1.5 bg-black border border-zinc-800 text-zinc-400 px-2.5 py-1 rounded";
+        gpuText.textContent = "Offline Mode";
+      }
     }
   }
 
@@ -504,6 +522,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // 6. Real-Time WebSocket Streaming Engine
   // -----------------------------------------------------------------------
   function initWebSocket() {
+    if (window.location.hostname.includes("github.io")) {
+      return; // GitHub Pages is a static CDN host without WebSocket backend
+    }
     if (liveWebSocket) {
       liveWebSocket.close();
     }
@@ -515,25 +536,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const wsStatusText = document.getElementById("ws-status-text");
 
-    liveWebSocket = new WebSocket(wsUrl);
+    try {
+      liveWebSocket = new WebSocket(wsUrl);
 
-    liveWebSocket.onopen = () => {
-      wsStatusText.textContent = `WS LIVE STREAM: ${sym}`;
-    };
+      liveWebSocket.onopen = () => {
+        if (wsStatusText) wsStatusText.textContent = `WS LIVE STREAM: ${sym}`;
+      };
 
-    liveWebSocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      updateLiveStreamData(data);
-    };
+      liveWebSocket.onmessage = (event) => {
+        const data = JSON.parse(event.data);
+        updateLiveStreamData(data);
+      };
 
-    liveWebSocket.onclose = () => {
-      wsStatusText.textContent = "WS RECONNECTING...";
-      setTimeout(initWebSocket, 3000);
-    };
+      liveWebSocket.onclose = () => {
+        if (wsStatusText && !window.location.hostname.includes("github.io")) {
+          wsStatusText.textContent = "WS RECONNECTING...";
+          setTimeout(initWebSocket, 5000);
+        }
+      };
 
-    liveWebSocket.onerror = (err) => {
-      console.error("WS Error:", err);
-    };
+      liveWebSocket.onerror = (err) => {
+        console.warn("WS connection error:", err);
+      };
+    } catch (e) {
+      console.warn("WebSocket init failed:", e);
+    }
   }
 
   function updateLiveStreamData(d) {
