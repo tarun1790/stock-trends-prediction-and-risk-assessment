@@ -50,6 +50,15 @@ document.addEventListener("DOMContentLoaded", () => {
     non_metallic_minerals: { name: "TSE Non-metallic Minerals", exchange: "TSE", price: 1220.00, change: 5.50, change_pct: 0.45, cap: "$6.2B", pe: "13.1", pb: "1.6", ind_pe: "14.0", roe: 12.8, eps: "93.1", div: "2.90%", vol: 9200000, low52: 980.00, high52: 1310.00, is_bullish: true, alpha: 8.0 },
   };
 
+
+  function getCurrency(ticker) {
+    const sym = (ticker || "").toUpperCase();
+    if (sym.includes(".NS") || sym.startsWith("^NSE") || sym.includes("INR")) return "₹";
+    if (sym.includes("JPY")) return "¥";
+    if (sym.includes("EURUSD") || sym.includes("GBPUSD") || sym.includes("AUDUSD")) return "";
+    return "$";
+  }
+
   function getStockInfo(sym) {
     return STOCK_DATABASE[sym] || STOCK_DATABASE["SPY"];
   }
@@ -310,6 +319,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("fund-eps").textContent = `${curr}${f.eps_ttm}`;
     document.getElementById("fund-vol").textContent = f.volume_24h.toLocaleString();
 
+    if (data.credit_risk) {
+      renderCreditRisk(data.credit_risk);
+    }
+
+
     // 95%+ Accuracy Verified Trend Card Population
     if (data.trend_engine) {
       const te = data.trend_engine;
@@ -340,9 +354,53 @@ document.addEventListener("DOMContentLoaded", () => {
         descEl.textContent = `${aiSc}${adxStr}${te.architecture} • ${te.methodology}`;
       }
     }
-    } catch (e) {
-      console.warn("Could not fetch overview:", e);
+  }
+
+
+  // -----------------------------------------------------------------------
+  // Corporate Credit Risk Assessment (Altman Z-Score & Merton Model)
+  // -----------------------------------------------------------------------
+  function renderCreditRisk(cr) {
+    if (!cr) return;
+    const rEl = document.getElementById("cr-rating");
+    if (rEl) rEl.textContent = cr.synthetic_credit_rating || "A";
+    const catEl = document.getElementById("cr-category");
+    if (catEl) catEl.textContent = cr.rating_category || "Investment Grade";
+    const distEl = document.getElementById("cr-distress-zone");
+    if (distEl) {
+      distEl.textContent = cr.credit_risk_tier || "SAFE ZONE";
+      distEl.className = `text-xs font-bold px-2 py-0.5 rounded inline-block mt-1 ${cr.z_score_details?.badge_color || "text-emerald-400 border-emerald-800 bg-emerald-950/40"}`;
     }
+    const descEl = document.getElementById("cr-description");
+    if (descEl) descEl.textContent = cr.z_score_details?.description || "";
+    const zEl = document.getElementById("cr-z-score");
+    if (zEl) zEl.textContent = cr.altman_z_score?.toFixed(2) || "--";
+    const zBar = document.getElementById("cr-z-bar");
+    if (zBar) {
+      const pct = Math.min(Math.max(((cr.altman_z_score || 3.0) / 6.0) * 100, 10), 100);
+      zBar.style.width = `${pct}%`;
+      zBar.className = (cr.altman_z_score || 3) >= 2.99 ? "bg-emerald-500 h-full transition-all duration-300" : ((cr.altman_z_score || 3) >= 1.81 ? "bg-amber-500 h-full transition-all duration-300" : "bg-rose-500 h-full transition-all duration-300");
+    }
+    const pdEl = document.getElementById("cr-merton-pd");
+    if (pdEl) pdEl.textContent = `PD: ${cr.merton_structural_model?.default_probability_pct ?? 0.01}%`;
+    const ddEl = document.getElementById("cr-distance-to-default");
+    if (ddEl) ddEl.textContent = `${cr.merton_structural_model?.distance_to_default ?? 5.0} σ (DD)`;
+    const mvEl = document.getElementById("cr-merton-verdict");
+    if (mvEl) mvEl.textContent = cr.merton_structural_model?.merton_verdict || "";
+
+    const sm = cr.solvency_metrics;
+    if (sm) {
+      const debtEl = document.getElementById("cr-debt");
+      if (debtEl) debtEl.textContent = sm.total_debt_formatted;
+      const cashEl = document.getElementById("cr-cash");
+      if (cashEl) cashEl.textContent = sm.total_cash_formatted;
+      const covEl = document.getElementById("cr-coverage");
+      if (covEl) covEl.textContent = `${sm.interest_coverage_ratio}x`;
+      const levEl = document.getElementById("cr-leverage");
+      if (levEl) levEl.textContent = `${sm.net_debt_to_ebitda}x`;
+    }
+    const synEl = document.getElementById("cr-synthesis");
+    if (synEl) synEl.textContent = cr.institutional_risk_synthesis?.recommendation || "";
   }
 
   // -----------------------------------------------------------------------
@@ -362,12 +420,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const tp = data.trade_plan;
       document.getElementById("tp-action-badge").textContent = tp.action;
       document.getElementById("tp-action-badge").className = `px-3 py-1 rounded text-xs font-black uppercase ${tp.action_badge}`;
-      document.getElementById("tp-entry-price").textContent = `$${tp.entry_price.toFixed(2)}`;
-      document.getElementById("tp-stop-loss").textContent = `$${tp.stop_loss.toFixed(2)}`;
+      const cSym = currentStockOverviewData?.currency || "$";
+      document.getElementById("tp-entry-price").textContent = `${cSym}${tp.entry_price.toFixed(2)}`;
+      document.getElementById("tp-stop-loss").textContent = `${cSym}${tp.stop_loss.toFixed(2)}`;
       document.getElementById("tp-stop-loss-pct").textContent = `${tp.stop_loss_pct}% Max Risk`;
-      document.getElementById("tp-tp1").textContent = `$${tp.take_profit_1.toFixed(2)}`;
+      document.getElementById("tp-tp1").textContent = `${cSym}${tp.take_profit_1.toFixed(2)}`;
       document.getElementById("tp-tp1-pct").textContent = `+${tp.take_profit_1_pct}% (2x ATR)`;
-      document.getElementById("tp-tp2").textContent = `$${tp.take_profit_2.toFixed(2)}`;
+      document.getElementById("tp-tp2").textContent = `${cSym}${tp.take_profit_2.toFixed(2)}`;
       document.getElementById("tp-tp2-pct").textContent = `+${tp.take_profit_2_pct}% (3.8x ATR)`;
       document.getElementById("tp-rr").textContent = tp.risk_reward_ratio;
       document.getElementById("tp-kelly").textContent = `${tp.kelly_position_size_pct}%`;
@@ -480,7 +539,8 @@ document.addEventListener("DOMContentLoaded", () => {
         const isUp = item.trend === "UP";
         document.getElementById("pred-1d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
         document.getElementById("pred-1d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
-        document.getElementById("pred-1d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        const predCurr = currentStockOverviewData?.currency || "$";
+        document.getElementById("pred-1d-price").textContent = `${predCurr}${targetPrice.toFixed(2)}`;
         document.getElementById("pred-1d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
         document.getElementById("pred-1d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
         document.getElementById("pred-1d-conf").textContent = `${item.confidence_up_pct}% UP`;
@@ -493,7 +553,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const isUp = item.trend === "UP";
         document.getElementById("pred-3d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
         document.getElementById("pred-3d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
-        document.getElementById("pred-3d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-3d-price").textContent = `${predCurr}${targetPrice.toFixed(2)}`;
         document.getElementById("pred-3d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
         document.getElementById("pred-3d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
         document.getElementById("pred-3d-conf").textContent = `${item.confidence_up_pct}% UP`;
@@ -506,7 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const isUp = item.trend === "UP";
         document.getElementById("pred-5d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
         document.getElementById("pred-5d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
-        document.getElementById("pred-5d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-5d-price").textContent = `${predCurr}${targetPrice.toFixed(2)}`;
         document.getElementById("pred-5d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
         document.getElementById("pred-5d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
         document.getElementById("pred-5d-conf").textContent = `${item.confidence_up_pct}% UP`;
@@ -519,7 +579,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const isUp = item.trend === "UP";
         document.getElementById("pred-10d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
         document.getElementById("pred-10d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
-        document.getElementById("pred-10d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-10d-price").textContent = `${predCurr}${targetPrice.toFixed(2)}`;
         document.getElementById("pred-10d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
         document.getElementById("pred-10d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
         document.getElementById("pred-10d-conf").textContent = `${item.confidence_up_pct}% UP`;
@@ -532,16 +592,13 @@ document.addEventListener("DOMContentLoaded", () => {
         const isUp = item.trend === "UP";
         document.getElementById("pred-20d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
         document.getElementById("pred-20d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
-        document.getElementById("pred-20d-price").textContent = `$${targetPrice.toFixed(2)}`;
+        document.getElementById("pred-20d-price").textContent = `${predCurr}${targetPrice.toFixed(2)}`;
         document.getElementById("pred-20d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
         document.getElementById("pred-20d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
         document.getElementById("pred-20d-conf").textContent = `${item.confidence_up_pct}% UP`;
       }
 
       renderPriceChart();
-    } catch (e) {
-      console.warn("Could not load predictions:", e);
-    }
   }
 
   function round(val, decimals) {
@@ -657,12 +714,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const isUp = d.is_up !== undefined ? d.is_up : (d.price >= prevPrice);
 
     if (currPriceEl && d.price) {
-      // Guard against anomalous leaps (e.g. 220 vs 770)
-      if (prevPrice > 0 && Math.abs(d.price - prevPrice) / prevPrice > 0.3) {
-        return;
-      }
-
-      currPriceEl.textContent = `$${d.price.toFixed(2)}`;
+      const curSym = currentStockOverviewData?.currency || "$";
+      currPriceEl.textContent = `${curSym}${d.price.toFixed(2)}`;
       currPriceEl.className = `text-2xl font-extrabold font-mono transition-colors duration-200 ${isUp ? "text-emerald-400 bg-emerald-950/40" : "text-rose-400 bg-rose-950/40"} px-1.5 py-0.5 rounded`;
       setTimeout(() => {
         currPriceEl.className = `text-2xl font-extrabold font-mono ${isUp ? "text-emerald-400" : "text-rose-400"}`;
@@ -670,7 +723,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     if (chartPriceEl) {
-      chartPriceEl.textContent = `$${d.price.toFixed(2)}`;
+      const curSym = currentStockOverviewData?.currency || "$";
+      chartPriceEl.textContent = `${curSym}${d.price.toFixed(2)}`;
     }
 
     // Dynamically update the active chart canvas in real time
@@ -707,9 +761,9 @@ document.addEventListener("DOMContentLoaded", () => {
           const el1 = document.getElementById("chart-1d-target");
           const el5 = document.getElementById("chart-5d-target");
           const el20 = document.getElementById("chart-20d-target");
-          if (el1) el1.textContent = `$${p1.toFixed(2)}`;
-          if (el5) el5.textContent = `$${p5.toFixed(2)}`;
-          if (el20) el20.textContent = `$${p20.toFixed(2)}`;
+          if (el1) el1.textContent = `${chartCurr}${p1.toFixed(2)}`;
+          if (el5) el5.textContent = `${chartCurr}${p5.toFixed(2)}`;
+          if (el20) el20.textContent = `${chartCurr}${p20.toFixed(2)}`;
         }
 
         priceChartInstance.update("none"); // Smooth real-time redraw
@@ -879,7 +933,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update KPI strip directly above chart
     const currEl = document.getElementById("chart-curr-price");
-    if (currEl) currEl.textContent = `$${lastP.toFixed(2)}`;
+    const chartCurr = currentStockOverviewData?.currency || "$";
+    if (currEl) currEl.textContent = `${chartCurr}${lastP.toFixed(2)}`;
 
     // Model Future Projection Line (Extending 1D, 3D, 5D, 10D, 20D)
     let allLabels = [...histLabels];
@@ -904,17 +959,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const el1 = document.getElementById("chart-1d-target");
       const r1 = document.getElementById("chart-1d-ret");
-      if (el1) el1.textContent = `$${p1.toFixed(2)}`;
+      if (el1) el1.textContent = `${chartCurr}${p1.toFixed(2)}`;
       if (r1) r1.textContent = `${(h1?.expected_return_pct ?? 0.07) >= 0 ? "+" : ""}${(h1?.expected_return_pct ?? 0.07).toFixed(2)}%`;
 
       const el5 = document.getElementById("chart-5d-target");
       const r5 = document.getElementById("chart-5d-ret");
-      if (el5) el5.textContent = `$${p5.toFixed(2)}`;
+      if (el5) el5.textContent = `${chartCurr}${p5.toFixed(2)}`;
       if (r5) r5.textContent = `${(h5?.expected_return_pct ?? 0.39) >= 0 ? "+" : ""}${(h5?.expected_return_pct ?? 0.39).toFixed(2)}%`;
 
       const el20 = document.getElementById("chart-20d-target");
       const r20 = document.getElementById("chart-20d-ret");
-      if (el20) el20.textContent = `$${p20.toFixed(2)}`;
+      if (el20) el20.textContent = `${chartCurr}${p20.toFixed(2)}`;
       if (r20) r20.textContent = `${(h20?.expected_return_pct ?? 1.00) >= 0 ? "+" : ""}${(h20?.expected_return_pct ?? 1.00).toFixed(2)}%`;
 
       const futurePoints = [

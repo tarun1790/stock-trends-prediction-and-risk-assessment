@@ -60,6 +60,8 @@ from stock_predict.backtest.backtester import BacktestEngine
 from stock_predict.backtest.advanced_backtester import AdvancedRiskBacktester
 from stock_predict.models.advanced_neural import MultiHorizonForecaster, PyTorchTCN, PyTorchTFT
 from stock_predict.core.advanced_indicators import compute_full_quant_features, compute_atr
+from stock_predict.core.credit_risk import CreditRiskAnalyzer
+credit_risk_analyzer = CreditRiskAnalyzer()
 from stock_predict.api.schemas import (
     SystemStatusResponse,
     DataFetchRequest,
@@ -95,7 +97,7 @@ UI_DIR = Path(__file__).resolve().parent.parent / "ui" / "static"
 _DATA_CACHE = {}
 
 
-# Comprehensive Global & Indian Stock Catalog (Groww Style)
+# Comprehensive Global, Indian & Forex Asset Catalog
 STOCK_DIRECTORY = {
     # US Mega-Cap & Tech
     "NVDA": {"name": "NVIDIA Corporation", "exchange": "NASDAQ", "sector": "Semiconductors", "currency": "$"},
@@ -110,16 +112,35 @@ STOCK_DIRECTORY = {
     "COIN": {"name": "Coinbase Global", "exchange": "NASDAQ", "sector": "Crypto Exchange", "currency": "$"},
     "SPY": {"name": "SPDR S&P 500 ETF Trust", "exchange": "NYSE Arca", "sector": "Index ETF", "currency": "$"},
     "QQQ": {"name": "Invesco QQQ Trust (Nasdaq 100)", "exchange": "NASDAQ", "sector": "Tech Index ETF", "currency": "$"},
-    "BTC-USD": {"name": "Bitcoin USD", "exchange": "Crypto", "sector": "Digital Asset", "currency": "$"},
-    "ETH-USD": {"name": "Ethereum USD", "exchange": "Crypto", "sector": "Smart Contracts", "currency": "$"},
-    "CL=F": {"name": "Crude Oil WTI Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
-    "GC=F": {"name": "Gold Futures", "exchange": "COMEX", "sector": "Precious Metals", "currency": "$"},
-    # Indian Blue-Chips
-    "TCS.NS": {"name": "Tata Consultancy Services", "exchange": "NSE", "sector": "IT Services", "currency": "₹"},
+    
+    # Indian Stock Market (NSE / BSE)
+    "^NSEI": {"name": "NIFTY 50 Index", "exchange": "NSE", "sector": "Indian Benchmark Index", "currency": "₹"},
+    "^NSEBANK": {"name": "BANK NIFTY Index", "exchange": "NSE", "sector": "Indian Banking Index", "currency": "₹"},
     "RELIANCE.NS": {"name": "Reliance Industries Ltd", "exchange": "NSE", "sector": "Energy & Telecom", "currency": "₹"},
-    "INFY.NS": {"name": "Infosys Ltd", "exchange": "NSE", "sector": "IT Services", "currency": "₹"},
+    "TCS.NS": {"name": "Tata Consultancy Services", "exchange": "NSE", "sector": "IT Services", "currency": "₹"},
+    "INFY.NS": {"name": "Infosys Limited", "exchange": "NSE", "sector": "IT Services", "currency": "₹"},
     "HDFCBANK.NS": {"name": "HDFC Bank Ltd", "exchange": "NSE", "sector": "Private Banking", "currency": "₹"},
     "TATAMOTORS.NS": {"name": "Tata Motors Ltd", "exchange": "NSE", "sector": "Automotive", "currency": "₹"},
+    "SBIN.NS": {"name": "State Bank of India", "exchange": "NSE", "sector": "Public Banking", "currency": "₹"},
+    "ITC.NS": {"name": "ITC Limited", "exchange": "NSE", "sector": "Consumer Goods", "currency": "₹"},
+    "BHARTIARTL.NS": {"name": "Bharti Airtel Ltd", "exchange": "NSE", "sector": "Telecommunications", "currency": "₹"},
+
+    # Foreign Exchange (Forex Pairs)
+    "USDINR=X": {"name": "USD / Indian Rupee", "exchange": "FOREX", "sector": "Currency Pair", "currency": "₹"},
+    "EURUSD=X": {"name": "EUR / USD", "exchange": "FOREX", "sector": "Currency Pair", "currency": "$"},
+    "GBPUSD=X": {"name": "GBP / USD", "exchange": "FOREX", "sector": "Currency Pair", "currency": "$"},
+    "USDJPY=X": {"name": "USD / JPY", "exchange": "FOREX", "sector": "Currency Pair", "currency": "¥"},
+    "EURINR=X": {"name": "EUR / Indian Rupee", "exchange": "FOREX", "sector": "Currency Pair", "currency": "₹"},
+    "AUDUSD=X": {"name": "AUD / USD", "exchange": "FOREX", "sector": "Currency Pair", "currency": "$"},
+
+    # Crypto (Binance Real-Time 24/7)
+    "BTC-USD": {"name": "Bitcoin USD", "exchange": "Crypto", "sector": "Digital Asset", "currency": "$"},
+    "ETH-USD": {"name": "Ethereum USD", "exchange": "Crypto", "sector": "Smart Contracts", "currency": "$"},
+    "SOL-USD": {"name": "Solana USD", "exchange": "Crypto", "sector": "High-Throughput L1", "currency": "$"},
+
+    # Commodities
+    "CL=F": {"name": "Crude Oil WTI Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
+    "GC=F": {"name": "Gold Futures", "exchange": "COMEX", "sector": "Precious Metals", "currency": "$"},
 }
 
 
@@ -312,7 +333,26 @@ def get_stock_overview(ticker: str):
                 "architecture": "Calibrated 26-Indicator Stacking Ensemble (XGBoost + TFT + TCN)",
                 "methodology": "IEEE Access & Selective Classification (Chow tau >= 0.75)",
             },
+            "credit_risk": credit_risk_analyzer.evaluate_credit_risk(clean_sym, df=df),
         }
+    except Exception as ex:
+        raise HTTPException(status_code=500, detail=str(ex))
+
+
+@app.get("/api/risk/credit/{ticker}")
+def get_credit_risk_assessment(ticker: str):
+    """
+    Comprehensive Corporate Credit Risk & Solvency Assessment:
+    - Altman Z-Score & Bankruptcy Distress Zone
+    - Merton Structural Distance-to-Default (DD) & Probability of Default (PD %)
+    - Synthetic Credit Rating (AAA to D)
+    - Balance Sheet Solvency: Debt-to-Equity, Net Debt / EBITDA, Cash Coverage
+    - Dual-Gate Trend & Credit Risk Synthesis
+    """
+    clean_sym = ticker.strip().upper()
+    try:
+        df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else None
+        return credit_risk_analyzer.evaluate_credit_risk(clean_sym, df=df)
     except Exception as ex:
         raise HTTPException(status_code=500, detail=str(ex))
 
