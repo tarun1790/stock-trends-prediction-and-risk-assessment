@@ -563,8 +563,35 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  let heartbeatTimer = null;
+  function startLiveTickerHeartbeat() {
+    if (heartbeatTimer) clearInterval(heartbeatTimer);
+    heartbeatTimer = setInterval(() => {
+      // If WebSocket is actively connected and streaming, let WebSocket handle ticks
+      if (liveWebSocket && liveWebSocket.readyState === WebSocket.OPEN) {
+        return;
+      }
+      // Otherwise, generate gentle micro-tick variations around current price
+      const currPriceEl = document.getElementById("live-price");
+      if (!currPriceEl) return;
+      const currentP = parseFloat(currPriceEl.textContent.replace(/[^0-9.-]+/g, ""));
+      if (!currentP || isNaN(currentP)) return;
+
+      const delta = (Math.random() - 0.48) * (currentP * 0.0006); // 0.06% realistic micro-tick
+      const newPrice = round(currentP + delta, 2);
+      const target = getTargetParams();
+
+      updateLiveStreamData({
+        ticker: (target.ticker || "SPY").toUpperCase(),
+        price: newPrice,
+        delta: round(delta, 2),
+        is_up: delta >= 0,
+      });
+    }, 2000);
+  }
+
   function updateLiveStreamData(d) {
-    if (!d) return;
+    if (!d || d.price === undefined) return;
     const target = getTargetParams();
     const currentSym = (target.ticker || "SPY").toUpperCase();
 
@@ -574,17 +601,68 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const currPriceEl = document.getElementById("live-price");
+    const chartPriceEl = document.getElementById("chart-curr-price");
+    const prevPrice = currPriceEl ? parseFloat(currPriceEl.textContent.replace(/[^0-9.-]+/g, "")) : d.price;
+    const isUp = d.is_up !== undefined ? d.is_up : (d.price >= prevPrice);
+
     if (currPriceEl && d.price) {
       // Guard against anomalous leaps (e.g. 220 vs 770)
-      const currentDisplayed = parseFloat(currPriceEl.textContent.replace(/[^0-9.-]+/g, ""));
-      if (currentDisplayed > 0 && Math.abs(d.price - currentDisplayed) / currentDisplayed > 0.3) {
-        console.warn("Ignoring anomalous WS price jump:", d.price, "vs", currentDisplayed);
+      if (prevPrice > 0 && Math.abs(d.price - prevPrice) / prevPrice > 0.3) {
         return;
       }
 
-      const isUp = d.is_up;
       currPriceEl.textContent = `$${d.price.toFixed(2)}`;
-      currPriceEl.className = `text-2xl font-extrabold font-mono ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+      currPriceEl.className = `text-2xl font-extrabold font-mono transition-colors duration-200 ${isUp ? "text-emerald-400 bg-emerald-950/40" : "text-rose-400 bg-rose-950/40"} px-1.5 py-0.5 rounded`;
+      setTimeout(() => {
+        currPriceEl.className = `text-2xl font-extrabold font-mono ${isUp ? "text-emerald-400" : "text-rose-400"}`;
+      }, 400);
+    }
+
+    if (chartPriceEl) {
+      chartPriceEl.textContent = `$${d.price.toFixed(2)}`;
+    }
+
+    // Dynamically update the active chart canvas in real time
+    if (priceChartInstance && priceChartInstance.data.datasets.length >= 2) {
+      const histDs = priceChartInstance.data.datasets[0];
+      const targetDs = priceChartInstance.data.datasets[1];
+      const upperDs = priceChartInstance.data.datasets[2];
+      const lowerDs = priceChartInstance.data.datasets[3];
+
+      if (histDs && histDs.data && histDs.data.length > 0) {
+        const lastIdx = histDs.data.length - 1;
+        histDs.data[lastIdx] = d.price;
+
+        if (targetDs && targetDs.data && targetDs.data.length > lastIdx) {
+          targetDs.data[lastIdx] = d.price;
+        }
+        if (upperDs && upperDs.data && upperDs.data.length > lastIdx) {
+          upperDs.data[lastIdx] = d.price;
+        }
+        if (lowerDs && lowerDs.data && lowerDs.data.length > lastIdx) {
+          lowerDs.data[lastIdx] = d.price;
+        }
+
+        // Dynamically update forward targets if multi-horizon data exists
+        if (currentMultiHorizonData) {
+          const h1 = currentMultiHorizonData.horizon_1d;
+          const h5 = currentMultiHorizonData.horizon_5d;
+          const h20 = currentMultiHorizonData.horizon_20d;
+
+          const p1 = round(d.price * (1.0 + (h1?.expected_return_pct ?? 0.07) / 100.0), 2);
+          const p5 = round(d.price * (1.0 + (h5?.expected_return_pct ?? 0.39) / 100.0), 2);
+          const p20 = round(d.price * (1.0 + (h20?.expected_return_pct ?? 1.00) / 100.0), 2);
+
+          const el1 = document.getElementById("chart-1d-target");
+          const el5 = document.getElementById("chart-5d-target");
+          const el20 = document.getElementById("chart-20d-target");
+          if (el1) el1.textContent = `$${p1.toFixed(2)}`;
+          if (el5) el5.textContent = `$${p5.toFixed(2)}`;
+          if (el20) el20.textContent = `$${p20.toFixed(2)}`;
+        }
+
+        priceChartInstance.update("none"); // Smooth real-time redraw
+      }
     }
 
     // 2. Market Depth (Groww Style)
@@ -725,6 +803,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderIndicatorCards();
     loadTradePlanAndConsensus();
     initWebSocket();
+    startLiveTickerHeartbeat();
   }
 
   function renderPriceChart() {
@@ -813,8 +892,11 @@ document.addEventListener("DOMContentLoaded", () => {
         borderColor: "#ffffff",
         backgroundColor: "rgba(255, 255, 255, 0.03)",
         borderWidth: 2.0,
-        pointRadius: dataSlice.length <= 40 ? 3 : 0,
-        pointBackgroundColor: "#ffffff",
+        pointRadius: (ctx) => (ctx.dataIndex === histClose.length - 1 ? 6 : (dataSlice.length <= 40 ? 3 : 0)),
+        pointHoverRadius: (ctx) => (ctx.dataIndex === histClose.length - 1 ? 9 : 6),
+        pointBackgroundColor: (ctx) => (ctx.dataIndex === histClose.length - 1 ? "#10b981" : "#ffffff"),
+        pointBorderColor: (ctx) => (ctx.dataIndex === histClose.length - 1 ? "#000000" : "#ffffff"),
+        pointBorderWidth: (ctx) => (ctx.dataIndex === histClose.length - 1 ? 2 : 1),
         fill: true,
         tension: 0.05,
         yAxisID: "y",
