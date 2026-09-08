@@ -617,10 +617,13 @@ async def live_ticker_websocket(websocket: WebSocket, ticker: str):
             await websocket.send_json(msg)
             await asyncio.sleep(1.0)
 
-    except WebSocketDisconnect:
+    except (WebSocketDisconnect, asyncio.CancelledError):
         pass
     except Exception:
-        await websocket.close()
+        try:
+            await websocket.close()
+        except Exception:
+            pass
 
 
 @app.post("/api/data/fetch")
