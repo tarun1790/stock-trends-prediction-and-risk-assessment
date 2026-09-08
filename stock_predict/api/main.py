@@ -242,6 +242,17 @@ def get_stock_overview(ticker: str):
         trend_direction = "UP (+1)" if ov["score"] >= 0 else "DOWN (-1)"
         confidence_pct = round(min(max(ov["win_probability_pct"], 65.0), 96.5), 1)
 
+        from stock_predict.core.market_intelligence import VolumeProfileAnalyzer, ConformalPredictor, OptionsSentimentEstimator
+
+        vp_analyzer = VolumeProfileAnalyzer()
+        vp_res = vp_analyzer.compute_profile(df.tail(120))
+
+        cp_analyzer = ConformalPredictor(coverage_level=0.90)
+        cp_res = cp_analyzer.compute_conformal_bounds(df["Close"].values, curr_price)
+
+        opt_estimator = OptionsSentimentEstimator()
+        opt_res = opt_estimator.estimate_options_flow(df, clean_sym)
+
         return {
             "ticker": clean_sym,
             "name": info["name"],
@@ -256,6 +267,14 @@ def get_stock_overview(ticker: str):
             "ai_alpha_badge": ai_alpha_badge,
             "adx_regime": adx_regime,
             "technical_ratings": tv_indicators,
+            "volume_profile": {
+                "poc_price": vp_res["poc_price"],
+                "vah_price": vp_res["vah_price"],
+                "val_price": vp_res["val_price"],
+                "auction_location": vp_res["auction_location"],
+            },
+            "conformal_bounds": cp_res,
+            "options_intelligence": opt_res,
             "today_range": {
                 "low": round(today_low, 2),
                 "high": round(today_high, 2),
