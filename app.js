@@ -531,6 +531,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!f) return;
     currentMultiHorizonData = f;
+    const predCurr = currentStockOverviewData?.currency || "$";
 
       // Update 1D
       if (f.horizon_1d) {
@@ -539,7 +540,6 @@ document.addEventListener("DOMContentLoaded", () => {
         const isUp = item.trend === "UP";
         document.getElementById("pred-1d-trend").textContent = isUp ? "UP (+1)" : "DOWN (-1)";
         document.getElementById("pred-1d-trend").className = `text-[10px] font-extrabold px-1 py-0.2 rounded border ${isUp ? "text-emerald-400 border-emerald-800 bg-black" : "text-rose-400 border-rose-800 bg-black"}`;
-        const predCurr = currentStockOverviewData?.currency || "$";
         document.getElementById("pred-1d-price").textContent = `${predCurr}${targetPrice.toFixed(2)}`;
         document.getElementById("pred-1d-return").textContent = `${item.expected_return_pct >= 0 ? "+" : ""}${item.expected_return_pct}%`;
         document.getElementById("pred-1d-return").className = `font-bold ${isUp ? "text-emerald-400" : "text-rose-400"}`;
@@ -901,14 +901,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     // Await overview and predictions before chart rendering
-    await loadStockOverview();
-    await loadMainPredictions();
-
-    renderPriceChart();
-    renderIndicatorCards();
-    loadTradePlanAndConsensus();
-    initWebSocket();
-    startLiveTickerHeartbeat();
+    try { await loadStockOverview(); } catch (e) { console.error("Error in loadStockOverview:", e); }
+    try { await loadMainPredictions(); } catch (e) { console.error("Error in loadMainPredictions:", e); }
+    try { renderPriceChart(); } catch (e) { console.error("Error in renderPriceChart:", e); }
+    try { renderIndicatorCards(); } catch (e) { console.error("Error in renderIndicatorCards:", e); }
+    try { await loadTradePlanAndConsensus(); } catch (e) { console.error("Error in loadTradePlanAndConsensus:", e); }
+    try { initWebSocket(); } catch (e) { console.error("Error in initWebSocket:", e); }
+    try { startLiveTickerHeartbeat(); } catch (e) { console.error("Error in startLiveTickerHeartbeat:", e); }
   }
 
   function renderPriceChart() {

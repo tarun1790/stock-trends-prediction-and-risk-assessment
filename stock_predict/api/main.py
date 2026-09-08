@@ -656,47 +656,18 @@ async def live_ticker_websocket(websocket: WebSocket, ticker: str):
     await websocket.accept()
     clean_ticker = ticker.strip().upper()
     try:
-        df_price = (
-            data_loader.fetch_live_data(clean_ticker)
-            if clean_ticker not in PAPER_SECTORS
-            else data_loader.load_sector_data(clean_ticker)
-        )
-        base_price = float(df_price["Close"].iloc[-1])
+        quote = get_live_market_quote(clean_ticker)
+        base_price = float(quote["price"])
     except Exception:
-        cache_file = data_loader.cache_dir / f"{clean_ticker}_1d.csv"
-        if cache_file.exists():
-            import pandas as pd
-            df_c = pd.read_csv(cache_file)
-            base_price = float(df_c["Close"].iloc[-1])
-        else:
-            ticker_defaults = {
-                "SPY": 770.19,
-                "NVDA": 132.85,
-                "AAPL": 242.50,
-                "MSFT": 458.20,
-                "AMZN": 215.30,
-                "GOOGL": 198.40,
-                "META": 612.00,
-                "TSLA": 268.00,
-                "AMD": 165.00,
-                "PLTR": 58.50,
-                "COIN": 235.00,
-                "QQQ": 512.00,
-                "GLD": 248.00,
-                "CL=F": 72.50,
-                "BTC-USD": 87500.00,
-                "ETH-USD": 3150.00,
-                "TCS.NS": 4250.00,
-                "RELIANCE.NS": 2980.00,
-                "INFY.NS": 1890.00,
-                "HDFCBANK.NS": 1680.00,
-                "TATAMOTORS.NS": 1040.00,
-                "DIVERSIFIED_FINANCIALS": 1845.00,
-                "PETROLEUM": 1530.00,
-                "BASIC_METALS": 2140.00,
-                "NON_METALLIC_MINERALS": 1220.00,
-            }
-            base_price = ticker_defaults.get(clean_ticker, 100.0)
+        try:
+            df_price = (
+                data_loader.fetch_live_data(clean_ticker)
+                if clean_ticker not in PAPER_SECTORS
+                else data_loader.load_sector_data(clean_ticker)
+            )
+            base_price = float(df_price["Close"].iloc[-1])
+        except Exception:
+            base_price = 100.0
 
     current_price = base_price
     tick_spread = max(round(base_price * 0.0003, 2), 0.02)
