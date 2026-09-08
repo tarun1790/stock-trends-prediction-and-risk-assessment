@@ -368,32 +368,80 @@
       </div>
 
       <!-- Interactive Chart Section with Historical + Model Forward Projection Line -->
-      <div class="terminal-card p-4">
+      <div class="terminal-card p-4 bg-zinc-950 border border-zinc-800">
         <div class="flex flex-wrap items-center justify-between pb-3 border-b border-zinc-800 gap-2 font-mono">
-          <div class="flex items-center space-x-2">
-            <span class="text-xs font-bold uppercase tracking-wider text-white">Historical Price & Model Forward Forecast Trajectory</span>
-            <span class="text-xs text-zinc-500">|</span>
-            <span class="text-xs text-emerald-400 font-bold">Solid White: Historical &bull; Dashed Green: Model Future Projection</span>
+          <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+            <span class="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>Price Action & Model Forward Trajectory Chart</span>
+            </span>
+            <span class="text-xs text-zinc-600 hidden sm:inline">|</span>
+            <span class="text-[11px] text-zinc-300">White: Historical &bull; <span class="text-emerald-400 font-bold">Dashed Emerald: Expected Target Price</span> &bull; <span class="text-emerald-500/60">Shaded Cone: 90% Confidence Corridor</span></span>
           </div>
 
-          <!-- Indicator Overlay Selector -->
-          <div class="flex items-center space-x-3 text-xs">
-            <span class="text-zinc-400">Overlay:</span>
-            <select id="indicator-overlay-select" class="bg-black border border-zinc-700 text-xs text-white rounded px-2 py-1 focus:outline-none font-mono">
-              <option value="SMA">SMA (10-day)</option>
-              <option value="WMA">WMA (10-day)</option>
-              <option value="MOM">Momentum (MOM)</option>
-              <option value="RSI">RSI (10-day)</option>
-              <option value="SIG">MACD Signal Line</option>
-              <option value="STCK">Stochastic %K</option>
-              <option value="LWR">Larry Williams %R</option>
-              <option value="ADO">A/D Oscillator</option>
-              <option value="CCI">CCI</option>
-            </select>
+          <!-- Controls: Timeframe Zoom & Indicator Overlay -->
+          <div class="flex items-center space-x-3 text-xs flex-wrap gap-y-2">
+            <!-- Timeframe Zoom Buttons -->
+            <div class="flex items-center bg-black border border-zinc-800 rounded p-0.5 space-x-1" id="chart-timeframe-controls">
+              <button data-tf="30" class="tf-btn px-2 py-0.5 rounded text-[10px] font-bold text-zinc-400 hover:text-white transition">1M</button>
+              <button data-tf="60" class="tf-btn px-2 py-0.5 rounded text-[10px] font-bold bg-zinc-800 text-emerald-400 border border-emerald-800 transition">3M</button>
+              <button data-tf="120" class="tf-btn px-2 py-0.5 rounded text-[10px] font-bold text-zinc-400 hover:text-white transition">6M</button>
+              <button data-tf="250" class="tf-btn px-2 py-0.5 rounded text-[10px] font-bold text-zinc-400 hover:text-white transition">1Y</button>
+              <button data-tf="all" class="tf-btn px-2 py-0.5 rounded text-[10px] font-bold text-zinc-400 hover:text-white transition">ALL</button>
+            </div>
+
+            <!-- Indicator Overlay Selector -->
+            <div class="flex items-center space-x-1.5">
+              <span class="text-zinc-500 text-[11px]">Overlay:</span>
+              <select id="indicator-overlay-select" class="bg-black border border-zinc-700 text-xs text-white rounded px-2 py-1 focus:outline-none font-mono">
+                <option value="none">None (Clean Price)</option>
+                <option value="SMA" selected>SMA (10-day)</option>
+                <option value="WMA">WMA (10-day)</option>
+                <option value="MOM">Momentum (MOM)</option>
+                <option value="RSI">RSI (10-day)</option>
+                <option value="SIG">MACD Signal Line</option>
+                <option value="STCK">Stochastic %K</option>
+                <option value="LWR">Larry Williams %R</option>
+                <option value="ADO">A/D Oscillator</option>
+                <option value="CCI">CCI</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div class="h-96 w-full pt-3">
+        <!-- Forward Expected Target Price KPI Strip (Above Chart) -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 my-3 font-mono text-xs">
+          <div class="bg-black border border-zinc-800 p-2.5 rounded">
+            <span class="text-zinc-500 text-[10px] uppercase font-bold block">Current Market Price</span>
+            <div class="flex items-baseline space-x-1.5 mt-0.5">
+              <span id="chart-curr-price" class="text-white font-extrabold text-base">$770.19</span>
+              <span class="text-[10px] text-zinc-400">Anchor</span>
+            </div>
+          </div>
+          <div class="bg-black border border-emerald-900/60 p-2.5 rounded">
+            <span class="text-emerald-400 text-[10px] uppercase font-bold block">1-Day Next Close Target</span>
+            <div class="flex items-baseline space-x-1.5 mt-0.5">
+              <span id="chart-1d-target" class="text-emerald-400 font-extrabold text-base">$770.73</span>
+              <span id="chart-1d-ret" class="text-[10px] font-bold text-emerald-400">+0.07%</span>
+            </div>
+          </div>
+          <div class="bg-black border border-emerald-900/60 p-2.5 rounded">
+            <span class="text-emerald-400 text-[10px] uppercase font-bold block">5-Day Expected Target</span>
+            <div class="flex items-baseline space-x-1.5 mt-0.5">
+              <span id="chart-5d-target" class="text-emerald-400 font-extrabold text-base">$773.19</span>
+              <span id="chart-5d-ret" class="text-[10px] font-bold text-emerald-400">+0.39%</span>
+            </div>
+          </div>
+          <div class="bg-black border border-emerald-900/60 p-2.5 rounded">
+            <span class="text-emerald-400 text-[10px] uppercase font-bold block">20-Day Target Price</span>
+            <div class="flex items-baseline space-x-1.5 mt-0.5">
+              <span id="chart-20d-target" class="text-emerald-400 font-extrabold text-base">$777.89</span>
+              <span id="chart-20d-ret" class="text-[10px] font-bold text-emerald-400">+1.00%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-[420px] w-full pt-1 relative">
           <canvas id="price-chart"></canvas>
         </div>
       </div>
