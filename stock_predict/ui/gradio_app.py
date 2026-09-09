@@ -1,14 +1,20 @@
 """
 StockTrend AI | Pure-Python Real-Time Quantitative Trading & Credit Risk Terminal.
 100% Pure Python Web Application (Zero HTML Files) built with Gradio & Plotly.
-Real-Time Exchange Data, Live Level-2 Order Book (Bids/Asks), Executed Trade Tape (Time & Sales),
-and GPU-Accelerated Deep Learning (CUDA).
+Features:
+1. Real-Time Exchange Data, Live Level-2 Order Book (Bids/Asks), Executed Trade Tape (Time & Sales).
+2. Deep Multi-Horizon AI Forecasting (TFT, TCN, BiLSTM) on NVIDIA RTX 3070 Ti (CUDA).
+3. Corporate Credit Solvency (Altman Z-Score & Merton Structural Model).
+4. Automated Virtual Paper-Trading Execution Ledger with Mark-to-Market PnL Tracking.
+5. Global Macro Regime Matrix (VIX, 10Y-2Y Spread, DXY, WTI Crude Oil).
+6. Financial NLP News Sentiment Engine (Live Headlines & Sentiment Polarity).
+7. Fractional Differentiation Engine (Marcos López de Prado Memory Preservation).
 """
 
 import math
 import sys
 from pathlib import Path
-from typing import Tuple, Dict, Any
+from typing import Tuple, Dict, Any, List
 import time
 
 # Ensure repository root is on sys.path
@@ -26,11 +32,16 @@ from stock_predict.core.composite_indicators import compute_26_technical_indicat
 from stock_predict.core.credit_risk import CreditRiskAnalyzer
 from stock_predict.core.advanced_indicators import compute_atr
 from stock_predict.core.order_book import RealTimeOrderBookProvider, MarketSessionTracker
+from stock_predict.core.macro_regime import GlobalMacroRegime
+from stock_predict.core.paper_trading import PaperTradingEngine
+from stock_predict.core.news_sentiment import FinancialNewsSentimentEngine
+from stock_predict.core.fractional_diff import FractionalDifferentiator
 from stock_predict.models.calibrated_ensemble import CalibratedProductionEnsemble
 
 data_loader = DataLoader()
 credit_analyzer = CreditRiskAnalyzer()
 ensemble = CalibratedProductionEnsemble(confidence_threshold=0.75)
+paper_engine = PaperTradingEngine()
 
 DEVICE_STR = "NVIDIA GeForce RTX 3070 Ti (CUDA)" if torch.cuda.is_available() else "CPU Multi-Thread"
 
@@ -66,6 +77,13 @@ ASSET_MAP = {
 }
 
 
+def _resolve_ticker(asset_selection: str, custom_symbol: str) -> str:
+    return custom_symbol.strip().upper() if custom_symbol.strip() else ASSET_MAP.get(asset_selection, "TCS.NS")
+
+
+# -----------------------------------------------------------------------------
+# 1. Main Live Technical & Order Book Engine
+# -----------------------------------------------------------------------------
 def analyze_asset_and_order_book(
     asset_selection: str,
     custom_symbol: str,
@@ -73,12 +91,7 @@ def analyze_asset_and_order_book(
     timeframe: str,
     overlay: str,
 ):
-    """
-    Main execution engine for the pure Python real-time web application.
-    Fetches genuine real-time market data, Level-2 order book, recent executed trades,
-    computes 26 indicators, multi-horizon AI trajectory, and corporate credit risk.
-    """
-    ticker = custom_symbol.strip().upper() if custom_symbol.strip() else ASSET_MAP.get(asset_selection, "TCS.NS")
+    ticker = _resolve_ticker(asset_selection, custom_symbol)
     currency = "₹" if (".NS" in ticker or ticker.startswith("^NSE") or "INR" in ticker) else ("¥" if "JPY" in ticker else "$")
 
     # 1. Fetch Real-Time Order Book, Executed Trades & Exchange Market Session
@@ -89,17 +102,20 @@ def analyze_asset_and_order_book(
     session_detail = session.get("detail", "")
     feed_source = book_res.get("feed_source", "Real Exchange Feed")
 
-    # 2. Fetch Historical Bars for Technical & AI Engine
+    # 2. Fetch Historical Bars
     df = data_loader.fetch_live_data(ticker)
     curr_price = float(book_res.get("current_price", float(df["Close"].iloc[-1])))
     prev_price = float(df["Close"].iloc[-2]) if len(df) > 1 else curr_price
     day_change = curr_price - prev_price
     day_change_pct = (day_change / prev_price) * 100.0 if prev_price > 0 else 0.0
 
-    # 3. Format Status Card (Explicit Market Session Awareness)
+    # Auto Mark-to-Market paper portfolio
+    paper_engine.mark_to_market({ticker: curr_price})
+
+    # Status Card
     status_icon = "🟢" if is_open else "🔒"
     price_color = "🟢 +" if day_change >= 0 else "🔴 "
-    
+
     status_card = f"""
     ### 🏛️ {ticker} &bull; Real-Time Market Intelligence
     | Metric | Real-Time Value | Exchange Session Status | Feed Source |
@@ -112,7 +128,7 @@ def analyze_asset_and_order_book(
     > *(Zero artificial fluctuations: When markets are closed, prices remain strictly locked at the official exchange close).*
     """
 
-    # 4. Construct Level-2 Order Book DataFrame (Real Buy Orders vs Real Sell Orders)
+    # Level-2 Order Book
     ob_data = book_res.get("order_book", {})
     bids = ob_data.get("bids", [])
     asks = ob_data.get("asks", [])
@@ -139,7 +155,7 @@ def analyze_asset_and_order_book(
     **Market Depth Order Pressure:** `{buy_pressure:.1f}% BUYERS` &bull; `{100.0 - buy_pressure:.1f}% SELLERS` &bull; **Total Buy Vol:** `{ob_data.get('total_bid_qty', 0):,}` &bull; **Total Sell Vol:** `{ob_data.get('total_ask_qty', 0):,}`
     """
 
-    # 5. Construct Executed Trades DataFrame (Time & Sales Tape)
+    # Executed Trades Tape
     trades = book_res.get("recent_trades", [])
     trade_rows = []
     for t in trades:
@@ -160,7 +176,7 @@ def analyze_asset_and_order_book(
         })
     trades_df = pd.DataFrame(trade_rows)
 
-    # 6. Compute 26 Technical Indicators & AI Multi-Horizon Forecasts
+    # 26 Indicators & Multi-Horizon AI Targets
     tv_res = compute_26_technical_indicators(df)
     ov = tv_res["overall"]
     is_bullish = ov["score"] >= 0
@@ -176,7 +192,7 @@ def analyze_asset_and_order_book(
     p5 = round(curr_price * (1.0 + h5.get("expected_return_pct", 0.45) / 100.0), 2)
     p20 = round(curr_price * (1.0 + h20.get("expected_return_pct", 1.20) / 100.0), 2)
 
-    # 7. Candlestick Chart (Plotly)
+    # Plotly Candlesticks
     tf_days_map = {"1M": 22, "3M": 66, "6M": 132, "1Y": 252}
     slice_days = tf_days_map.get(timeframe, 66)
     df_slice = df.tail(slice_days).copy()
@@ -240,7 +256,7 @@ def analyze_asset_and_order_book(
         font=dict(family="monospace"),
     )
 
-    # 8. Horizon Targets
+    # Horizon Targets
     horizon_summary = f"""
     | Forecast Horizon | Predicted Trend | Expected Return | Target Price | Selective Model Confidence |
     | :--- | :---: | :---: | :---: | :---: |
@@ -249,7 +265,7 @@ def analyze_asset_and_order_book(
     | **20-Day Target**| `{"UP ▲" if h20.get("trend")=="UP" else "DOWN ▼"}` | `{h20.get("expected_return_pct", 1.20):+.2f}%` | **`{currency}{p20:,.2f}`** | `{h20.get("confidence_up_pct", 70.0)}%` |
     """
 
-    # 9. Trade Plan & Dynamic ATR Risk Management
+    # Trade Plan
     atr_series = compute_atr(df["High"], df["Low"], df["Close"], period=14).dropna()
     atr_val = float(atr_series.iloc[-1]) if len(atr_series) > 0 else (curr_price * 0.02)
     stop_loss = round(curr_price - (1.8 * atr_val) if is_bullish else curr_price + (1.8 * atr_val), 2)
@@ -270,27 +286,7 @@ def analyze_asset_and_order_book(
     | **Position Sizing** | **`12.5% Capital`** | Half-Kelly Fractional Allocation |
     """
 
-    # 10. Credit Risk Audit
-    credit_res = credit_analyzer.evaluate_credit_risk(ticker, df=df)
-    merton = credit_res.get("merton_model", {})
-    solv = credit_res.get("balance_sheet_solvency", {})
-
-    credit_risk_report = f"""
-    ### 🛡️ Corporate Credit Risk & Solvency Assessment (Altman Z & Merton Models)
-    | Solvency Metric | Numerical Value | Rating / Category | Assessment Verdict |
-    | :--- | :---: | :---: | :--- |
-    | **Synthetic Credit Rating** | **`{credit_res['synthetic_credit_rating']}`** | `{credit_res['rating_category']}` | Investment Grade Quality |
-    | **Altman Z-Score** | **`{credit_res['altman_z_score']:.2f}`** | `{credit_res['credit_risk_tier']}` | `Safe Zone >2.99, Distress <1.81` |
-    | **Merton Distance to Default** | **`{merton['distance_to_default']:.2f} σ`** | `PD: {merton['default_probability_pct']}%` | `{merton['merton_verdict']}` |
-    | **Total Enterprise Debt** | `{solv['total_debt_formatted']}` | Borrowings & Liabilities | Balance Sheet Debt |
-    | **Liquid Cash Reserves** | `{solv['total_cash_formatted']}` | Cash & Short-Term Assets | Solvency Buffer |
-    | **Interest Coverage** | `{solv['interest_coverage_ratio']}x` | EBITDA to Interest | Coverage Multiple |
-    
-    > **Dual-Gate Solvency Synthesis:**  
-    > **`{credit_res['institutional_risk_synthesis']['recommendation']}`**
-    """
-
-    # 11. 15-Model Deep Learning Consensus
+    # 15 Models Consensus
     consensus_models = [
         ("TFT (Temporal Fusion Transformer)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
         ("TCN (Dilated Temporal ConvNet)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.2:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
@@ -308,10 +304,14 @@ def analyze_asset_and_order_book(
         ("K-Nearest Neighbors Classifier", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 7.0:.1f}%", "CPU Multi-Thread"),
         ("Calibrated Meta-Stacking Ensemble", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence + 1.5:.1f}%", f"Hybrid Meta-Stack ({DEVICE_STR})"),
     ]
-
     consensus_md = "| Model Architecture | Directional Vote | Confidence | Compute Device |\n| :--- | :---: | :---: | :---: |\n"
     for m_name, vote, conf, hw in consensus_models:
         consensus_md += f"| **{m_name}** | `{vote}` | `{conf}` | `{hw}` |\n"
+
+    # Default order inputs for paper trading
+    default_sl = stop_loss
+    default_tp = target_1
+    default_qty = 10 if ".NS" not in ticker else 50
 
     return (
         status_card,
@@ -321,13 +321,154 @@ def analyze_asset_and_order_book(
         fig,
         horizon_summary,
         trade_plan_text,
-        credit_risk_report,
         consensus_md,
+        curr_price,
+        default_sl,
+        default_tp,
+        default_qty,
     )
 
 
 # -----------------------------------------------------------------------------
-# Gradio Pure Python Interface Layout (Zero HTML)
+# 2. Virtual Paper Trading Execution Handlers
+# -----------------------------------------------------------------------------
+def execute_paper_order(asset_selection: str, custom_symbol: str, action: str, qty: int, price: float, sl: float, tp: float):
+    ticker = _resolve_ticker(asset_selection, custom_symbol)
+    res = paper_engine.execute_order(
+        ticker=ticker,
+        action=action,
+        quantity=max(int(qty), 1),
+        current_price=float(price),
+        stop_loss=float(sl) if sl > 0 else None,
+        take_profit=float(tp) if tp > 0 else None,
+    )
+    status_msg = res["message"]
+    summary = paper_engine.get_summary()
+    return status_msg, summary["cash_usd"], summary["cash_inr"], summary["realized_usd"], summary["realized_inr"], summary["unrealized_usd"], summary["unrealized_inr"], summary["win_rate_pct"], summary["positions_df"], summary["history_df"]
+
+
+def close_paper_position(asset_selection: str, custom_symbol: str, price: float):
+    ticker = _resolve_ticker(asset_selection, custom_symbol)
+    res = paper_engine.close_position(ticker=ticker, current_price=float(price))
+    status_msg = res["message"]
+    summary = paper_engine.get_summary()
+    return status_msg, summary["cash_usd"], summary["cash_inr"], summary["realized_usd"], summary["realized_inr"], summary["unrealized_usd"], summary["unrealized_inr"], summary["win_rate_pct"], summary["positions_df"], summary["history_df"]
+
+
+def refresh_paper_portfolio():
+    summary = paper_engine.get_summary()
+    return "Portfolio Refreshed", summary["cash_usd"], summary["cash_inr"], summary["realized_usd"], summary["realized_inr"], summary["unrealized_usd"], summary["unrealized_inr"], summary["win_rate_pct"], summary["positions_df"], summary["history_df"]
+
+
+# -----------------------------------------------------------------------------
+# 3. Global Macro Regime Matrix Handler
+# -----------------------------------------------------------------------------
+def load_macro_regime():
+    macro = GlobalMacroRegime.get_macro_state()
+    f_idx = macro["fragility_index"]
+    verdict = macro["verdict"]
+    color = macro["verdict_color"]
+    guidance = macro["guidance"]
+
+    ind = macro["indicators"]
+    macro_card = f"""
+    ### 🌍 Global Macro Risk & Systematic Beta Matrix
+    | Macro Factor | Current Value | 5-Day Trend | Systematic Risk Interpretation |
+    | :--- | :---: | :---: | :--- |
+    | **{ind['vix']['label']}** | **`{ind['vix']['value']}`** | `{ind['vix']['5d_change']:+.2f}` | `{ind['vix']['status']}` |
+    | **{ind['crude_oil']['label']}** | **`{ind['crude_oil']['value']}`** | `{ind['crude_oil']['5d_change_pct']}` | `{ind['crude_oil']['status']}` |
+    | **{ind['gold']['label']}** | **`{ind['gold']['value']}`** | `{ind['gold']['5d_change_pct']}` | `{ind['gold']['status']}` |
+    | **{ind['usd_liquidity']['label']}** | **`{ind['usd_liquidity']['value']}`** | Spot Proxy | `{ind['usd_liquidity']['status']}` |
+    
+    > **Global Market Fragility Index:** **`{f_idx} / 100`** &bull; **Verdict:** **`{verdict}`**  
+    > **Macro Beta Discount Factor:** **`{macro['beta_discount']:.2f}x`**  
+    > *{guidance}*
+    """
+    return macro_card
+
+
+# -----------------------------------------------------------------------------
+# 4. Financial NLP News Sentiment Handler
+# -----------------------------------------------------------------------------
+def load_news_sentiment(asset_selection: str, custom_symbol: str):
+    ticker = _resolve_ticker(asset_selection, custom_symbol)
+    res = FinancialNewsSentimentEngine.analyze_ticker_sentiment(ticker)
+    
+    sentiment_card = f"""
+    ### 📰 {ticker} Financial NLP News Sentiment
+    | Metric | Quantitative Value | Market Interpretation |
+    | :--- | :---: | :--- |
+    | **Media Narrative Verdict** | **`{res['verdict_badge']}`** | `{res['verdict']}` |
+    | **NLP Sentiment Alpha Score** | **`{res['nlp_alpha_score']} / 10.0`** | `Calibrated Media Polarity` |
+    | **Normalized Sentiment Score** | **`{res['sentiment_polarity']:+.3f}`** | Range: `-1.0 (Bearish) to +1.0 (Bullish)` |
+    | **Headlines Analyzed** | `{res['breakdown']['total_articles']}` articles | `{res['breakdown']['bullish_articles']} Bullish • {res['breakdown']['bearish_articles']} Bearish • {res['breakdown']['neutral_articles']} Neutral` |
+    """
+
+    news_rows = []
+    for h in res["headlines"]:
+        news_rows.append({
+            "Sentiment": f"[{h['label']}]",
+            "Publisher": h["source"],
+            "Published Date": h["published"],
+            "Headline": h["title"],
+        })
+    news_df = pd.DataFrame(news_rows)
+    return sentiment_card, news_df
+
+
+# -----------------------------------------------------------------------------
+# 5. Corporate Credit Risk Solvency Handler
+# -----------------------------------------------------------------------------
+def load_credit_risk(asset_selection: str, custom_symbol: str):
+    ticker = _resolve_ticker(asset_selection, custom_symbol)
+    df = data_loader.fetch_live_data(ticker)
+    credit_res = credit_analyzer.evaluate_credit_risk(ticker, df=df)
+    merton = credit_res.get("merton_model", {})
+    solv = credit_res.get("balance_sheet_solvency", {})
+
+    credit_card = f"""
+    ### 🛡️ Corporate Credit Solvency & Distress Audit (Altman Z-Score & Merton Model)
+    | Solvency Metric | Numerical Value | Rating / Category | Assessment Verdict |
+    | :--- | :---: | :---: | :--- |
+    | **Synthetic Credit Rating** | **`{credit_res['synthetic_credit_rating']}`** | `{credit_res['rating_category']}` | Investment Grade Standard |
+    | **Altman Z-Score** | **`{credit_res['altman_z_score']:.2f}`** | `{credit_res['credit_risk_tier']}` | `Safe Zone >2.99, Distress <1.81` |
+    | **Merton Distance to Default** | **`{merton['distance_to_default']:.2f} σ`** | `PD: {merton['default_probability_pct']}%` | `{merton['merton_verdict']}` |
+    | **Total Enterprise Debt** | `{solv['total_debt_formatted']}` | Borrowings & Liabilities | Balance Sheet Debt |
+    | **Liquid Cash Reserves** | `{solv['total_cash_formatted']}` | Cash & Short-Term Assets | Solvency Buffer |
+    | **Interest Coverage** | `{solv['interest_coverage_ratio']}x` | EBITDA to Interest | Coverage Multiple |
+    
+    > **Dual-Gate Solvency Synthesis:**  
+    > **`{credit_res['institutional_risk_synthesis']['recommendation']}`**
+    """
+    return credit_card
+
+
+# -----------------------------------------------------------------------------
+# 6. Fractional Differentiation Engine Handler
+# -----------------------------------------------------------------------------
+def load_fractional_diff(asset_selection: str, custom_symbol: str):
+    ticker = _resolve_ticker(asset_selection, custom_symbol)
+    df = data_loader.fetch_live_data(ticker)
+    series = df["Close"].tail(250)
+    res = FractionalDifferentiator.find_optimal_d(series)
+
+    frac_card = f"""
+    ### 🔬 Marcos López de Prado's Fractional Differentiation Engine
+    *Standard integer differencing ($d=1$) stationarizes financial data but destroys historical price memory.  
+    Fractional differentiation solves for the minimum $d^*$ that passes the Augmented Dickey-Fuller (ADF) test while preserving memory.*
+    
+    | Metric | Optimal Calculation | Institutional Interpretation |
+    | :--- | :---: | :--- |
+    | **Optimal Differentiation Order ($d^*$)** | **`d = {res['optimal_d']:.2f}`** | Minimum order to achieve stationarity ($p < 0.05$) |
+    | **Historical Memory Preserved** | **`{res['memory_preserved_pct']:.1f}%`** | Correlation with original price level |
+    | **Augmented Dickey-Fuller Statistic** | **`{res['adf_statistic']:.4f}`** | Rejects unit root hypothesis |
+    | **ADF p-value** | **`{res['p_value']:.4f}`** | Statistically significant stationarity |
+    """
+    return frac_card, res["comparison_table"]
+
+
+# -----------------------------------------------------------------------------
+# Custom Gradio Layout (100% Pure Python - Zero HTML)
 # -----------------------------------------------------------------------------
 custom_theme = gr.themes.Monochrome(
     primary_hue="emerald",
@@ -335,15 +476,16 @@ custom_theme = gr.themes.Monochrome(
     font=[gr.themes.GoogleFont("JetBrains Mono"), "monospace"],
 )
 
-with gr.Blocks(title="StockTrend AI | Pure Python Real-Time Terminal", theme=custom_theme) as demo:
+with gr.Blocks(title="StockTrend AI | Institutional Quantitative Terminal") as demo:
     gr.Markdown(
         f"""
-        # 📈 StockTrend AI &bull; Pure Python Real-Time Quantitative Terminal
-        **100% Pure Python Web Architecture (Zero HTML Files) &bull; GPU Acceleration:** `{DEVICE_STR}`  
-        *Real-Time Level-2 Order Books &bull; Live Time-and-Sales Tape &bull; 26-Indicator Confluence &bull; Corporate Solvency Audit*
+        # 📈 StockTrend AI &bull; Institutional Quantitative Trading Terminal
+        **100% Pure Python Web Application (Zero HTML Files) &bull; GPU Acceleration:** `{DEVICE_STR}`  
+        *Real-Time Order Books &bull; Automated Paper Trading &bull; Macro Regime Matrix &bull; Financial NLP Sentiment &bull; Credit Solvency &bull; Fractional Diff*
         """
     )
 
+    # Global Selector Bar
     with gr.Row():
         with gr.Column(scale=4):
             asset_dd = gr.Dropdown(
@@ -352,7 +494,7 @@ with gr.Blocks(title="StockTrend AI | Pure Python Real-Time Terminal", theme=cus
                 label="Select Global Asset / Indian Stock / Forex / Crypto",
             )
         with gr.Column(scale=2):
-            custom_input = gr.Textbox(placeholder="Or enter ANY ticker (e.g. RELIANCE.NS, NVDA, BTC-USD)...", label="Custom Ticker Search")
+            custom_input = gr.Textbox(placeholder="Or enter ANY ticker (e.g. INFY.NS, NVDA, BTC-USD)...", label="Custom Ticker Search")
         with gr.Column(scale=2):
             model_dd = gr.Dropdown(
                 choices=[
@@ -372,51 +514,119 @@ with gr.Blocks(title="StockTrend AI | Pure Python Real-Time Terminal", theme=cus
 
     with gr.Row():
         run_btn = gr.Button("🚀 Execute Real-Time Scan & Order Book Fetch", variant="primary", scale=3)
-        auto_refresh_chk = gr.Checkbox(value=True, label="⚡ Live Auto-Refresh (Every 4 Seconds)", scale=1)
+        auto_refresh_chk = gr.Checkbox(value=True, label="⚡ Live Auto-Refresh (Every 4s)", scale=1)
 
-    # Real-Time Price & Session Status Header Card
-    price_output = gr.Markdown()
+    # TABS NAVIGATION
+    with gr.Tabs():
+        # -------------------------------------------------------------
+        # TAB 1: Real-Time Trading & Order Book
+        # -------------------------------------------------------------
+        with gr.TabItem("📊 Real-Time AI Trading & Level-2 Book"):
+            price_output = gr.Markdown()
 
-    # Real-Time Level 2 Order Book & Executed Trade Prints (Two Columns)
-    with gr.Row():
-        with gr.Column(scale=1):
-            gr.Markdown("### 📊 Level-2 Real-Time Order Book (Live Buy vs Sell Orders)")
-            pressure_output = gr.Markdown()
-            order_book_output = gr.Dataframe(
-                headers=["Bid Price (Buy)", "Buy Qty (Shares)", "Total Buy Value", "Spread", "Ask Price (Sell)", "Sell Qty (Shares)", "Total Sell Value"],
-                interactive=False,
-                label="Real-Time Market Depth",
-            )
-        with gr.Column(scale=1):
-            gr.Markdown("### ⏱️ Latest Executed Buy & Sell Orders (Time & Sales Tape)")
-            gr.Markdown("**Real Exchange Intraday Trade Executions:**")
-            trades_output = gr.Dataframe(
-                headers=["Execution Time", "Side", "Price", "Volume / Shares", "Total Trade Value"],
-                interactive=False,
-                label="Real-Time Trade Prints",
-            )
+            with gr.Row():
+                with gr.Column(scale=1):
+                    gr.Markdown("### 📊 Level-2 Real-Time Order Book (Live Buy vs Sell Orders)")
+                    pressure_output = gr.Markdown()
+                    order_book_output = gr.Dataframe(
+                        headers=["Bid Price (Buy)", "Buy Qty (Shares)", "Total Buy Value", "Spread", "Ask Price (Sell)", "Sell Qty (Shares)", "Total Sell Value"],
+                        interactive=False,
+                        label="Real-Time Market Depth",
+                    )
+                with gr.Column(scale=1):
+                    gr.Markdown("### ⏱️ Latest Executed Buy & Sell Orders (Time & Sales Tape)")
+                    gr.Markdown("**Real Exchange Intraday Trade Executions:**")
+                    trades_output = gr.Dataframe(
+                        headers=["Execution Time", "Side", "Price", "Volume / Shares", "Total Trade Value"],
+                        interactive=False,
+                        label="Real-Time Trade Prints",
+                    )
 
-    # Interactive Chart Output
-    chart_output = gr.Plot(label="Live Candlestick Action & Forward AI Trajectory")
+            chart_output = gr.Plot(label="Live Candlestick Action & Forward AI Trajectory")
 
-    # Forward Targets & Trade Plan
-    with gr.Row():
-        with gr.Column():
-            gr.Markdown("### 🎯 Multi-Horizon Forward Price Targets (1D, 5D, 20D)")
-            horizon_output = gr.Markdown()
-        with gr.Column():
-            gr.Markdown("### 📋 Institutional Trade Execution Plan")
-            trade_output = gr.Markdown()
+            with gr.Row():
+                with gr.Column():
+                    gr.Markdown("### 🎯 Multi-Horizon Forward Price Targets (1D, 5D, 20D)")
+                    horizon_output = gr.Markdown()
+                with gr.Column():
+                    gr.Markdown("### 📋 Institutional Trade Execution Plan")
+                    trade_output = gr.Markdown()
 
-    # Credit Risk & 15-Model Consensus
-    with gr.Row():
-        with gr.Column():
-            credit_output = gr.Markdown()
-        with gr.Column():
             gr.Markdown("### 🤖 15-Model Architecture Consensus & Voting")
             consensus_output = gr.Markdown()
 
-    all_outputs = [
+        # -------------------------------------------------------------
+        # TAB 2: Automated Paper-Trading Execution & PnL Ledger
+        # -------------------------------------------------------------
+        with gr.TabItem("💼 Automated Paper-Trading & PnL Ledger"):
+            gr.Markdown("### 💼 Real-Time Virtual Paper Execution Station")
+            gr.Markdown("Execute paper trades with simulated exchange slippage (0.03%) and commission. Live Mark-to-Market PnL tracks incoming real-time ticks.")
+
+            with gr.Row():
+                paper_action = gr.Radio(choices=["BUY", "SELL"], value="BUY", label="Order Side")
+                paper_qty = gr.Number(value=50, label="Quantity / Shares", precision=0)
+                paper_price = gr.Number(label="Execution Price Anchor", precision=2)
+                paper_sl = gr.Number(label="ATR Stop Loss Trigger", precision=2)
+                paper_tp = gr.Number(label="Take Profit Target", precision=2)
+
+            with gr.Row():
+                exec_btn = gr.Button("⚡ Execute Virtual Paper Order", variant="primary", scale=2)
+                close_btn = gr.Button("❌ Close Active Position for Asset", variant="stop", scale=2)
+                refresh_btn = gr.Button("🔄 Refresh Ledger", scale=1)
+
+            exec_status_msg = gr.Markdown("**Order Desk Status:** Ready for order execution.")
+
+            gr.Markdown("#### 📈 Portfolio Summary Cards")
+            with gr.Row():
+                cash_usd_card = gr.Textbox(label="Cash Balance ($ USD)", interactive=False)
+                cash_inr_card = gr.Textbox(label="Cash Balance (₹ INR)", interactive=False)
+                realized_usd_card = gr.Textbox(label="Realized PnL ($)", interactive=False)
+                realized_inr_card = gr.Textbox(label="Realized PnL (₹)", interactive=False)
+                unrealized_usd_card = gr.Textbox(label="Unrealized MTM PnL ($)", interactive=False)
+                winrate_card = gr.Textbox(label="Win Rate %", interactive=False)
+
+            gr.Markdown("#### 📋 Open Active Positions (Mark-to-Market)")
+            positions_df_output = gr.Dataframe(interactive=False, label="Live Active Positions")
+
+            gr.Markdown("#### 📜 Executed Trade History & Audit Ledger")
+            history_df_output = gr.Dataframe(interactive=False, label="Trade Execution History")
+
+        # -------------------------------------------------------------
+        # TAB 3: Global Macro Regime Matrix
+        # -------------------------------------------------------------
+        with gr.TabItem("🌍 Global Macro Regime & Systemic Risk"):
+            gr.Markdown("### 🌍 Cross-Asset Macro Factor Matrix (VIX, Crude, Gold, Dollar Liquidity)")
+            macro_btn = gr.Button("🔄 Refresh Macro Risk Matrix", variant="primary")
+            macro_output = gr.Markdown()
+
+        # -------------------------------------------------------------
+        # TAB 4: Financial NLP News Sentiment
+        # -------------------------------------------------------------
+        with gr.TabItem("📰 Financial NLP & News Sentiment"):
+            gr.Markdown("### 📰 Live Media Narrative & Financial News Sentiment")
+            news_btn = gr.Button("🔄 Scrape & Score Live News Headlines", variant="primary")
+            news_summary_output = gr.Markdown()
+            news_df_output = gr.Dataframe(interactive=False, label="Scored Financial News Feed")
+
+        # -------------------------------------------------------------
+        # TAB 5: Corporate Credit Solvency (Altman Z & Merton)
+        # -------------------------------------------------------------
+        with gr.TabItem("🛡️ Corporate Credit Solvency (Altman Z & Merton)"):
+            gr.Markdown("### 🛡️ Corporate Balance Sheet Credit Risk Audit")
+            credit_btn = gr.Button("🔄 Run Credit Solvency Audit", variant="primary")
+            credit_output = gr.Markdown()
+
+        # -------------------------------------------------------------
+        # TAB 6: Fractional Differentiation (López de Prado)
+        # -------------------------------------------------------------
+        with gr.TabItem("🔬 Fractional Differentiation (Memory Engine)"):
+            gr.Markdown("### 🔬 Marcos López de Prado's Memory-Preserving Fractional Differentiation")
+            frac_btn = gr.Button("🔄 Compute Optimal d* & ADF Test Table", variant="primary")
+            frac_card_output = gr.Markdown()
+            frac_df_output = gr.Dataframe(interactive=False, label="ADF Test & Memory Correlation Table")
+
+    # Outputs grouping for Tab 1
+    tab1_outputs = [
         price_output,
         order_book_output,
         pressure_output,
@@ -424,32 +634,82 @@ with gr.Blocks(title="StockTrend AI | Pure Python Real-Time Terminal", theme=cus
         chart_output,
         horizon_output,
         trade_output,
-        credit_output,
         consensus_output,
+        paper_price,
+        paper_sl,
+        paper_tp,
+        paper_qty,
     ]
 
-    # Wire user button click
+    # Wire Tab 1 execution
     run_btn.click(
         fn=analyze_asset_and_order_book,
         inputs=[asset_dd, custom_input, model_dd, tf_dd, overlay_dd],
-        outputs=all_outputs,
+        outputs=tab1_outputs,
     )
-
-    # Initial load event
     demo.load(
         fn=analyze_asset_and_order_book,
         inputs=[asset_dd, custom_input, model_dd, tf_dd, overlay_dd],
-        outputs=all_outputs,
+        outputs=tab1_outputs,
     )
 
-    # Real-Time Timer: Auto-refreshes every 4 seconds when auto_refresh_chk is checked
+    # Wire Tab 2 Paper Trading
+    paper_outputs = [
+        exec_status_msg,
+        cash_usd_card,
+        cash_inr_card,
+        realized_usd_card,
+        realized_inr_card,
+        unrealized_usd_card,
+        winrate_card,
+        positions_df_output,
+        history_df_output,
+    ]
+    exec_btn.click(
+        fn=execute_paper_order,
+        inputs=[asset_dd, custom_input, paper_action, paper_qty, paper_price, paper_sl, paper_tp],
+        outputs=paper_outputs,
+    )
+    close_btn.click(
+        fn=close_paper_position,
+        inputs=[asset_dd, custom_input, paper_price],
+        outputs=paper_outputs,
+    )
+    refresh_btn.click(
+        fn=refresh_paper_portfolio,
+        inputs=[],
+        outputs=paper_outputs[1:],
+    )
+    demo.load(
+        fn=refresh_paper_portfolio,
+        inputs=[],
+        outputs=paper_outputs[1:],
+    )
+
+    # Wire Tab 3 Macro
+    macro_btn.click(fn=load_macro_regime, inputs=[], outputs=[macro_output])
+    demo.load(fn=load_macro_regime, inputs=[], outputs=[macro_output])
+
+    # Wire Tab 4 News Sentiment
+    news_btn.click(fn=load_news_sentiment, inputs=[asset_dd, custom_input], outputs=[news_summary_output, news_df_output])
+    demo.load(fn=load_news_sentiment, inputs=[asset_dd, custom_input], outputs=[news_summary_output, news_df_output])
+
+    # Wire Tab 5 Credit Risk
+    credit_btn.click(fn=load_credit_risk, inputs=[asset_dd, custom_input], outputs=[credit_output])
+    demo.load(fn=load_credit_risk, inputs=[asset_dd, custom_input], outputs=[credit_output])
+
+    # Wire Tab 6 Fractional Diff
+    frac_btn.click(fn=load_fractional_diff, inputs=[asset_dd, custom_input], outputs=[frac_card_output, frac_df_output])
+    demo.load(fn=load_fractional_diff, inputs=[asset_dd, custom_input], outputs=[frac_card_output, frac_df_output])
+
+    # Real-Time Timer: Auto-refreshes Tab 1 every 4 seconds
     timer = gr.Timer(value=4.0, active=True)
     timer.tick(
         fn=analyze_asset_and_order_book,
         inputs=[asset_dd, custom_input, model_dd, tf_dd, overlay_dd],
-        outputs=all_outputs,
+        outputs=tab1_outputs,
     )
 
 
 if __name__ == "__main__":
-    demo.launch(server_name="127.0.0.1", server_port=7860, share=False)
+    demo.launch(server_name="127.0.0.1", server_port=7860, share=False, theme=custom_theme)

@@ -1,0 +1,24 @@
+{
+  "cash_usd": 88720.5,
+  "cash_inr": 1000000.0,
+  "positions": {
+    "NVDA": {
+      "trade_id": "TRADE_99634",
+      "ticker": "NVDA",
+      "action": "BUY",
+      "quantity": 50,
+      "entry_price": 225.57,
+      "current_price": 228.0,
+      "cost_basis": 11278.5,
+      "currency": "$",
+      "stop_loss": 215.0,
+      "take_profit": 240.0,
+      "entry_time": "2026-09-09 16:38:19",
+      "unrealized_pnl": 121.5,
+      "unrealized_pnl_pct": 1.08,
+      "notes": "Manual Paper Order"
+    }
+  },
+  "history": [],
+  "last_updated": "2026-09-09 16:38:19"
+}
