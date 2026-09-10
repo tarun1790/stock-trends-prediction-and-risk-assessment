@@ -7,7 +7,7 @@ Features:
 4. Zero synthetic jitter during closed market hours.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import urllib.request
 import json
 import time
@@ -121,15 +121,30 @@ class MarketSessionTracker:
         }
 
 
+_BOOK_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
+
+
 class RealTimeOrderBookProvider:
     """
     Fetches genuine real-time Level-2 order books and recent executed buy/sell trade prints.
     """
 
-    @staticmethod
-    def get_order_book_and_trades(ticker: str) -> Dict[str, Any]:
+    @classmethod
+    def get_order_book_and_trades(cls, ticker: str, force_refresh: bool = False) -> Dict[str, Any]:
+        global _BOOK_CACHE
         clean = ticker.strip().upper()
         session = MarketSessionTracker.get_session_info(clean)
+
+        # Fast In-Memory Cache Check: 120s if market is closed, 2.5s if market is open
+        ttl = 2.5 if session.get("is_open", False) else 120.0
+        now_ts = time.time()
+        if not force_refresh and clean in _BOOK_CACHE:
+            cached_ts, cached_res = _BOOK_CACHE[clean]
+            if (now_ts - cached_ts) < ttl:
+                # Update dynamic session timestamp while keeping cached order book
+                res_copy = dict(cached_res)
+                res_copy["session"] = session
+                return res_copy
 
         # 1. CRYPTO: Real Live Binance Level 2 Order Book & Trades
         if any(c in clean for c in ["BTC", "ETH", "SOL", "COIN", "DOGE"]):
@@ -187,7 +202,7 @@ class RealTimeOrderBookProvider:
 
                 curr_p = bids[0]["price"] if bids else 0.0
 
-                return {
+                res = {
                     "ticker": clean,
                     "session": session,
                     "current_price": curr_p,
@@ -202,6 +217,8 @@ class RealTimeOrderBookProvider:
                     },
                     "recent_trades": trades,
                 }
+                _BOOK_CACHE[clean] = (now_ts, res)
+                return res
             except Exception:
                 pass
 
@@ -272,7 +289,7 @@ class RealTimeOrderBookProvider:
                 else f"Official Closing Cross Trade Tape (Session Ended {session['trading_hours']})"
             )
 
-            return {
+            res = {
                 "ticker": clean,
                 "session": session,
                 "current_price": curr_price,
@@ -287,6 +304,8 @@ class RealTimeOrderBookProvider:
                 },
                 "recent_trades": recent_trades,
             }
+            _BOOK_CACHE[clean] = (now_ts, res)
+            return res
 
         except Exception as ex:
             return {

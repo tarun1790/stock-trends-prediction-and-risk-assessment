@@ -12,6 +12,11 @@ from stock_predict.config import DATA_DIR, PAPER_SECTORS
 from stock_predict.data.sample_data import generate_sector_historical_data
 
 
+import time
+
+_MEM_CACHE: dict = {}
+
+
 class DataLoader:
     """
     Unified Data Loader supporting live market downloads, custom CSV files,
@@ -84,9 +89,11 @@ class DataLoader:
         end_date: Optional[str] = None,
         period: Optional[str] = "5y",
         interval: str = "1d",
+        force_refresh: bool = False,
+        cache_ttl_seconds: Optional[float] = None,
     ) -> pd.DataFrame:
         """
-        Fetch live or historical stock data from Yahoo Finance or Binance.
+        Fetch live or historical stock data from Yahoo Finance or Binance with in-memory TTL caching.
 
         Args:
             ticker: Stock symbol (e.g. 'AAPL', 'MSFT', 'NVDA', 'SPY', 'BTC-USD').
@@ -94,11 +101,28 @@ class DataLoader:
             end_date: End date string (YYYY-MM-DD).
             period: Lookback period string (e.g. '1y', '5y', '10y', 'max').
             interval: Bar size ('1d', '1wk', '1h').
+            force_refresh: Bypass in-memory cache if True.
+            cache_ttl_seconds: Custom TTL duration in seconds.
 
         Returns:
             Standardized DataFrame with ['Open', 'High', 'Low', 'Close', 'Volume'].
         """
         clean_ticker = ticker.strip().upper()
+        cache_key = f"{clean_ticker}_{interval}_{start_date}_{period}"
+        now_ts = time.time()
+
+        # Determine optimal cache TTL based on asset type
+        if cache_ttl_seconds is None:
+            is_crypto = any(c in clean_ticker for c in ["BTC", "ETH", "SOL", "USDT"])
+            cache_ttl = 4.0 if is_crypto else 10.0
+        else:
+            cache_ttl = cache_ttl_seconds
+
+        # Fast In-Memory Cache Check (< 0.05ms)
+        if not force_refresh and cache_key in _MEM_CACHE:
+            last_time, cached_df = _MEM_CACHE[cache_key]
+            if (now_ts - last_time) < cache_ttl:
+                return cached_df.copy()
 
         # Direct zero-auth high-speed Binance feed for Crypto
         if clean_ticker in ["BTC-USD", "BTCUSDT", "ETH-USD", "ETHUSDT", "BTC", "ETH"]:
@@ -106,6 +130,7 @@ class DataLoader:
                 df = self.fetch_binance_live_klines(symbol=clean_ticker, interval=interval, limit=365)
                 cache_file = self.cache_dir / f"{clean_ticker}_{interval}.csv"
                 df.to_csv(cache_file)
+                _MEM_CACHE[cache_key] = (now_ts, df)
                 return df
             except Exception:
                 pass  # Fallback to Yahoo Finance below
@@ -137,13 +162,18 @@ class DataLoader:
                 raw_df["Volume"].values if "Volume" in raw_df.columns else 0
             )
 
-            # Persist cache
+            # Persist memory & disk cache
+            _MEM_CACHE[cache_key] = (now_ts, df)
             df.to_csv(cache_file)
             return df
 
         except Exception as ex:
+            if cache_key in _MEM_CACHE:
+                return _MEM_CACHE[cache_key][1].copy()
             if cache_file.exists():
-                return pd.read_csv(cache_file, parse_dates=[0], index_col=0)
+                disk_df = pd.read_csv(cache_file, parse_dates=[0], index_col=0)
+                _MEM_CACHE[cache_key] = (now_ts, disk_df)
+                return disk_df
             raise RuntimeError(f"Failed to fetch market data for '{ticker}': {ex}")
 
     def load_custom_csv(

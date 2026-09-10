@@ -12,10 +12,21 @@ import numpy as np
 import pandas as pd
 
 
+def _fast_wma(vals: np.ndarray, period: int) -> np.ndarray:
+    """Vectorized Weighted Moving Average via 1D Convolution."""
+    if len(vals) < period:
+        return np.full_like(vals, np.nan)
+    weights = np.arange(1, period + 1, dtype=float)
+    weights /= np.sum(weights)
+    conv = np.convolve(vals, weights[::-1], mode="full")[: len(vals)]
+    conv[: period - 1] = np.nan
+    return conv
+
+
 def compute_supertrend(
     high: pd.Series, low: pd.Series, close: pd.Series, period: int = 10, multiplier: float = 3.0
 ) -> Tuple[pd.Series, pd.Series]:
-    """SuperTrend Indicator (Trend + Dynamic Trailing Stop)."""
+    """SuperTrend Indicator (Trend + Dynamic Trailing Stop) - Vectorized array indexing."""
     prev_close = close.shift(1)
     tr = pd.concat(
         [high - low, (high - prev_close).abs(), (low - prev_close).abs()], axis=1
@@ -23,54 +34,58 @@ def compute_supertrend(
     atr = tr.rolling(window=period, min_periods=period).mean()
 
     hl2 = (high + low) / 2.0
-    upperband = hl2 + (multiplier * atr)
-    lowerband = hl2 - (multiplier * atr)
+    upperband = (hl2 + (multiplier * atr)).values
+    lowerband = (hl2 - (multiplier * atr)).values
+    close_vals = close.values
 
-    supertrend = pd.Series(index=close.index, dtype=float)
-    direction = pd.Series(index=close.index, dtype=int)
+    n = len(close_vals)
+    st_vals = np.empty(n, dtype=float)
+    st_vals[:] = np.nan
+    dir_vals = np.ones(n, dtype=int)
 
     in_uptrend = True
-    for i in range(period, len(close)):
-        curr_c = close.iloc[i]
-        curr_upper = upperband.iloc[i]
-        curr_lower = lowerband.iloc[i]
+    for i in range(period, n):
+        curr_c = close_vals[i]
+        curr_upper = upperband[i]
+        curr_lower = lowerband[i]
 
         if in_uptrend:
             if curr_c < curr_lower:
                 in_uptrend = False
-                supertrend.iloc[i] = curr_upper
-                direction.iloc[i] = -1
+                st_vals[i] = curr_upper
+                dir_vals[i] = -1
             else:
-                supertrend.iloc[i] = max(curr_lower, supertrend.iloc[i - 1] if i > period else curr_lower)
-                direction.iloc[i] = 1
+                prev_st = st_vals[i - 1] if i > period and not np.isnan(st_vals[i - 1]) else curr_lower
+                st_vals[i] = max(curr_lower, prev_st)
+                dir_vals[i] = 1
         else:
             if curr_c > curr_upper:
                 in_uptrend = True
-                supertrend.iloc[i] = curr_lower
-                direction.iloc[i] = 1
+                st_vals[i] = curr_lower
+                dir_vals[i] = 1
             else:
-                supertrend.iloc[i] = min(curr_upper, supertrend.iloc[i - 1] if i > period else curr_upper)
-                direction.iloc[i] = -1
+                prev_st = st_vals[i - 1] if i > period and not np.isnan(st_vals[i - 1]) else curr_upper
+                st_vals[i] = min(curr_upper, prev_st)
+                dir_vals[i] = -1
 
-    return supertrend.ffill().bfill(), direction.fillna(1)
+    st_series = pd.Series(st_vals, index=close.index).ffill().bfill()
+    dir_series = pd.Series(dir_vals, index=close.index).fillna(1)
+    return st_series, dir_series
 
 
 def compute_hull_ma(close: pd.Series, period: int = 9) -> pd.Series:
-    """Hull Moving Average (HMA) - Ultra low lag."""
-    half_length = int(period / 2)
-    sqrt_length = int(np.sqrt(period))
+    """Hull Moving Average (HMA) - Ultra low lag, vectorized via 1D convolutions."""
+    vals = close.values.astype(float)
+    half_length = max(int(period / 2), 1)
+    sqrt_length = max(int(np.sqrt(period)), 1)
 
-    wma_half = close.rolling(half_length).apply(
-        lambda x: np.dot(x, np.arange(1, half_length + 1)) / np.sum(np.arange(1, half_length + 1)), raw=True
-    )
-    wma_full = close.rolling(period).apply(
-        lambda x: np.dot(x, np.arange(1, period + 1)) / np.sum(np.arange(1, period + 1)), raw=True
-    )
+    wma_half = _fast_wma(vals, half_length)
+    wma_full = _fast_wma(vals, period)
     raw_hma = 2.0 * wma_half - wma_full
-    hma = raw_hma.rolling(sqrt_length).apply(
-        lambda x: np.dot(x, np.arange(1, sqrt_length + 1)) / np.sum(np.arange(1, sqrt_length + 1)), raw=True
-    )
-    return hma.ffill().bfill()
+    hma_vals = _fast_wma(raw_hma, sqrt_length)
+
+    hma_s = pd.Series(hma_vals, index=close.index)
+    return hma_s.ffill().bfill()
 
 
 def compute_vwma(close: pd.Series, volume: pd.Series, period: int = 20) -> pd.Series:
@@ -133,6 +148,9 @@ def compute_26_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
     Computes TradingView's official 26 technical indicators:
     15 Moving Averages and 11 Oscillators, with buy/neutral/sell ratings and scores.
     """
+    if len(df) > 350:
+        df = df.iloc[-350:]
+
     close = df["Close"].copy()
     high = df["High"].copy()
     low = df["Low"].copy()
