@@ -85,7 +85,10 @@ class FractionalDifferentiator:
                 continue
 
             # Run Augmented Dickey-Fuller Test
-            adf_res = adfuller(diff_s.values, maxlag=1, regression="c", autolag=None)
+            try:
+                adf_res = adfuller(diff_s.values, maxlag=1, regression="c", autolag=None, result_object=False)
+            except TypeError:
+                adf_res = adfuller(diff_s.values, maxlag=1, regression="c", autolag=None)
             adf_stat = float(adf_res[0])
             p_val = float(adf_res[1])
             is_stationary = p_val < 0.05

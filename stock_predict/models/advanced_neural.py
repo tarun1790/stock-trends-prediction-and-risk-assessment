@@ -32,6 +32,13 @@ class Chomp1d(nn.Module):
         return x[:, :, :-self.chomp_size].contiguous() if self.chomp_size > 0 else x
 
 
+def _apply_weight_norm(module: nn.Module) -> nn.Module:
+    """Applies weight normalization using modern parametrizations API if available."""
+    if hasattr(nn.utils, "parametrizations") and hasattr(nn.utils.parametrizations, "weight_norm"):
+        return nn.utils.parametrizations.weight_norm(module)
+    return nn.utils.weight_norm(module)
+
+
 class TemporalBlock(nn.Module):
     """Residual Dilated Causal Convolutional Block for TCN."""
     def __init__(
@@ -45,7 +52,7 @@ class TemporalBlock(nn.Module):
         dropout: float = 0.2,
     ):
         super().__init__()
-        self.conv1 = nn.utils.weight_norm(
+        self.conv1 = _apply_weight_norm(
             nn.Conv1d(
                 n_inputs,
                 n_outputs,
@@ -59,7 +66,7 @@ class TemporalBlock(nn.Module):
         self.relu1 = nn.GELU()
         self.dropout1 = nn.Dropout(dropout)
 
-        self.conv2 = nn.utils.weight_norm(
+        self.conv2 = _apply_weight_norm(
             nn.Conv1d(
                 n_outputs,
                 n_outputs,

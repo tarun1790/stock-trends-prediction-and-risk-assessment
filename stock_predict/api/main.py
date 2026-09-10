@@ -77,11 +77,30 @@ from stock_predict.api.schemas import (
     BacktestResponse,
 )
 
+from fastapi.responses import JSONResponse, FileResponse
+from fastapi import Request
+
+_START_TIME = time.time()
+
 app = FastAPI(
     title="StockTrend AI | Quantitative Intelligence Platform",
     description="Real-time Financial Machine Learning Platform with Institutional Trade Execution Analytics",
     version="3.0.0",
 )
+
+@app.exception_handler(Exception)
+async def production_exception_handler(request: Request, exc: Exception):
+    """Global structured JSON exception handler preventing unhandled 500 HTML crashes."""
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "error",
+            "error_type": exc.__class__.__name__,
+            "message": str(exc) or "Internal server error occurred",
+            "path": str(request.url.path),
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        },
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -96,6 +115,48 @@ UI_DIR = Path(__file__).resolve().parent.parent / "ui" / "static"
 
 # In-memory cache for ultra-low latency response (<10ms)
 _DATA_CACHE = {}
+
+
+@app.get("/api/diagnostics")
+def get_system_diagnostics():
+    """
+    Production-grade System Telemetry: GPU VRAM, host RAM, process health, and active caches.
+    """
+    import psutil
+    cuda_avail = torch.cuda.is_available()
+    gpu_stats = {}
+    if cuda_avail:
+        dev_idx = 0
+        props = torch.cuda.get_device_properties(dev_idx)
+        gpu_stats = {
+            "device_name": props.name,
+            "allocated_mb": round(torch.cuda.memory_allocated(dev_idx) / (1024 * 1024), 2),
+            "reserved_mb": round(torch.cuda.memory_reserved(dev_idx) / (1024 * 1024), 2),
+            "total_vram_mb": round(props.total_memory / (1024 * 1024), 2),
+            "utilization_pct": round(
+                (torch.cuda.memory_allocated(dev_idx) / max(props.total_memory, 1)) * 100.0, 2
+            ),
+        }
+
+    vm = psutil.virtual_memory()
+    proc = psutil.Process()
+    proc_mem = proc.memory_info()
+
+    return {
+        "status": "healthy",
+        "system_status": "PRODUCTION_OPERATIONAL",
+        "uptime_seconds": round(time.time() - _START_TIME, 1),
+        "cuda_gpu": gpu_stats if cuda_avail else {"status": "CPU_EXECUTION"},
+        "host_ram": {
+            "total_gb": round(vm.total / (1024**3), 2),
+            "available_gb": round(vm.available / (1024**3), 2),
+            "system_used_pct": vm.percent,
+            "process_rss_mb": round(proc_mem.rss / (1024 * 1024), 2),
+        },
+        "cpu_count": psutil.cpu_count(logical=True),
+        "active_models_count": len(MODEL_REGISTRY) + 1,
+        "in_memory_cache_entries": len(_DATA_CACHE),
+    }
 
 
 # Comprehensive Global, Indian & Forex Asset Catalog

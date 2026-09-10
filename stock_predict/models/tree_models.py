@@ -108,6 +108,7 @@ class AdaBoostModel(BaseModelWrapper):
             n_estimators=n_estimators,
             learning_rate=learning_rate,
             random_state=random_state,
+            algorithm="SAMME",
             **kwargs,
         )
 
