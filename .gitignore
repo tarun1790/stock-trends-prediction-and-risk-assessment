@@ -10,3 +10,7 @@ ENV/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# Documentation & Export Artifacts
+*.pdf
+StockTrend_AI_Complete_Project_Guide.pdf
