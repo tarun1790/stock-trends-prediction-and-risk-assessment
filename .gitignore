@@ -13,4 +13,8 @@ htmlcov/
 
 # Documentation & Export Artifacts
 *.pdf
+*.html
+!index.html
+!docs/index.html
 StockTrend_AI_Complete_Project_Guide.pdf
+StockTrend_AI_System_Design_Specification.pdf
