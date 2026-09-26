@@ -420,14 +420,14 @@ document.addEventListener("DOMContentLoaded", () => {
       const tp = data.trade_plan;
       document.getElementById("tp-action-badge").textContent = tp.action;
       document.getElementById("tp-action-badge").className = `px-3 py-1 rounded text-xs font-black uppercase ${tp.action_badge}`;
-      const cSym = currentStockOverviewData?.currency || "$";
+      const cSym = data.currency || currentStockOverviewData?.currency || "$";
       document.getElementById("tp-entry-price").textContent = `${cSym}${tp.entry_price.toFixed(2)}`;
       document.getElementById("tp-stop-loss").textContent = `${cSym}${tp.stop_loss.toFixed(2)}`;
       document.getElementById("tp-stop-loss-pct").textContent = `${tp.stop_loss_pct}% Max Risk`;
       document.getElementById("tp-tp1").textContent = `${cSym}${tp.take_profit_1.toFixed(2)}`;
-      document.getElementById("tp-tp1-pct").textContent = `+${tp.take_profit_1_pct}% (2x ATR)`;
+      document.getElementById("tp-tp1-pct").textContent = `${tp.take_profit_1_pct >= 0 ? "+" : ""}${tp.take_profit_1_pct}% (Consensus)`;
       document.getElementById("tp-tp2").textContent = `${cSym}${tp.take_profit_2.toFixed(2)}`;
-      document.getElementById("tp-tp2-pct").textContent = `+${tp.take_profit_2_pct}% (3.8x ATR)`;
+      document.getElementById("tp-tp2-pct").textContent = `${tp.take_profit_2_pct >= 0 ? "+" : ""}${tp.take_profit_2_pct}% (Extended)`;
       document.getElementById("tp-rr").textContent = tp.risk_reward_ratio;
       document.getElementById("tp-kelly").textContent = `${tp.kelly_position_size_pct}%`;
 
@@ -481,6 +481,11 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
         })
         .join("");
+
+      // 5. Multi-Theory Valuation & Financial Models
+      if (data.theories && data.multi_theory_consensus) {
+        renderMultiTheoryTable(data.theories, data.multi_theory_consensus, cSym);
+      }
     } catch (e) {
       console.warn("Could not load trade plan:", e);
     }
@@ -1254,8 +1259,12 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (res.ok) {
         const data = await res.json();
-        renderMultiHorizonGrid(data.forecasts);
+        const cSym = data.currency || currentStockOverviewData?.currency || "$";
+        renderMultiHorizonGrid(data.forecasts, cSym);
         renderMultiHorizonChart(data.forecasts);
+        if (data.theories && data.multi_theory_consensus) {
+          renderMultiTheoryTable(data.theories, data.multi_theory_consensus, cSym);
+        }
       } else if (currentMultiHorizonData) {
         renderMultiHorizonGrid(currentMultiHorizonData);
         renderMultiHorizonChart(currentMultiHorizonData);
@@ -1272,7 +1281,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function renderMultiHorizonGrid(fcasts) {
+  function renderMultiHorizonGrid(fcasts, currency = "$") {
     const grid = document.getElementById("multi-horizon-grid");
     const horizons = Object.keys(fcasts);
 
@@ -1282,16 +1291,17 @@ document.addEventListener("DOMContentLoaded", () => {
         const isUp = item.trend === "UP";
         const badgeColor = isUp ? "text-emerald-400 bg-black border-emerald-800" : "text-rose-400 bg-black border-rose-800";
         const returnSign = item.expected_return_pct >= 0 ? "+" : "";
+        const targetStr = item.target_price ? `${currency}${item.target_price.toFixed(2)}` : "--";
 
         return `
         <div class="terminal-card p-3 flex flex-col justify-between">
-          <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs uppercase font-bold text-zinc-400 font-mono">${item.horizon_days}-Day Horizon</span>
             <span class="text-[10px] font-mono font-extrabold px-1.5 py-0.5 rounded border ${badgeColor}">${item.trend}</span>
           </div>
-          <div class="my-2">
-            <p class="text-2xl font-bold ${isUp ? "text-emerald-400" : "text-rose-400"} font-mono">${returnSign}${item.expected_return_pct}%</p>
-            <p class="text-[10px] text-zinc-500 font-mono">Expected Magnitude</p>
+          <div class="my-1.5">
+            <p class="text-xl font-black text-white font-mono">${targetStr}</p>
+            <p class="text-xs font-bold ${isUp ? "text-emerald-400" : "text-rose-400"} font-mono">${returnSign}${item.expected_return_pct}% Target</p>
           </div>
           <div class="mt-2 space-y-1">
             <div class="flex justify-between text-[10px] text-zinc-400 font-mono">
@@ -1340,6 +1350,59 @@ document.addEventListener("DOMContentLoaded", () => {
         },
       },
     });
+  }
+
+  function renderMultiTheoryTable(theories, consensus, currency = "$") {
+    const tbody = document.getElementById("multi-theory-table-body");
+    const badge = document.getElementById("multi-theory-consensus-badge");
+    if (!tbody || !theories) return;
+
+    if (badge && consensus) {
+      const cSign = consensus.expected_return_pct >= 0 ? "+" : "";
+      badge.textContent = `Consensus Target: ${currency}${consensus.target_price.toFixed(2)} (${cSign}${consensus.expected_return_pct.toFixed(2)}%)`;
+      badge.className = `px-2.5 py-1 rounded text-xs font-mono font-bold self-start sm:self-auto ${
+        consensus.expected_return_pct >= 0 ? "bg-emerald-950/60 border border-emerald-500/40 text-emerald-400" : "bg-rose-950/60 border border-rose-500/40 text-rose-400"
+      }`;
+    }
+
+    const rows = theories.map((t) => {
+      const isPos = t.expected_return_pct >= 0;
+      const retColor = isPos ? "text-emerald-400 font-bold" : "text-rose-400 font-bold";
+      const retSign = isPos ? "+" : "";
+      return `
+        <tr class="hover:bg-zinc-900/60 transition">
+          <td class="p-2 font-bold text-white flex items-center gap-1.5">
+            <span class="w-1.5 h-1.5 rounded-full ${isPos ? "bg-emerald-400" : "bg-rose-400"}"></span>
+            ${t.theory_name}
+          </td>
+          <td class="p-2 text-center font-bold text-white">${currency}${t.target_price.toFixed(2)}</td>
+          <td class="p-2 text-center ${retColor}">${retSign}${t.expected_return_pct.toFixed(2)}%</td>
+          <td class="p-2 text-center text-zinc-400 text-[10px] uppercase">${t.horizon}</td>
+          <td class="p-2 text-zinc-300 text-[11px] leading-tight">${t.methodology}</td>
+        </tr>
+      `;
+    });
+
+    if (consensus) {
+      const isPos = consensus.expected_return_pct >= 0;
+      const retColor = isPos ? "text-emerald-400 font-extrabold" : "text-rose-400 font-extrabold";
+      const retSign = isPos ? "+" : "";
+      rows.push(`
+        <tr class="bg-zinc-900 font-semibold border-t-2 border-zinc-700">
+          <td class="p-2.5 text-white font-bold flex items-center gap-1.5">
+            <span class="text-amber-400 font-bold">★</span> Synthesized Multi-Theory Target
+          </td>
+          <td class="p-2.5 text-center font-extrabold text-white text-sm">${currency}${consensus.target_price.toFixed(2)}</td>
+          <td class="p-2.5 text-center ${retColor} text-sm">${retSign}${consensus.expected_return_pct.toFixed(2)}%</td>
+          <td class="p-2.5 text-center text-amber-400 text-[10px] uppercase font-bold">Weighted Synthesis</td>
+          <td class="p-2.5 text-zinc-300 text-[11px]">
+            <span class="font-bold text-white">${consensus.confidence}% Confidence</span> &bull; Primary Bias: <span class="${isPos ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}">${consensus.primary_bias}</span> &bull; Inverse-variance Bayesian aggregation
+          </td>
+        </tr>
+      `);
+    }
+
+    tbody.innerHTML = rows.join("");
   }
 
   // -----------------------------------------------------------------------

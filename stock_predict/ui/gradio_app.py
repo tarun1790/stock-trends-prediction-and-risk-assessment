@@ -184,13 +184,17 @@ def analyze_asset_and_order_book(
 
     analysis = ensemble.analyze_asset(df, ticker=ticker)
     forecasts = analysis["forecasts"]
+    theories_list = analysis.get("theories", [])
+    synth_consensus = analysis.get("multi_theory_consensus", {})
+    risk_metrics = analysis.get("risk_metrics", {})
+
     h1 = forecasts.get("horizon_1d", {})
     h5 = forecasts.get("horizon_5d", {})
     h20 = forecasts.get("horizon_20d", {})
 
-    p1 = round(curr_price * (1.0 + h1.get("expected_return_pct", 0.14) / 100.0), 2)
-    p5 = round(curr_price * (1.0 + h5.get("expected_return_pct", 0.45) / 100.0), 2)
-    p20 = round(curr_price * (1.0 + h20.get("expected_return_pct", 1.20) / 100.0), 2)
+    p1 = h1.get("target_price", round(curr_price * (1.0 + h1.get("expected_return_pct", 0.0) / 100.0), 2))
+    p5 = h5.get("target_price", round(curr_price * (1.0 + h5.get("expected_return_pct", 0.0) / 100.0), 2))
+    p20 = h20.get("target_price", round(curr_price * (1.0 + h20.get("expected_return_pct", 0.0) / 100.0), 2))
 
     # Plotly Candlesticks
     tf_days_map = {"1M": 22, "3M": 66, "6M": 132, "1Y": 252}
@@ -260,18 +264,36 @@ def analyze_asset_and_order_book(
     horizon_summary = f"""
     | Forecast Horizon | Predicted Trend | Expected Return | Target Price | Selective Model Confidence |
     | :--- | :---: | :---: | :---: | :---: |
-    | **1-Day Target** | `{"UP ▲" if h1.get("trend")=="UP" else "DOWN ▼"}` | `{h1.get("expected_return_pct", 0.14):+.2f}%` | **`{currency}{p1:,.2f}`** | `{h1.get("confidence_up_pct", 75.0)}%` |
-    | **5-Day Target** | `{"UP ▲" if h5.get("trend")=="UP" else "DOWN ▼"}` | `{h5.get("expected_return_pct", 0.45):+.2f}%` | **`{currency}{p5:,.2f}`** | `{h5.get("confidence_up_pct", 73.0)}%` |
-    | **20-Day Target**| `{"UP ▲" if h20.get("trend")=="UP" else "DOWN ▼"}` | `{h20.get("expected_return_pct", 1.20):+.2f}%` | **`{currency}{p20:,.2f}`** | `{h20.get("confidence_up_pct", 70.0)}%` |
+    | **1-Day Target** | `{"UP ▲" if h1.get("trend")=="UP" else "DOWN ▼"}` | `{h1.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p1:,.2f}`** | `{h1.get("confidence_up_pct", 75.0)}%` |
+    | **5-Day Target** | `{"UP ▲" if h5.get("trend")=="UP" else "DOWN ▼"}` | `{h5.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p5:,.2f}`** | `{h5.get("confidence_up_pct", 73.0)}%` |
+    | **20-Day Target**| `{"UP ▲" if h20.get("trend")=="UP" else "DOWN ▼"}` | `{h20.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p20:,.2f}`** | `{h20.get("confidence_up_pct", 70.0)}%` |
     """
+
+    # Multi-Theory Valuation Markdown
+    theories_md = f"""
+    | Financial Theory / Quantitative Model | Target Price | Expected Return | Horizon | Methodology & Signal |
+    | :--- | :---: | :---: | :---: | :--- |
+    """
+    for t in theories_list:
+        t_price = t.get("target_price", curr_price)
+        t_ret = t.get("expected_return_pct", 0.0)
+        ret_str = f"+{t_ret:.2f}%" if t_ret >= 0 else f"{t_ret:.2f}%"
+        theories_md += f"| **{t.get('theory_name')}** | **`{currency}{t_price:,.2f}`** | `{ret_str}` | `{t.get('horizon')}` | {t.get('methodology')} |\n"
+
+    synth_target = synth_consensus.get("target_price", curr_price)
+    synth_ret = synth_consensus.get("expected_return_pct", 0.0)
+    synth_ret_str = f"+{synth_ret:.2f}%" if synth_ret >= 0 else f"{synth_ret:.2f}%"
+    theories_md += f"| **★ Synthesized Consensus Target** | **`{currency}{synth_target:,.2f}`** | **`{synth_ret_str}`** | `Weighted Synthesis` | **Confidence: {synth_consensus.get('confidence', 85.0)}%** &bull; Bias: `{synth_consensus.get('primary_bias', 'NEUTRAL')}` |\n"
 
     # Trade Plan
     atr_series = compute_atr(df["High"], df["Low"], df["Close"], period=14).dropna()
     atr_val = float(atr_series.iloc[-1]) if len(atr_series) > 0 else (curr_price * 0.02)
-    stop_loss = round(curr_price - (1.8 * atr_val) if is_bullish else curr_price + (1.8 * atr_val), 2)
-    target_1 = round(curr_price + (2.2 * atr_val) if is_bullish else curr_price - (2.2 * atr_val), 2)
-    target_2 = round(curr_price + (3.8 * atr_val) if is_bullish else curr_price - (3.8 * atr_val), 2)
-    risk_reward = "1 : 1.22 (TP1) / 1 : 2.11 (TP2)"
+    stop_loss = risk_metrics.get("stop_loss", round(curr_price - (1.8 * atr_val) if is_bullish else curr_price + (1.8 * atr_val), 2))
+    target_1 = risk_metrics.get("take_profit_1", round(curr_price + (2.2 * atr_val) if is_bullish else curr_price - (2.2 * atr_val), 2))
+    target_2 = risk_metrics.get("take_profit_2", round(curr_price + (3.8 * atr_val) if is_bullish else curr_price - (3.8 * atr_val), 2))
+    risk_amount = max(abs(curr_price - stop_loss), 1e-4)
+    reward_amount = abs(target_1 - curr_price)
+    rr_ratio = f"1 : {round(reward_amount / risk_amount, 2)}"
     action_rec = "STRONG BUY" if (is_bullish and confidence >= 85) else ("BUY" if is_bullish else ("STRONG SELL" if confidence <= 25 else "SELL"))
 
     trade_plan_text = f"""
@@ -279,10 +301,10 @@ def analyze_asset_and_order_book(
     | :--- | :---: | :--- |
     | **Action Recommendation** | **`{action_rec}`** | Algorithmic Confluence of 26 Alpha Indicators |
     | **Optimal Entry** | `{currency}{curr_price:,.2f}` | Market Price Anchor |
-    | **ATR Stop Loss** | **`{currency}{stop_loss:,.2f}`** | Volatility Risk Ceiling (1.8x ATR) |
-    | **Take Profit 1** | **`{currency}{target_1:,.2f}`** | First Target (2.2x ATR) |
-    | **Take Profit 2** | **`{currency}{target_2:,.2f}`** | Extended Target (3.8x ATR) |
-    | **Risk / Reward Ratio** | **`{risk_reward}`** | Favorable Asymmetric Edge |
+    | **ATR Stop Loss** | **`{currency}{stop_loss:,.2f}`** | Volatility Risk Floor |
+    | **Target 1 (Consensus)** | **`{currency}{target_1:,.2f}`** | Synthesized Multi-Theory Fair Value |
+    | **Target 2 (Extended)** | **`{currency}{target_2:,.2f}`** | High Bullish Extension Target |
+    | **Risk / Reward Ratio** | **`{rr_ratio}`** | Favorable Asymmetric Edge |
     | **Position Sizing** | **`12.5% Capital`** | Half-Kelly Fractional Allocation |
     """
 
@@ -320,6 +342,7 @@ def analyze_asset_and_order_book(
         trades_df,
         fig,
         horizon_summary,
+        theories_md,
         trade_plan_text,
         consensus_md,
         curr_price,
@@ -604,6 +627,9 @@ with gr.Blocks(title="StockTrend AI | Institutional Quantitative Terminal") as d
                     gr.Markdown("### 📋 Institutional Trade Execution Plan")
                     trade_output = gr.Markdown()
 
+            gr.Markdown("### 🌐 Multi-Theory Valuation & Fair Price Synthesis (8 Quantitative & Online Theories)")
+            theories_output = gr.Markdown()
+
             gr.Markdown("### 🤖 15-Model Architecture Consensus & Voting")
             consensus_output = gr.Markdown()
 
@@ -693,6 +719,7 @@ with gr.Blocks(title="StockTrend AI | Institutional Quantitative Terminal") as d
         trades_output,
         chart_output,
         horizon_output,
+        theories_output,
         trade_output,
         consensus_output,
         paper_price,

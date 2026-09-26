@@ -513,13 +513,13 @@
           </div>
 
           <div class="bg-black border border-emerald-950/40 p-2 rounded">
-            <span class="text-emerald-400 text-[10px] uppercase block font-bold">Target 1 (2x ATR)</span>
+            <span class="text-emerald-400 text-[10px] uppercase block font-bold">Target 1 (Consensus)</span>
             <h3 class="text-base font-bold text-emerald-400 mt-1" id="tp-tp1">--</h3>
             <span class="text-[10px] text-zinc-500" id="tp-tp1-pct">--</span>
           </div>
 
           <div class="bg-black border border-emerald-950/40 p-2 rounded">
-            <span class="text-emerald-400 text-[10px] uppercase block font-bold">Target 2 (3.8x ATR)</span>
+            <span class="text-emerald-400 text-[10px] uppercase block font-bold">Target 2 (Extended)</span>
             <h3 class="text-base font-bold text-emerald-400 mt-1" id="tp-tp2">--</h3>
             <span class="text-[10px] text-zinc-500" id="tp-tp2-pct">--</span>
           </div>
@@ -789,6 +789,40 @@
         <div class="grid grid-cols-1 sm:grid-cols-5 gap-2" id="multi-horizon-grid"></div>
         <div class="h-64 w-full">
           <canvas id="multi-horizon-chart"></canvas>
+        </div>
+
+        <!-- MULTI-THEORY VALUATION & FINANCIAL MODELS TABLE -->
+        <div class="border border-zinc-800 rounded bg-zinc-950 p-3 mt-3 space-y-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between border-b border-zinc-800 pb-2 gap-2">
+            <div>
+              <h4 class="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                Multi-Theory Valuation & Fair Price Synthesis (8 Quantitative Theories)
+              </h4>
+              <p class="text-[11px] text-zinc-400 mt-0.5">Synthesized Fair Value integrating Wall Street Analyst Targets, DCF / Graham Number, CAPM, Monte Carlo GBM, Mean Reversion, Fibonacci & Deep Neural Models</p>
+            </div>
+            <div id="multi-theory-consensus-badge" class="px-2.5 py-1 rounded text-xs font-mono font-bold bg-emerald-950/60 border border-emerald-500/40 text-emerald-400 self-start sm:self-auto">
+              Consensus Target: --
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-zinc-900/80 text-zinc-400 font-mono text-[10px] uppercase">
+                <tr>
+                  <th class="p-2">Financial Theory / Model</th>
+                  <th class="p-2 text-center">Target Price</th>
+                  <th class="p-2 text-center">Expected Return</th>
+                  <th class="p-2 text-center">Horizon</th>
+                  <th class="p-2">Theoretical Methodology & Signal</th>
+                </tr>
+              </thead>
+              <tbody id="multi-theory-table-body" class="divide-y divide-zinc-800/60 font-mono text-[11px]">
+                <tr>
+                  <td colspan="5" class="p-3 text-center text-zinc-500">Run Multi-Horizon Forecast to synthesize all 8 financial theories.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

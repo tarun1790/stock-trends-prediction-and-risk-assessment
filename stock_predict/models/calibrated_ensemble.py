@@ -15,6 +15,7 @@ import pandas as pd
 import torch
 from stock_predict.core.composite_indicators import compute_26_technical_indicators
 from stock_predict.core.advanced_indicators import compute_atr, compute_adx
+from stock_predict.core.multi_theory_engine import MultiTheoryPredictor
 
 
 class CalibratedProductionEnsemble:
@@ -26,6 +27,7 @@ class CalibratedProductionEnsemble:
     def __init__(self, confidence_threshold: float = 0.75):
         self.tau = confidence_threshold
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.theory_predictor = MultiTheoryPredictor(device=self.device)
 
     def analyze_asset(self, df: pd.DataFrame, ticker: str = "ASSET") -> Dict[str, Any]:
         """
@@ -77,40 +79,21 @@ class CalibratedProductionEnsemble:
             base_prob += 4.0
         confidence_pct = round(min(max(base_prob, 65.0), 96.5), 1)
 
-        # 4. Multi-Horizon Quantile Targets (1D, 3D, 5D, 10D, 20D)
-        horizons = [1, 3, 5, 10, 20]
-        forecasts = {}
-        for h in horizons:
-            # Expected return scales sub-linearly with horizon
-            drift_factor = 0.12 * daily_vol_pct * (h ** 0.65) * (1.0 + abs_score)
-            drift_pct = round(max(drift_factor, 0.05 * h), 2)
-            if not is_bullish:
-                drift_pct = -drift_pct
+        # 4. Multi-Theory Forecasting & Intrinsic Valuation (8 Financial Theories)
+        theory_res = self.theory_predictor.analyze_theories(ticker, df)
+        forecasts = theory_res["multi_horizon_forecasts"]
+        theories_list = theory_res["theories"]
+        synth_consensus = theory_res["synthesized_consensus"]
 
-            # Quantile price cones: 50th (expected), 90th (bullish path), 10th (bearish stop path)
-            target_expected = round(curr_price * (1.0 + drift_pct / 100.0), 2)
-            vol_expansion = (atr_val * np.sqrt(h))
-            bull_target_90 = round(target_expected + (1.2 * vol_expansion), 2)
-            bear_target_10 = round(target_expected - (1.2 * vol_expansion), 2)
-
-            # Decaying horizon confidence
-            h_conf = round(max(confidence_pct - (h - 1) * 0.5, 60.0), 1)
-            prob_up = h_conf if is_bullish else round(100.0 - h_conf, 1)
-            prob_down = round(100.0 - prob_up, 1)
-
-            forecasts[f"horizon_{h}d"] = {
-                "horizon_days": h,
-                "trend": "UP" if is_bullish else "DOWN",
-                "confidence_up_pct": prob_up,
-                "confidence_down_pct": prob_down,
-                "expected_return_pct": drift_pct,
-                "target_price": target_expected,
-                "bull_target_90th": bull_target_90,
-                "bear_target_10th": bear_target_10,
-            }
+        # Dynamic Risk Management bounded by synthesized target and ATR volatility
+        tp1_price = synth_consensus["target_price"] if (is_bullish and synth_consensus["target_price"] > curr_price) else round(curr_price + (2.2 * atr_val if is_bullish else -2.2 * atr_val), 2)
+        highest_target = max([t["target_price"] for t in theories_list]) if is_bullish else min([t["target_price"] for t in theories_list])
+        tp2_price = round(highest_target, 2)
+        stop_loss_price = round(curr_price - (1.8 * atr_val if is_bullish else -1.8 * atr_val), 2)
 
         return {
             "ticker": ticker,
+            "currency": theory_res.get("currency", "$"),
             "current_price": curr_price,
             "day_change": round(day_change, 2),
             "day_change_pct": round(day_change_pct, 2),
@@ -129,11 +112,13 @@ class CalibratedProductionEnsemble:
             },
             "technical_ratings": indicators_result,
             "forecasts": forecasts,
+            "multi_theory_consensus": synth_consensus,
+            "theories": theories_list,
             "risk_metrics": {
                 "atr_14": round(atr_val, 2),
                 "daily_volatility_pct": round(daily_vol_pct, 2),
-                "stop_loss": round(curr_price - (1.8 * atr_val if is_bullish else -1.8 * atr_val), 2),
-                "take_profit_1": round(curr_price + (2.2 * atr_val if is_bullish else -2.2 * atr_val), 2),
-                "take_profit_2": round(curr_price + (3.8 * atr_val if is_bullish else -3.8 * atr_val), 2),
+                "stop_loss": stop_loss_price,
+                "take_profit_1": tp1_price,
+                "take_profit_2": tp2_price,
             },
         }
