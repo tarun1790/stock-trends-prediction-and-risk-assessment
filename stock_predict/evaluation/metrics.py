@@ -1,7 +1,7 @@
 """
 Evaluation Metrics Engine.
 Computes F1-Score, Accuracy, ROC-AUC, Precision, Recall, Confusion Matrix,
-and execution latency matching Section IV-A of the IEEE Access paper.
+and execution latency for quantitative model validation.
 """
 
 from typing import Any, Dict, Optional, Tuple

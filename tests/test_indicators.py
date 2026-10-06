@@ -1,5 +1,5 @@
 """
-Unit Tests for the 10 Technical Indicators (Table 10 of IEEE Access Paper).
+Unit Tests for the 10 Foundational Technical Indicators.
 """
 
 import numpy as np

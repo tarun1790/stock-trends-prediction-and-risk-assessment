@@ -1,7 +1,7 @@
 """
 System configuration and global parameters.
-Handles hardware acceleration (GPU/CUDA auto-detection), indicator defaults,
-model hyperparameters from the IEEE Access paper, and sector definitions.
+Handles hardware acceleration (dynamic GPU/CUDA, MPS, CPU detection),
+technical indicator parameters, and model hyperparameters.
 """
 
 from dataclasses import dataclass, field
@@ -19,14 +19,30 @@ SAVED_MODELS_DIR.mkdir(parents=True, exist_ok=True)
 
 def get_device() -> torch.device:
     """
-    Get the optimal execution device, defaulting to GPU/CUDA when available.
+    Get the optimal execution device, defaulting to GPU/CUDA when available,
+    Apple Silicon MPS if on macOS, or high-performance CPU multi-threading.
+    Ensures seamless execution on any laptop hardware.
     """
     if torch.cuda.is_available():
         return torch.device("cuda")
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return torch.device("mps")
     return torch.device("cpu")
 
 
+def get_device_name() -> str:
+    """
+    Get the human-readable name of the active compute device dynamically.
+    """
+    if torch.cuda.is_available():
+        return f"{torch.cuda.get_device_name(0)} (CUDA)"
+    if hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        return "Apple Silicon GPU (MPS)"
+    return "Universal CPU Multi-Thread"
+
+
 DEVICE = get_device()
+DEVICE_NAME = get_device_name()
 
 
 @dataclass
@@ -60,10 +76,14 @@ class PreprocessingConfig:
     )
 
 
-# Four stock market groups from the paper
+# Market sector presets
 PAPER_SECTORS = {
-    "diversified_financials": "Diversified Financials",
-    "petroleum": "Petroleum",
-    "basic_metals": "Basic Metals",
-    "non_metallic_minerals": "Non-metallic Minerals",
+    "technology": "Technology",
+    "financials": "Financials",
+    "energy": "Energy",
+    "healthcare": "Healthcare",
+    "diversified_financials": "Financials",
+    "petroleum": "Energy",
+    "basic_metals": "Materials",
+    "non_metallic_minerals": "Industrials",
 }

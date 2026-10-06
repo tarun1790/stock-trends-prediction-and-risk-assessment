@@ -47,7 +47,7 @@ This section provides formal architectural blueprints for all ten primary softwa
   <tr><th style="width: 25%;">Module Identity</th><td><code>stock_predict.core.indicators</code> &amp; <code>stock_predict.core.advanced_indicators</code></td></tr>
   <tr><th>Subsystem</th><td>Signal Processing &amp; Feature Vectorization Subsystem</td></tr>
   <tr><th>Primary Responsibilities</th><td>
-    1. Compute the foundational 10 IEEE technical indicators (SMA, WMA, MOM, RSI, STCK, STCD, MACD, LWR, ADO, CCI).<br/>
+    1. Compute the foundational 10 technical indicators (SMA, WMA, MOM, RSI, STCK, STCD, MACD, LWR, ADO, CCI).<br/>
     2. Vectorize the institutional 26-indicator matrix (HMA 9, SuperTrend ATR, ADX 14, VWAP 20, Ichimoku Cloud, Bollinger Bands).<br/>
     3. Eliminate iterative Python for-loops by executing 1D FIR LTI convolutions on NumPy strided arrays (35.2x speedup).
   </td></tr>
@@ -57,7 +57,7 @@ This section provides formal architectural blueprints for all ten primary softwa
     Kernel derivation: <math xmlns="http://www.w3.org/1998/Math/MathML" display="inline"><mrow><mi>&#x1D421;</mi><mo>&#x0003D;</mo><mn>2</mn><mo>&#x000B7;</mo><msub><mi>&#x1D430;</mi><mrow><mo stretchy="false">&#x0230A;</mo><mi>n</mi><mo>&#x0002F;</mo><mn>2</mn><mo stretchy="false">&#x0230B;</mo></mrow></msub><mo>&#x02212;</mo><msub><mi>&#x1D430;</mi><mi>n</mi></msub></mrow></math>, evaluated via <code>scipy.signal.convolve(P, h, mode='valid')</code> with AVX-256 SIMD parallelization.
   </td></tr>
   <tr><th>Core Classes &amp; Key Methods</th><td>
-    &bull; <code>compute_all_indicators(df)</code>: Computes 10 IEEE indicators with binary crossing flags.<br/>
+    &bull; <code>compute_all_indicators(df)</code>: Computes 10 foundational indicators with binary crossing flags.<br/>
     &bull; <code>compute_full_quant_features(df)</code>: Computes 26 multi-scale composite indicators.<br/>
     &bull; <code>compute_supertrend_fast(df, n=10, m=3.0)</code>: Vectorized contiguous memory traversal.
   </td></tr>
@@ -238,7 +238,7 @@ This section provides formal architectural blueprints for all ten primary softwa
   <tr><th>Primary Responsibilities</th><td>
     1. Institutional Web Dashboard on Port 8050 with embedded TradingView lightweight candlestick charts and order books.<br/>
     2. Pure-Python Gradio Web Terminal on Port 7860 organizing the platform into 7 interactive engineering tabs.<br/>
-    3. Live hardware diagnostics panel displaying RTX 3070 Ti VRAM gauges, host RAM utilization, and system uptime.
+    3. Live hardware diagnostics panel displaying compute device telemetry gauges, host RAM utilization, and system uptime.
   </td></tr>
   <tr><th>Mathematical &amp; Algorithmic Foundations</th><td>
     Event-driven JavaScript client with Chart.js and TradingView Canvas engines rendering sub-second vector candlesticks, moving averages, and SuperTrend trailing bands.

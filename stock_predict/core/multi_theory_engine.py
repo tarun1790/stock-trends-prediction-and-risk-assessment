@@ -20,7 +20,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-from stock_predict.config import get_device
+from stock_predict.config import get_device, get_device_name
 
 # In-memory TTL cache for online company info to prevent API rate limits
 _THEORY_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
@@ -337,7 +337,7 @@ class MultiTheoryPredictor:
             "name": "Temporal Neural Sequence Architecture (TCN + TFT)",
             "target_price": round(t8_target, 2),
             "expected_return_pct": t8_ret,
-            "compute_device": "NVIDIA GeForce RTX 3070 Ti (CUDA)" if torch.cuda.is_available() else "Host CPU",
+            "compute_device": get_device_name(),
             "methodology": "Dilated causal convolutions (RF=61) and Interpretable Multi-Head Self-Attention.",
             "source": "Google Research Temporal Fusion Transformer & WaveNet TCN",
         }

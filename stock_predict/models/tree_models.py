@@ -1,11 +1,11 @@
 """
 Tree-Based Classifiers.
-Implements the 4 tree models from Table 1 of the IEEE paper:
+Implements gradient boosted and bagging tree ensembles:
 - Decision Tree
 - Random Forest
 - AdaBoost (with DecisionTree base estimator)
 - XGBoost
-Plus LightGBM as a modern state-of-the-art tree ensemble addition.
+- LightGBM
 """
 
 from typing import Any, Dict, Optional

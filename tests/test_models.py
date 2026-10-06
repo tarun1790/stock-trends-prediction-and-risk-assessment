@@ -18,10 +18,10 @@ from stock_predict.models import (
     LogisticRegressionModel,
     create_ann_model,
     create_rnn_model,
-    create_lstm_model,
     create_gru_model,
-    create_bilstm_attention_model,
     create_transformer_model,
+    create_tcn_model,
+    create_tft_model,
     VotingEnsembleModel,
 )
 
@@ -80,10 +80,10 @@ def test_pytorch_neural_models(synthetic_sequence_data):
     models = [
         create_ann_model(hidden_dims=[64, 32], epochs=5),
         create_rnn_model(hidden_dim=32, epochs=5),
-        create_lstm_model(hidden_dim=32, epochs=5),
         create_gru_model(hidden_dim=32, epochs=5),
-        create_bilstm_attention_model(hidden_dim=32, epochs=5),
         create_transformer_model(d_model=32, epochs=5),
+        create_tcn_model(epochs=5),
+        create_tft_model(epochs=5),
     ]
     for m in models:
         # Check GPU device allocation

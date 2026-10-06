@@ -150,9 +150,9 @@ def get_system_architecture_svg():
   <!-- Bottom Hardware Tier Indicator -->
   <rect x="30" y="625" width="900" height="75" rx="6" fill="#f8f8f8" stroke="#000000" stroke-width="1.5"/>
   <text x="50" y="655" font-family="'Times New Roman', Times, serif" font-size="12" font-weight="700" fill="#000000">UNDERLYING HARDWARE ACCELERATION &amp; COMPUTE SUBSTRATE</text>
-  <text x="50" y="675" font-family="'Times New Roman', Times, serif" font-size="10" fill="#333333">NVIDIA GeForce RTX 3070 Ti Laptop GPU (8,191.5 MB VRAM, CUDA 12.x, Tensor Cores) | 16-Thread Host CPU | AVX-256 SIMD Vectorization</text>
+  <text x="50" y="675" font-family="'Times New Roman', Times, serif" font-size="10" fill="#333333">Hardware-Accelerated Compute Device (CUDA GPU / MPS / CPU) | Multi-Thread Host CPU | AVX-256 SIMD Vectorization</text>
   <rect x="800" y="642" width="115" height="42" rx="4" fill="#000000"/>
-  <text x="857" y="667" font-family="'Times New Roman', Times, serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">CUDA ACTIVE</text>
+  <text x="857" y="667" font-family="'Times New Roman', Times, serif" font-size="11" font-weight="700" fill="#ffffff" text-anchor="middle">ACTIVE</text>
 </svg>'''
 
 def get_er_database_svg():
@@ -503,7 +503,7 @@ def get_uml_use_case_svg():
   <!-- UC 9: Monitor GPU Hardware Telemetry -->
   <g transform="translate(260, 610)">
     <ellipse cx="140" cy="22" rx="130" ry="20" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-    <text x="140" y="26" font-family="'Times New Roman', Times, serif" font-size="11" font-weight="600" fill="#000000" text-anchor="middle">UC9: Query CUDA RTX 3070 Ti Telemetry</text>
+    <text x="140" y="26" font-family="'Times New Roman', Times, serif" font-size="11" font-weight="600" fill="#000000" text-anchor="middle">UC9: Query Hardware Telemetry</text>
   </g>
 
   <!-- Association Lines -->
@@ -941,7 +941,7 @@ def get_uml_collaboration_svg():
   <g transform="translate(390, 310)">
     <rect width="180" height="60" rx="4" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
     <text x="90" y="26" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="700" fill="#000000" text-anchor="middle">ensemble : DeepLearning</text>
-    <text x="90" y="44" font-family="'Times New Roman', Times, serif" font-size="8" fill="#333333" text-anchor="middle">RTX 3070 Ti CUDA Device</text>
+    <text x="90" y="44" font-family="'Times New Roman', Times, serif" font-size="8" fill="#333333" text-anchor="middle">Hardware Compute Accelerator</text>
   </g>
 
   <!-- OBJECT 6: Risk & Allocation Engine -->
@@ -1054,8 +1054,8 @@ def get_uml_activity_svg():
 
   <!-- Activity 3: Deep Learning GPU Inference -->
   <rect x="340" y="375" width="280" height="38" rx="19" fill="#ffffff" stroke="#000000" stroke-width="1.5"/>
-  <text x="480" y="394" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="600" fill="#000000" text-anchor="middle">Run Temporal Ensemble (TCN + TFT + BiLSTM)</text>
-  <text x="480" y="406" font-family="'Times New Roman', Times, serif" font-size="8" fill="#333333" text-anchor="middle">Executed on NVIDIA GeForce RTX 3070 Ti CUDA</text>
+  <text x="480" y="394" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="600" fill="#000000" text-anchor="middle">Run Temporal Ensemble (TCN + TFT + Transformer)</text>
+  <text x="480" y="406" font-family="'Times New Roman', Times, serif" font-size="8" fill="#333333" text-anchor="middle">Executed with Dynamic Hardware Acceleration</text>
 
   <!-- Transition 5: To Chow Decision Node -->
   <line x1="480" y1="413" x2="480" y2="445" stroke="#000000" stroke-width="1.5" marker-end="url(#actArrow)"/>
@@ -1212,8 +1212,8 @@ def get_uml_component_svg():
     <rect x="-8" y="36" width="16" height="10" fill="#ffffff" stroke="#000000" stroke-width="1.2"/>
     <text x="140" y="30" font-family="'Times New Roman', Times, serif" font-size="11" font-weight="700" fill="#000000" text-anchor="middle">&lt;&lt;component&gt;&gt;</text>
     <text x="140" y="48" font-family="'Times New Roman', Times, serif" font-size="11" font-weight="700" fill="#000000" text-anchor="middle">SystemDiagnosticsTelemetry</text>
-    <text x="140" y="70" font-family="'Times New Roman', Times, serif" font-size="9" fill="#333333" text-anchor="middle">&bull; PyTorch CUDA 12 Runtime Hook</text>
-    <text x="140" y="85" font-family="'Times New Roman', Times, serif" font-size="9" fill="#333333" text-anchor="middle">&bull; RTX 3070 Ti VRAM Allocator</text>
+    <text x="140" y="70" font-family="'Times New Roman', Times, serif" font-size="9" fill="#333333" text-anchor="middle">&bull; Dynamic Device Runtime Hook</text>
+    <text x="140" y="85" font-family="'Times New Roman', Times, serif" font-size="9" fill="#333333" text-anchor="middle">&bull; Dynamic Device Memory Allocator</text>
     <text x="140" y="100" font-family="'Times New Roman', Times, serif" font-size="9" fill="#333333" text-anchor="middle">&bull; psutil Host RAM / Thread Gauge</text>
   </g>
 
@@ -1309,16 +1309,16 @@ def get_uml_deployment_svg():
     <polygon points="230,0 240,10 240,310 230,300" fill="#000000" stroke="#000000"/>
     <rect x="0" y="15" width="230" height="295" fill="#000000" stroke="#000000" stroke-width="1.5" rx="2"/>
     <text x="115" y="40" font-family="'Times New Roman', Times, serif" font-size="11" font-weight="700" fill="#000000" text-anchor="middle">&lt;&lt;accelerator&gt;&gt;</text>
-    <text x="115" y="56" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">NVIDIA GeForce RTX 3070 Ti</text>
-    <text x="115" y="72" font-family="'Times New Roman', Times, serif" font-size="8" fill="#333333" text-anchor="middle">8,191.5 MB GDDR6 VRAM | Ampere GA104</text>
+    <text x="115" y="56" font-family="'Times New Roman', Times, serif" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">Hardware Compute Node</text>
+    <text x="115" y="72" font-family="'Times New Roman', Times, serif" font-size="8" fill="#333333" text-anchor="middle">CUDA / MPS / Multi-Thread CPU</text>
 
     <!-- Nested CUDA Artifacts -->
     <rect x="15" y="85" width="200" height="95" rx="3" fill="#000000" stroke="#000000" stroke-width="1"/>
     <text x="115" y="105" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="700" fill="#000000" text-anchor="middle">&lt;&lt;runtime&gt;&gt;</text>
-    <text x="115" y="120" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">CUDA 12.x / cuDNN / TensorRT</text>
+    <text x="115" y="120" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">Hardware Runtime Acceleration</text>
     <text x="115" y="140" font-family="'Courier New', Courier, monospace" font-size="8" fill="#f0f0f0" text-anchor="middle">&bull; PyTorchTCN Dilated Convolutions</text>
     <text x="115" y="155" font-family="'Courier New', Courier, monospace" font-size="8" fill="#f0f0f0" text-anchor="middle">&bull; PyTorchTFT Self-Attention VSN</text>
-    <text x="115" y="170" font-family="'Courier New', Courier, monospace" font-size="8" fill="#f0f0f0" text-anchor="middle">&bull; BiLSTM with Bahdanau Attn</text>
+    <text x="115" y="170" font-family="'Courier New', Courier, monospace" font-size="8" fill="#f0f0f0" text-anchor="middle">&bull; PatchTST &amp; ResNet-1D</text>
 
     <rect x="15" y="195" width="200" height="95" rx="3" fill="#000000" stroke="#000000" stroke-width="1"/>
     <text x="115" y="215" font-family="'Times New Roman', Times, serif" font-size="9" font-weight="700" fill="#000000" text-anchor="middle">&lt;&lt;acceleration&gt;&gt;</text>

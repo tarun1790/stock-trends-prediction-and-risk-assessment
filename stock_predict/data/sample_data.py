@@ -1,18 +1,46 @@
 """
-Sample and Synthetic Benchmark Data Generator.
-Calibrated to replicate the 10-year statistical distributions from Table 11 of the IEEE paper:
-- Diversified Financials
-- Petroleum
-- Basic Metals
-- Non-metallic Minerals
+Synthetic and Historical Benchmark Data Generator.
+Calibrated for realistic market distributions across sectors:
+- Technology
+- Financials
+- Energy
+- Materials
 """
 
 from typing import Dict, Tuple
 import numpy as np
 import pandas as pd
 
-# Table 11 reference statistics from the IEEE paper (10-year historical metrics)
+# Sector volatility and drift calibration parameters
 SECTOR_CALIBRATION: Dict[str, Dict[str, float]] = {
+    "technology": {
+        "start_price": 150.0,
+        "drift": 0.00055,
+        "volatility": 0.022,
+        "mean_sma": 180.0,
+        "std_sma": 45.0,
+    },
+    "financials": {
+        "start_price": 100.0,
+        "drift": 0.00035,
+        "volatility": 0.015,
+        "mean_sma": 120.0,
+        "std_sma": 30.0,
+    },
+    "energy": {
+        "start_price": 80.0,
+        "drift": 0.00045,
+        "volatility": 0.018,
+        "mean_sma": 95.0,
+        "std_sma": 25.0,
+    },
+    "healthcare": {
+        "start_price": 120.0,
+        "drift": 0.00038,
+        "volatility": 0.014,
+        "mean_sma": 140.0,
+        "std_sma": 28.0,
+    },
     "diversified_financials": {
         "start_price": 1471.2,
         "drift": 0.00035,
@@ -51,10 +79,10 @@ def generate_sector_historical_data(
 ) -> pd.DataFrame:
     """
     Generate realistic 10-year historical OHLCV daily market series for a given sector
-    calibrated to match Table 11 statistics from the IEEE Access paper.
+    calibrated to statistical market distributions.
 
     Args:
-        sector_key: One of ['diversified_financials', 'petroleum', 'basic_metals', 'non_metallic_minerals']
+        sector_key: Sector identifier
         num_days: Number of trading days (~245 days/year * 10 years = 2450)
         seed: Random seed for reproducible benchmarking.
 

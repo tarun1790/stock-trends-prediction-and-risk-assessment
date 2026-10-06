@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "stock-trend-prediction"
 version = "1.0.0"
-description = "Predicting Stock Market Trends Using Machine Learning and Deep Learning Algorithms via Continuous and Binary Data"
+description = "Stock Trend Prediction & Risk Assessment Engine with Multi-Theory Confluence and Deep Learning"
 authors = [
     { name = "tarun1790", email = "tarun.jampani45@gmail.com" }
 ]

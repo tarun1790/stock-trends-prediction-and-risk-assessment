@@ -97,7 +97,7 @@ def test_predict_multi_horizon():
 def test_explain_endpoint():
     res = client.post(
         "/api/explain",
-        json={"ticker": "sample", "model_name": "lstm", "data_mode": "binary"},
+        json={"ticker": "sample", "model_name": "tft", "data_mode": "binary"},
     )
     assert res.status_code == 200
     data = res.json()
@@ -129,7 +129,7 @@ def test_standard_backtest_endpoint():
         "/api/backtest",
         json={
             "sector_key": "diversified_financials",
-            "model_name": "lstm",
+            "model_name": "tft",
             "data_mode": "binary",
             "initial_capital": 100000.0,
             "transaction_cost_pct": 0.001,
@@ -169,7 +169,7 @@ def test_all_15_model_instantiations():
     X_seq_train = np.random.randn(40, 15, 10).astype(np.float32)
 
     for m_name, factory in MODEL_REGISTRY.items():
-        if m_name in ["ann", "rnn", "lstm", "gru", "bilstm_attention", "transformer", "tcn", "tft"]:
+        if m_name in ["ann", "rnn", "gru", "transformer", "tcn", "tft"]:
             model = factory(epochs=2)
             model.fit(X_seq_train, y_train)
             preds = model.predict(X_seq_train)

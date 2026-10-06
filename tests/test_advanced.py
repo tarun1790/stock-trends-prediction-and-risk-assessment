@@ -23,7 +23,7 @@ from stock_predict.models.advanced_neural import (
 )
 from stock_predict.evaluation.explainability import compute_feature_saliency
 from stock_predict.backtest.advanced_backtester import AdvancedRiskBacktester
-from stock_predict.models.neural_models import create_lstm_model
+from stock_predict.models import create_tft_model
 
 
 @pytest.fixture
@@ -72,7 +72,7 @@ def test_multi_horizon_forecaster():
 
 
 def test_explainability(ohlcv_df):
-    model = create_lstm_model(hidden_dim=32, epochs=2)
+    model = create_tft_model(epochs=2)
     X = np.random.randn(20, 10, 10).astype(np.float32)
     y = np.random.randint(0, 2, size=20)
     model.fit(X, y)

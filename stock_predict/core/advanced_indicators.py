@@ -1,6 +1,6 @@
 """
 Advanced Feature Engineering & Quantitative Indicators.
-Expands beyond the 10 basic IEEE indicators to include:
+Expands beyond foundational technical indicators to include:
 - ATR (Average True Range) & Volatility Bands (Bollinger %B & Bandwidth)
 - ADX (Average Directional Index) with +DI / -DI for trend strength filtering
 - CMF (Chaikin Money Flow) & VWAP (Volume-Weighted Average Price)
@@ -199,9 +199,9 @@ def compute_ternary_regime_signals(df: pd.DataFrame) -> pd.DataFrame:
 def compute_full_quant_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Compute comprehensive 25+ institutional feature matrix combining
-    the 10 IEEE indicators with advanced volatility, momentum, and regime features.
+    foundational technical indicators with advanced volatility, momentum, and regime features.
     """
-    # 1. Baseline 10 IEEE Indicators
+    # 1. Foundational Technical Indicators
     result = compute_all_indicators(df)
 
     high = result["High"]

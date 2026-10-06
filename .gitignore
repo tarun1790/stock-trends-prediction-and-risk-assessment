@@ -18,3 +18,7 @@ htmlcov/
 !docs/index.html
 StockTrend_AI_Complete_Project_Guide.pdf
 StockTrend_AI_System_Design_Specification.pdf
+
+# Sector dataset cache
+*_10yr.csv
+

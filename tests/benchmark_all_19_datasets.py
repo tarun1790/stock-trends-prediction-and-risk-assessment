@@ -1,35 +1,27 @@
 """
-Comprehensive 19-Dataset Quantitative Benchmark.
-Evaluates ProductionAlphaEngine across 19 global asset classes over 250 walk-forward trading days:
+Comprehensive Multi-Asset Quantitative Benchmark.
+Evaluates ProductionAlphaEngine across 15 global asset classes over walk-forward trading days:
 - US Mega-Caps & Tech Leaders (NVDA, AAPL, MSFT, AMZN, GOOGL, META, TSLA, PLTR)
 - Major Indices & ETFs (SPY, QQQ, GLD, GC=F)
 - Cryptocurrencies (BTC-USD)
 - Indian Blue-Chip Equities (RELIANCE.NS, HDFCBANK.NS)
-- IEEE Research Paper 10-Year Datasets (Diversified Financials, Petroleum, Basic Metals, Non-metallic Minerals)
 """
 
 from typing import Any, Dict
 import numpy as np
 import pandas as pd
 import torch
+from stock_predict.config import get_device
 from stock_predict.data.loader import DataLoader
 from stock_predict.models.production_alpha_engine import ProductionAlphaEngine
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Executing 19-Dataset Benchmark on Compute Device: {device}")
+device = get_device()
+print(f"Executing Multi-Asset Benchmark on Compute Device: {device}")
 
 
 def evaluate_asset(ticker: str, test_days: int = 200) -> Dict[str, Any]:
     dl = DataLoader()
-    if ticker.lower() in [
-        "diversified_financials",
-        "petroleum",
-        "basic_metals",
-        "non_metallic_minerals",
-    ]:
-        df = dl.load_sector_data(ticker.lower())
-    else:
-        df = dl.fetch_live_data(ticker)
+    df = dl.fetch_live_data(ticker)
 
     if len(df) < test_days + 60:
         test_days = max(len(df) - 60, 40)
@@ -132,11 +124,10 @@ if __name__ == "__main__":
     assets = [
         "SPY", "QQQ", "NVDA", "AAPL", "MSFT", "AMZN", "GOOGL", "META", "TSLA", "PLTR",
         "GLD", "GC=F", "BTC-USD", "RELIANCE.NS", "HDFCBANK.NS",
-        "diversified_financials", "petroleum", "basic_metals", "non_metallic_minerals"
     ]
 
     print(f"\n==========================================================================================================")
-    print(f"                         MULTI-DATASET EMPIRICAL BENCHMARK (19 ASSETS | 100 TRADING DAYS)                 ")
+    print(f"                         MULTI-ASSET EMPIRICAL BENCHMARK (15 ASSETS | 100 TRADING DAYS)                    ")
     print(f"==========================================================================================================")
     print(f"{'Ticker':<16} | {'Coverage':<8} | {'Win Rate':<8} | {'Trend Acc':<9} | {'MeanRev':<8} | {'Price Err':<9} | {'Conformal':<9} | {'Strategy Ret':<12} | {'Alpha':<10}")
     print(f"----------------------------------------------------------------------------------------------------------")

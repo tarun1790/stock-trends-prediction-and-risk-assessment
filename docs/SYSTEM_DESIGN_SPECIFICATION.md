@@ -3,9 +3,9 @@
 
 **Principal Architect:** Tarun Jampani (`tarun1790`)  
 **Institutional Contact:** `tarun.jampani45@gmail.com`  
-**Underlying Hardware Acceleration Substrate:** NVIDIA GeForce RTX 3070 Ti Laptop GPU (CUDA 12.x, 8,191.5 MB VRAM)  
+**Underlying Hardware Acceleration Substrate:** Dynamic Hardware Acceleration (CUDA GPU / Apple Silicon MPS / Multi-Thread CPU)  
 **Release Version:** 3.0.0 (Production Operational)  
-**Standard Compliance:** IEEE/ISO 12207 Software Engineering & Architecture Documentation  
+**Standard Compliance:** ISO/IEC 12207 Software Engineering & Architecture Documentation  
 **Date:** September 2026  
 
 ---
@@ -62,13 +62,13 @@ AlphaTemporal is organized into a 5-tier decoupled physical and logical topology
 |                        TIER 5: AI ENSEMBLE, SELECTIVE RISK & EXECUTION                            |
 |  +----------------------------+  +----------------------------+  +-----------------------------+  |
 |  | Temporal Deep Learning     |  |  Chow Selective Rule       |  | Quantitative Credit Risk    |  |
-|  | TCN, TFT, BiLSTM Attention |  |  tau >= 0.75 (95.4% Win)   |  | Merton DD & Altman Z Veto   |  |
+|  | TCN, TFT, PatchTST, ResNet |  |  tau >= 0.75 (95.4% Win)   |  | Merton DD & Altman Z Veto   |  |
 |  +----------------------------+  +----------------------------+  +-----------------------------+  |
 +-------------------------------------------------+-------------------------------------------------+
-                                                  | PCIe Gen 4.0 x16 Bus
+                                                  | High-Speed Compute Bus
 +-------------------------------------------------v-------------------------------------------------+
 |                   UNDERLYING HARDWARE ACCELERATION & COMPUTE SUBSTRATE                            |
-|  NVIDIA GeForce RTX 3070 Ti Laptop GPU (8,191.5 MB VRAM, CUDA 12.x) | 16-Thread Host CPU | AVX-256 |
+|  Dynamic Hardware Acceleration (CUDA GPU / Apple Silicon MPS / Multi-Thread CPU) | AVX-256 SIMD   |
 +---------------------------------------------------------------------------------------------------+
 ```
 
@@ -97,12 +97,12 @@ AlphaTemporal is organized into a 5-tier decoupled physical and logical topology
 - **Functionality:** 
   - **Temporal Convolutional Network (TCN):** Dilated causal 1D convolutions with dilation factors $d \in \{1, 2, 4, 8, 16\}$, kernel size $K = 3$, and receptive field $RF = 61$ bars, utilizing weight normalization and residual mappings.
   - **Temporal Fusion Transformer (TFT):** Variable Selection Networks (VSN), Gated Linear Units (GLU), and Interpretable Multi-Head Self-Attention for dynamic feature importance attribution.
-  - **Hardware Allocation:** Auto-detects and binds to `device = torch.device('cuda')` (NVIDIA GeForce RTX 3070 Ti).
+  - **Hardware Allocation:** Auto-detects and binds to available GPU/CUDA, Apple Silicon MPS, or Multi-Thread CPU.
 
-### MOD-05: Recurrent Attention & Machine Learning Meta-Ensembles
+### MOD-05: Transformer & Machine Learning Meta-Ensembles
 - **Core Files:** `stock_predict/models/neural_models.py`, `stock_predict/models/ensemble.py`, `stock_predict/models/tree_models.py`
-- **Classes:** `BiLSTMAttention`, `BahdanauAttention`, `StackingMetaEnsemble`
-- **Functionality:** Bidirectional LSTM with Bahdanau additive attention scoring ($e_t = v_a^\top \tanh(W_a h_t + b_a)$). Combines 10 heterogeneous base learners (LightGBM, XGBoost, CatBoost, ExtraTrees, Random Forest, SVC RBF, AdaBoost, Logistic Regression) using an out-of-fold probability blended Level-2 meta-learner.
+- **Classes:** `PatchTST`, `ResNet1D`, `StackingMetaEnsemble`
+- **Functionality:** High-capacity temporal architectures with multi-head attention. Combines heterogeneous base learners (LightGBM, XGBoost, CatBoost, ExtraTrees, Random Forest, SVC RBF, AdaBoost, Logistic Regression) using an out-of-fold probability blended Level-2 meta-learner.
 
 ### MOD-06: Chow's Selective Classification Gating ($\tau \ge 0.75$)
 - **Core Files:** `stock_predict/models/calibrated_ensemble.py`
@@ -160,7 +160,7 @@ The architecture includes all 8 formal UML 2.5 diagrams:
 4. **UML Collaboration / Communication Diagram:** Object topology showing decimal-numbered inter-object message exchanges (`1.0`, `2.0`, `3.0`, `4.0`, etc.).
 5. **UML Activity Diagram:** Algorithmic flow showing parallel fork/join synchronization bars, decision diamonds for Chow confidence ($\tau \ge 0.75$) and distress veto ($Z < 1.81$), and bullseye termination nodes.
 6. **UML Component Diagram:** Packaging architecture showing 8 decoupled subsystems connected via provided interface lollipops (`IPredictionService`, `IRiskEngine`) and required interface sockets (`ICUDAEngine`, `IMarketGateway`).
-7. **UML Deployment Diagram:** 3D hardware deployment nodes showcasing Workstation Client, Host Server, NVIDIA GeForce RTX 3070 Ti PCIe device node, and Cloud Database nodes.
+7. **UML Deployment Diagram:** 3D hardware deployment nodes showcasing Workstation Client, Host Server, Hardware-Accelerated Compute device node, and Cloud Database nodes.
 8. **UML State-Chart Diagram:** Discrete state machine tracing trade signal lifecycle: `IDLE` $\rightarrow$ `INGESTING_SESSION` $\rightarrow$ `VECTORIZING_SIGNALS` $\rightarrow$ `GPU_INFERENCE` $\rightarrow$ `CHOW_SELECTIVE_GATING` $\rightarrow$ `ABSTAINED` / `CREDIT_DISTRESS_CHECK` $\rightarrow$ `ORDER_CONFIRMED`.
 
 ---

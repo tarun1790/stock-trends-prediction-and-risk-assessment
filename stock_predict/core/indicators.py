@@ -1,8 +1,7 @@
 """
 Technical Indicator Computation Module.
-Implements the exact 10 technical indicators specified in Table 10 of:
-'Predicting Stock Market Trends Using Machine Learning and Deep Learning Algorithms
-Via Continuous and Binary Data; a Comparative Analysis' (Nabipour et al., IEEE Access 2020).
+Implements foundational technical indicators for quantitative trend forecasting
+including SMA, WMA, Momentum, Stochastic %K/%D, RSI, MACD, Williams %R, ADO, and CCI.
 """
 
 from typing import Optional

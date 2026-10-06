@@ -1,7 +1,7 @@
 """
 Preprocessing & Data Representation Engine.
 Implements Continuous Normalization [0, 1] and Trend Deterministic Binary Transformation (+1 / -1)
-as detailed in Section II-B of the IEEE Access paper.
+for robust quantitative trend learning.
 """
 
 from typing import Dict, List, Optional, Tuple, Union

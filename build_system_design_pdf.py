@@ -5,7 +5,7 @@ and compiles the publication-grade PDF via Google Chrome Headless.
 
 Author: Tarun Jampani (tarun1790)
 Email: tarun.jampani45@gmail.com
-Hardware Substrate: NVIDIA GeForce RTX 3070 Ti Laptop GPU (CUDA 12.x)
+Hardware Substrate: Dynamic Hardware Acceleration (CUDA GPU / MPS / CPU)
 Release: Version 3.0.0 (Production Operational)
 """
 
@@ -290,8 +290,8 @@ cover_html = """
   <div class="meta-grid">
     <strong>Author / Lead Architect:</strong> Tarun Jampani (<code>tarun1790</code>) &nbsp;|&nbsp; 
     <strong>Email:</strong> <code>tarun.jampani45@gmail.com</code><br/>
-    <strong>Hardware Acceleration Substrate:</strong> NVIDIA GeForce RTX 3070 Ti Laptop GPU (CUDA 12.x, 8,191.5 MB VRAM)<br/>
-    <strong>Document Classification:</strong> System Architecture &amp; Engineering Specification (IEEE/ISO Compliant)<br/>
+    <strong>Hardware Acceleration Substrate:</strong> Dynamic Hardware Acceleration (CUDA GPU / Apple Silicon MPS / Multi-Thread CPU)<br/>
+    <strong>Document Classification:</strong> System Architecture &amp; Engineering Specification (ISO/IEC Compliant)<br/>
     <strong>Production Version:</strong> 3.0.0 &nbsp;|&nbsp; 
     <strong>Publication Date:</strong> September 2026
   </div>

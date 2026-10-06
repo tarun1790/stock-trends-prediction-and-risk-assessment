@@ -46,6 +46,8 @@ def compute_feature_saliency(
 
     # Forward pass
     output = torch_model(tensor_x)
+    if isinstance(output, tuple):
+        output = output[0]
     # Take predicted class logit
     pred_idx = torch.argmax(output, dim=-1)
     target_score = output[0, pred_idx]

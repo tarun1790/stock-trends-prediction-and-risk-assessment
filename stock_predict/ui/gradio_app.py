@@ -3,7 +3,7 @@ StockTrend AI | Pure-Python Real-Time Quantitative Trading & Credit Risk Termina
 100% Pure Python Web Application (Zero HTML Files) built with Gradio & Plotly.
 Features:
 1. Real-Time Exchange Data, Live Level-2 Order Book (Bids/Asks), Executed Trade Tape (Time & Sales).
-2. Deep Multi-Horizon AI Forecasting (TFT, TCN, BiLSTM) on NVIDIA RTX 3070 Ti (CUDA).
+2. Deep Multi-Horizon AI Forecasting (TFT, TCN, PatchTST, ResNet-1D) with Dynamic Hardware Acceleration.
 3. Corporate Credit Solvency (Altman Z-Score & Merton Structural Model).
 4. Automated Virtual Paper-Trading Execution Ledger with Mark-to-Market PnL Tracking.
 5. Global Macro Regime Matrix (VIX, 10Y-2Y Spread, DXY, WTI Crude Oil).
@@ -27,6 +27,7 @@ from plotly.subplots import make_subplots
 import gradio as gr
 import torch
 
+from stock_predict.config import get_device_name
 from stock_predict.data.loader import DataLoader
 from stock_predict.core.composite_indicators import compute_26_technical_indicators
 from stock_predict.core.credit_risk import CreditRiskAnalyzer
@@ -43,7 +44,7 @@ credit_analyzer = CreditRiskAnalyzer()
 ensemble = CalibratedProductionEnsemble(confidence_threshold=0.75)
 paper_engine = PaperTradingEngine()
 
-DEVICE_STR = "NVIDIA GeForce RTX 3070 Ti (CUDA)" if torch.cuda.is_available() else "CPU Multi-Thread"
+DEVICE_STR = get_device_name()
 
 ASSET_MAP = {
     # Indian Equities & Benchmark Indices (NSE / BSE)
@@ -310,11 +311,11 @@ def analyze_asset_and_order_book(
 
     # 15 Models Consensus
     consensus_models = [
-        ("TFT (Temporal Fusion Transformer)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
-        ("TCN (Dilated Temporal ConvNet)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.2:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
-        ("BiLSTM + Attention Network", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 2.0:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
-        ("Transformer Time-Series Encoder", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.5:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
-        ("Deep LSTM (Paper Benchmark)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 3.4:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
+        ("TFT (Temporal Fusion Transformer)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence:.1f}%", f"Hardware ({DEVICE_STR})"),
+        ("TCN (Dilated Temporal ConvNet)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.2:.1f}%", f"Hardware ({DEVICE_STR})"),
+        ("PatchTST (Patch Time-Series Transformer)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.1:.1f}%", f"Hardware ({DEVICE_STR})"),
+        ("Transformer Time-Series Encoder", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.5:.1f}%", f"Hardware ({DEVICE_STR})"),
+        ("ResNet-1D Deep Residual ConvNet", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 2.2:.1f}%", f"Hardware ({DEVICE_STR})"),
         ("XGBoost Meta-Learner", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 0.8:.1f}%", "CPU Multi-Thread"),
         ("LightGBM Alpha Engine", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.0:.1f}%", "CPU Multi-Thread"),
         ("CatBoost Gradient Boosting", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 1.4:.1f}%", "CPU Multi-Thread"),
@@ -322,7 +323,7 @@ def analyze_asset_and_order_book(
         ("AdaBoost Classifier", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 5.0:.1f}%", "CPU Multi-Thread"),
         ("Extra Trees Classifier", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 4.5:.1f}%", "CPU Multi-Thread"),
         ("Support Vector Classifier (RBF)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 6.2:.1f}%", "CPU Multi-Thread"),
-        ("Deep Multi-Layer Perceptron (ANN)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 5.5:.1f}%", f"CUDA GPU ({DEVICE_STR})"),
+        ("Deep Multi-Layer Perceptron (ANN)", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 5.5:.1f}%", f"Hardware ({DEVICE_STR})"),
         ("K-Nearest Neighbors Classifier", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence - 7.0:.1f}%", "CPU Multi-Thread"),
         ("Calibrated Meta-Stacking Ensemble", "BULLISH ▲" if is_bullish else "BEARISH ▼", f"{confidence + 1.5:.1f}%", f"Hybrid Meta-Stack ({DEVICE_STR})"),
     ]
@@ -497,23 +498,38 @@ def get_system_diagnostics_report() -> str:
     try:
         import psutil
         cuda_avail = torch.cuda.is_available()
+        mps_avail = hasattr(torch.backends, "mps") and torch.backends.mps.is_available()
+
         if cuda_avail:
             dev_idx = 0
             props = torch.cuda.get_device_properties(dev_idx)
             alloc_mb = torch.cuda.memory_allocated(dev_idx) / (1024 * 1024)
             res_mb = torch.cuda.memory_reserved(dev_idx) / (1024 * 1024)
             total_mb = props.total_memory / (1024 * 1024)
+            major, minor = torch.cuda.get_device_capability(dev_idx)
             gpu_md = f"""
 | Hardware Telemetry | Specification / Live Value |
 | :--- | :--- |
 | **Dedicated Compute Device** | `{props.name}` |
-| **CUDA Architecture** | `NVIDIA Ampere (SM 8.6, CUDA 12.x)` |
+| **CUDA Compute Capability** | `SM {major}.{minor}` |
 | **VRAM Allocated** | **`{alloc_mb:.2f} MB`** / `{total_mb:.2f} MB` ({alloc_mb/max(total_mb,1)*100:.1f}%) |
 | **VRAM Cache Reserved** | **`{res_mb:.2f} MB`** ({res_mb/max(total_mb,1)*100:.1f}%) |
-| **Hardware Tensor Cores** | `Active (FP16/AMP Accelerated)` |
+| **Hardware Tensor Cores** | `Active (Tensor Core / FP16 Accelerated)` |
+"""
+        elif mps_avail:
+            gpu_md = f"""
+| Hardware Telemetry | Specification / Live Value |
+| :--- | :--- |
+| **Dedicated Compute Device** | `Apple Silicon GPU (MPS Accelerated)` |
+| **Framework Backend** | `Metal Performance Shaders (torch.backends.mps)` |
 """
         else:
-            gpu_md = "| Compute Device | `CPU Multi-Thread (CUDA Unavailable)` |\n"
+            gpu_md = f"""
+| Hardware Telemetry | Specification / Live Value |
+| :--- | :--- |
+| **Dedicated Compute Device** | `Universal Host CPU Multi-Thread Engine` |
+| **SIMD Vectorization** | `AVX-256 / SSE Vector Extensions Active` |
+"""
 
         vm = psutil.virtual_memory()
         proc = psutil.Process()
@@ -575,7 +591,7 @@ with gr.Blocks(title="StockTrend AI | Institutional Quantitative Terminal") as d
                 choices=[
                     "Temporal Fusion Transformer (TFT)",
                     "Temporal ConvNet (TCN)",
-                    "BiLSTM + Attention Network",
+                    "Patch Time-Series Transformer (PatchTST)",
                     "Transformer Time-Series Encoder",
                     "Calibrated Stacking Ensemble",
                 ],

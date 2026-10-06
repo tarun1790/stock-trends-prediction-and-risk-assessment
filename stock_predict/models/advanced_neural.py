@@ -227,9 +227,15 @@ class PyTorchTFT(nn.Module):
     ):
         super().__init__()
         self.vsn = VariableSelectionNetwork(input_dim, hidden_dim, dropout)
-        self.lstm = nn.LSTM(
-            hidden_dim, hidden_dim, num_layers=num_layers, batch_first=True, dropout=dropout
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden_dim,
+            nhead=num_heads,
+            dim_feedforward=hidden_dim * 2,
+            dropout=dropout,
+            batch_first=True,
+            activation="gelu",
         )
+        self.temporal_encoder = nn.TransformerEncoder(encoder_layer, num_layers=num_layers)
         self.mha = nn.MultiheadAttention(
             embed_dim=hidden_dim, num_heads=num_heads, batch_first=True
         )
@@ -245,9 +251,9 @@ class PyTorchTFT(nn.Module):
         if x.dim() == 2:
             x = x.unsqueeze(1)
         vsn_out, var_weights = self.vsn(x)
-        lstm_out, _ = self.lstm(vsn_out)
-        attn_out, attn_weights = self.mha(lstm_out, lstm_out, lstm_out)
-        normed = self.post_norm(lstm_out + attn_out)
+        enc_out = self.temporal_encoder(vsn_out)
+        attn_out, attn_weights = self.mha(enc_out, enc_out, enc_out)
+        normed = self.post_norm(enc_out + attn_out)
         last_step = normed[:, -1, :]
         logits = self.fc(last_step)
         return logits, var_weights, attn_weights
@@ -260,6 +266,7 @@ class PyTorchTFT(nn.Module):
 class MultiHorizonNetwork(nn.Module):
     """
     Multi-Task Neural Network predicting 1D, 3D, 5D, 10D, and 20D forward horizons.
+    Uses Dilated Causal Convolutional backbone + Multi-Head Self-Attention.
     Outputs: Direction Probabilities and Expected Return Magnitudes.
     """
     def __init__(
@@ -271,9 +278,20 @@ class MultiHorizonNetwork(nn.Module):
     ):
         super().__init__()
         self.horizons = horizons or [1, 3, 5, 10, 20]
-        self.shared_lstm = nn.LSTM(
-            input_dim, hidden_dim, num_layers=2, batch_first=True, dropout=dropout
+        self.conv_in = nn.Conv1d(input_dim, hidden_dim, kernel_size=1)
+        self.temporal_conv = TemporalBlock(
+            n_inputs=hidden_dim,
+            n_outputs=hidden_dim,
+            kernel_size=3,
+            stride=1,
+            dilation=2,
+            padding=4,
+            dropout=dropout,
         )
+        self.self_attn = nn.MultiheadAttention(
+            embed_dim=hidden_dim, num_heads=4, batch_first=True
+        )
+        self.attn_norm = nn.LayerNorm(hidden_dim)
         self.shared_fc = nn.Sequential(
             nn.Linear(hidden_dim, 64),
             nn.GELU(),
@@ -292,8 +310,12 @@ class MultiHorizonNetwork(nn.Module):
     def forward(self, x: torch.Tensor) -> Dict[str, Dict[str, torch.Tensor]]:
         if x.dim() == 2:
             x = x.unsqueeze(1)
-        out, _ = self.shared_lstm(x)
-        feat = self.shared_fc(out[:, -1, :])
+        # x is (batch, seq_len, input_dim) -> transpose for conv1d: (batch, input_dim, seq_len)
+        x_conv = self.conv_in(x.transpose(1, 2))
+        t_out = self.temporal_conv(x_conv).transpose(1, 2)
+        attn_out, _ = self.self_attn(t_out, t_out, t_out)
+        normed = self.attn_norm(t_out + attn_out)
+        feat = self.shared_fc(normed[:, -1, :])
 
         results = {}
         for h in self.horizons:

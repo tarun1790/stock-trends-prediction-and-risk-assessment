@@ -133,7 +133,7 @@ The diagram below presents the complete relational database entity schema, showi
     <tr><td><code>f1_score</code></td><td>NUMERIC(6,4)</td><td>NO</td><td>&mdash;</td><td>&mdash;</td><td>Harmonic mean of precision and recall.</td></tr>
     <tr><td><code>accuracy</code></td><td>NUMERIC(6,4)</td><td>NO</td><td>&mdash;</td><td>&mdash;</td><td>Out-of-sample validation accuracy.</td></tr>
     <tr><td><code>weights_path</code></td><td>VARCHAR(256)</td><td>YES</td><td>&mdash;</td><td>NULL</td><td>Filesystem URI to serialized PyTorch <code>.pt</code> weights.</td></tr>
-    <tr><td><code>trained_on_gpu</code></td><td>VARCHAR(32)</td><td>YES</td><td>&mdash;</td><td>NULL</td><td>GPU hardware telemetry signature (e.g. RTX 3070 Ti).</td></tr>
+    <tr><td><code>trained_on_gpu</code></td><td>VARCHAR(32)</td><td>YES</td><td>&mdash;</td><td>NULL</td><td>Compute hardware telemetry signature (e.g. CUDA/MPS/CPU).</td></tr>
   </tbody>
 </table>
 

@@ -89,7 +89,7 @@ The system employs a 5-tier decoupled layered architecture separating Presentati
     <tr>
       <td><strong>Tier 4: Signal Vectorization</strong></td>
       <td>
-        &bull; <code>core/indicators.py</code> (10 IEEE)<br/>
+        &bull; <code>core/indicators.py</code> (10 Core)<br/>
         &bull; <code>core/advanced_indicators.py</code> (26 Matrix)<br/>
         &bull; <code>core/fractional_diff.py</code> (L&oacute;pez de Prado FFD)
       </td>
@@ -123,7 +123,7 @@ The system employs a 5-tier decoupled layered architecture separating Presentati
 To satisfy high-throughput institutional workloads without thread contention or memory starvation, AlphaTemporal is tightly coupled to modern hardware acceleration:
 </p>
 <ul>
-  <li><strong>GPU Acceleration Node:</strong> Powered by the <strong>NVIDIA GeForce RTX 3070 Ti Laptop GPU</strong> equipped with 8,191.5 MB GDDR6 dedicated VRAM, 5,888 CUDA cores, and 184 third-generation Tensor Cores. PyTorch tensors are explicitly directed to device <code>device = torch.device('cuda')</code> with pinned host memory and asynchronous stream transfers.</li>
+  <li><strong>Hardware Acceleration Node:</strong> Dynamically routes tensor computation to available GPU/CUDA, Apple Silicon MPS, or Multi-Thread CPU with optimized memory management and asynchronous stream execution.</li>
   <li><strong>Host CPU &amp; Vectorization:</strong> 16-thread host processor executing vectorized 1D Finite Impulse Response (FIR) moving averages via AVX-256 SIMD machine instructions, cutting convolution overhead from 3.8ms to 0.11ms per pass.</li>
   <li><strong>Telemetry &amp; Health Boundaries:</strong> The system continuously queries PyTorch CUDA runtime metrics (allocated VRAM, reserved memory, total capacity) and host memory via <code>psutil</code>, exposed in real-time at <code>/api/diagnostics</code>.</li>
 </ul>

@@ -17,9 +17,9 @@ class SystemStatusResponse(BaseModel):
 
 
 class DataFetchRequest(BaseModel):
-    source: str = Field("sample", description="'sample' (TSE sector), 'ticker' (Yahoo Finance), or 'csv'")
-    sector_key: Optional[str] = Field("diversified_financials", description="TSE sector key if source=='sample'")
-    ticker: Optional[str] = Field(None, description="Ticker symbol (e.g. 'AAPL', 'NVDA', 'SPY') if source=='ticker'")
+    source: str = Field("ticker", description="'ticker' (live market feed), 'sample' (sector preset), or 'csv'")
+    sector_key: Optional[str] = Field("financials", description="Sector key if source=='sample'")
+    ticker: Optional[str] = Field("AAPL", description="Ticker symbol (e.g. 'AAPL', 'NVDA', 'SPY') if source=='ticker'")
     start_date: Optional[str] = "2018-01-01"
     end_date: Optional[str] = None
     period: Optional[str] = "5y"
@@ -52,7 +52,7 @@ class IndicatorComputeResponse(BaseModel):
 
 
 class ModelTrainRequest(BaseModel):
-    model_name: str = Field("lstm", description="Model identifier (e.g. 'random_forest', 'xgboost', 'lstm', 'transformer', 'ensemble')")
+    model_name: str = Field("tft", description="Model identifier (e.g. 'random_forest', 'xgboost', 'tft', 'tcn', 'transformer', 'ensemble')")
     data_mode: str = Field("binary", description="'continuous' or 'binary'")
     sector_key: Optional[str] = "diversified_financials"
     ticker: Optional[str] = None
@@ -86,7 +86,7 @@ class BenchmarkResponse(BaseModel):
 
 class LivePredictRequest(BaseModel):
     ticker: str = Field("AAPL", description="Ticker symbol or 'sample'")
-    model_name: str = Field("lstm", description="Model to use for inference")
+    model_name: str = Field("tft", description="Model to use for inference")
     data_mode: str = Field("binary", description="'continuous' or 'binary'")
 
 
@@ -104,7 +104,7 @@ class LivePredictResponse(BaseModel):
 
 
 class BacktestRequest(BaseModel):
-    model_name: str = "lstm"
+    model_name: str = "tft"
     data_mode: str = "binary"
     sector_key: Optional[str] = "diversified_financials"
     ticker: Optional[str] = None

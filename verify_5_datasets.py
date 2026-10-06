@@ -23,7 +23,7 @@ from stock_predict.models import (
     RandomForestModel,
     create_tcn_model,
     create_tft_model,
-    create_lstm_model,
+    create_gru_model,
     create_transformer_model,
     VotingEnsembleModel,
 )
@@ -70,7 +70,7 @@ def run_dataset_verification():
         models = [
             ("TFT (Temporal Fusion Transformer)", lambda: create_tft_model(epochs=35), True),
             ("TCN (Dilated ConvNet)", lambda: create_tcn_model(epochs=35), True),
-            ("LSTM (Deep Recurrent)", lambda: create_lstm_model(epochs=35), True),
+            ("GRU (Gated Recurrent Unit)", lambda: create_gru_model(epochs=35), True),
             ("Transformer Classifier", lambda: create_transformer_model(epochs=35), True),
             ("XGBoost Classifier", lambda: XGBoostModel(n_estimators=100), False),
             ("Random Forest", lambda: RandomForestModel(n_estimators=100), False),

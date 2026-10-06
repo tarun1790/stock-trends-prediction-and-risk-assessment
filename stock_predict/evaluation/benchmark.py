@@ -1,7 +1,7 @@
 """
 Comprehensive Model Benchmarking Engine.
 Executes systematic comparative analysis across continuous and binary data representations
-reproducing Tables 4-9 and Figures 14-16 from the IEEE Access paper.
+across diverse machine learning and deep temporal architectures.
 """
 
 from typing import Any, Dict, List, Optional
@@ -22,10 +22,10 @@ from stock_predict.models import (
     LogisticRegressionModel,
     create_ann_model,
     create_rnn_model,
-    create_lstm_model,
     create_gru_model,
-    create_bilstm_attention_model,
     create_transformer_model,
+    create_tcn_model,
+    create_tft_model,
     VotingEnsembleModel,
 )
 from stock_predict.evaluation.metrics import evaluate_predictions
@@ -41,7 +41,7 @@ class BenchmarkRunner:
         self.sequence_length = sequence_length
 
     def get_default_models(self) -> Dict[str, Any]:
-        """Get instantiated instances of all 11 baseline models + advanced models."""
+        """Get instantiated instances of baseline models + advanced models."""
         return {
             "Decision Tree": DecisionTreeModel(max_depth=10),
             "Random Forest": RandomForestModel(n_estimators=100, max_depth=10),
@@ -54,10 +54,10 @@ class BenchmarkRunner:
             "Logistic Regression": LogisticRegressionModel(C=1.0),
             "ANN": create_ann_model(hidden_dims=[200, 100], epochs=100),
             "RNN": create_rnn_model(hidden_dim=256, epochs=60),
-            "LSTM": create_lstm_model(hidden_dim=256, epochs=60),
             "GRU": create_gru_model(hidden_dim=256, epochs=60),
-            "BiLSTM-Attention": create_bilstm_attention_model(hidden_dim=256, epochs=60),
             "Transformer": create_transformer_model(d_model=64, epochs=60),
+            "TCN": create_tcn_model(epochs=60),
+            "TFT": create_tft_model(epochs=60),
         }
 
     def run_single_model(
@@ -68,7 +68,7 @@ class BenchmarkRunner:
     ) -> Dict[str, Any]:
         """Train and evaluate a single model on prepared data."""
         is_sequence_model = model_name in [
-            "RNN", "LSTM", "GRU", "BiLSTM-Attention", "Transformer"
+            "RNN", "GRU", "Transformer", "TCN", "TFT"
         ]
 
         if is_sequence_model and "X_seq_train" in data_dict:

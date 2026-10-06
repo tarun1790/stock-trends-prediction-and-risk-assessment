@@ -3,11 +3,9 @@ Deep Learning and Neural Network Models (GPU/CUDA Accelerated).
 Implements PyTorch implementations of:
 - ANN (Artificial Neural Network / MLP)
 - RNN (Recurrent Neural Network with sequence window 1-30 days)
-- LSTM (Long Short-Term Memory Network)
 - GRU (Gated Recurrent Unit)
-- BiLSTM with Temporal Self-Attention
 - Time-Series Transformer Classifier
-Configured for GPU/CUDA acceleration by default.
+Configured for GPU/CUDA acceleration by default with dynamic device fallback.
 """
 
 import math
@@ -44,8 +42,7 @@ def get_activation(name: str) -> nn.Module:
 
 class PyTorchANN(nn.Module):
     """
-    Artificial Neural Network (MLP) architecture.
-    Matches Table 3 & Figures 11-12 of the IEEE paper.
+    Artificial Neural Network (Multi-Layer Perceptron) architecture.
     """
 
     def __init__(
@@ -84,8 +81,7 @@ class PyTorchANN(nn.Module):
 
 class PyTorchRNN(nn.Module):
     """
-    Recurrent Neural Network (Elman RNN).
-    Matches Table 3 & Figure 13 of the IEEE paper.
+    Recurrent Neural Network (Elman RNN) architecture.
     """
 
     def __init__(
@@ -113,44 +109,6 @@ class PyTorchRNN(nn.Module):
         if x.dim() == 2:
             x = x.unsqueeze(1)  # (batch, 1, features)
         out, _ = self.rnn(x)
-        last_step = out[:, -1, :]
-        out = self.dropout(last_step)
-        return self.fc(out)
-
-
-class PyTorchLSTM(nn.Module):
-    """
-    Long Short-Term Memory (LSTM) Network.
-    Matches Section III-K and Table 3 of the IEEE paper.
-    """
-
-    def __init__(
-        self,
-        input_dim: int = 10,
-        hidden_dim: int = 500,
-        num_layers: int = 2,
-        dropout: float = 0.2,
-        bidirectional: bool = False,
-        num_classes: int = 2,
-    ):
-        super().__init__()
-        self.bidirectional = bidirectional
-        self.lstm = nn.LSTM(
-            input_size=input_dim,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout if num_layers > 1 else 0.0,
-            bidirectional=bidirectional,
-        )
-        fc_in = hidden_dim * 2 if bidirectional else hidden_dim
-        self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Linear(fc_in, num_classes)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.dim() == 2:
-            x = x.unsqueeze(1)
-        out, _ = self.lstm(x)
         last_step = out[:, -1, :]
         out = self.dropout(last_step)
         return self.fc(out)
@@ -188,65 +146,6 @@ class PyTorchGRU(nn.Module):
         last_step = out[:, -1, :]
         out = self.dropout(last_step)
         return self.fc(out)
-
-
-class AttentionBlock(nn.Module):
-    """Temporal Multi-Head Attention layer over time-series steps."""
-
-    def __init__(self, hidden_dim: int, num_heads: int = 4):
-        super().__init__()
-        self.mha = nn.MultiheadAttention(
-            embed_dim=hidden_dim, num_heads=num_heads, batch_first=True
-        )
-        self.norm = nn.LayerNorm(hidden_dim)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # x: (batch, seq_len, hidden_dim)
-        attn_out, _ = self.mha(x, x, x)
-        x = self.norm(x + attn_out)
-        return x
-
-
-class PyTorchBiLSTMAttention(nn.Module):
-    """
-    Bidirectional LSTM with Temporal Self-Attention Mechanism.
-    """
-
-    def __init__(
-        self,
-        input_dim: int = 10,
-        hidden_dim: int = 256,
-        num_layers: int = 2,
-        num_heads: int = 4,
-        dropout: float = 0.2,
-        num_classes: int = 2,
-    ):
-        super().__init__()
-        self.lstm = nn.LSTM(
-            input_size=input_dim,
-            hidden_size=hidden_dim // 2,
-            num_layers=num_layers,
-            batch_first=True,
-            bidirectional=True,
-            dropout=dropout if num_layers > 1 else 0.0,
-        )
-        self.attention = AttentionBlock(hidden_dim, num_heads=num_heads)
-        self.dropout = nn.Dropout(dropout)
-        self.fc = nn.Sequential(
-            nn.Linear(hidden_dim, 64),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(64, num_classes),
-        )
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        if x.dim() == 2:
-            x = x.unsqueeze(1)
-        lstm_out, _ = self.lstm(x)
-        attn_out = self.attention(lstm_out)
-        pooled = torch.mean(attn_out, dim=1)  # Temporal global average pooling
-        pooled = self.dropout(pooled)
-        return self.fc(pooled)
 
 
 class PositionalEncoding(nn.Module):
@@ -383,27 +282,16 @@ class PyTorchModelWrapper(BaseModelWrapper):
                 nonlinearity=self.kwargs.get("nonlinearity", "tanh"),
                 dropout=self.kwargs.get("dropout", 0.2),
             )
-        elif mtype == "lstm":
-            return PyTorchLSTM(
-                input_dim=self.input_dim,
-                hidden_dim=self.hidden_dim,
-                num_layers=self.kwargs.get("num_layers", 2),
-                dropout=self.kwargs.get("dropout", 0.2),
-                bidirectional=self.kwargs.get("bidirectional", False),
+        elif mtype in ["lstm", "bilstm_attention"]:
+            raise ValueError(
+                f"Architecture '{mtype}' has been deprecated and removed. "
+                "Please use 'tft', 'tcn', 'gru', or 'transformer' for superior temporal predictive accuracy."
             )
         elif mtype == "gru":
             return PyTorchGRU(
                 input_dim=self.input_dim,
                 hidden_dim=self.hidden_dim,
                 num_layers=self.kwargs.get("num_layers", 2),
-                dropout=self.kwargs.get("dropout", 0.2),
-            )
-        elif mtype == "bilstm_attention":
-            return PyTorchBiLSTMAttention(
-                input_dim=self.input_dim,
-                hidden_dim=self.hidden_dim,
-                num_layers=self.kwargs.get("num_layers", 2),
-                num_heads=self.kwargs.get("num_heads", 4),
                 dropout=self.kwargs.get("dropout", 0.2),
             )
         elif mtype == "transformer":
@@ -574,22 +462,6 @@ def create_rnn_model(
     )
 
 
-def create_lstm_model(
-    input_dim: int = 10,
-    hidden_dim: int = 500,
-    lr: float = 0.00005,
-    epochs: int = 100,
-) -> PyTorchModelWrapper:
-    return PyTorchModelWrapper(
-        model_type="lstm",
-        name="LSTM",
-        input_dim=input_dim,
-        hidden_dim=hidden_dim,
-        learning_rate=lr,
-        epochs=epochs,
-    )
-
-
 def create_gru_model(
     input_dim: int = 10,
     hidden_dim: int = 256,
@@ -599,22 +471,6 @@ def create_gru_model(
     return PyTorchModelWrapper(
         model_type="gru",
         name="GRU",
-        input_dim=input_dim,
-        hidden_dim=hidden_dim,
-        learning_rate=lr,
-        epochs=epochs,
-    )
-
-
-def create_bilstm_attention_model(
-    input_dim: int = 10,
-    hidden_dim: int = 256,
-    lr: float = 0.0001,
-    epochs: int = 100,
-) -> PyTorchModelWrapper:
-    return PyTorchModelWrapper(
-        model_type="bilstm_attention",
-        name="BiLSTM-Attention",
         input_dim=input_dim,
         hidden_dim=hidden_dim,
         learning_rate=lr,

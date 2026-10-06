@@ -13,6 +13,7 @@ from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 import pandas as pd
 import torch
+from stock_predict.config import get_device, get_device_name
 from stock_predict.core.composite_indicators import compute_26_technical_indicators
 from stock_predict.core.advanced_indicators import compute_atr, compute_adx
 from stock_predict.core.multi_theory_engine import MultiTheoryPredictor
@@ -26,7 +27,7 @@ class CalibratedProductionEnsemble:
 
     def __init__(self, confidence_threshold: float = 0.75):
         self.tau = confidence_threshold
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.device = get_device()
         self.theory_predictor = MultiTheoryPredictor(device=self.device)
 
     def analyze_asset(self, df: pd.DataFrame, ticker: str = "ASSET") -> Dict[str, Any]:
@@ -107,8 +108,8 @@ class CalibratedProductionEnsemble:
                 "confidence_pct": confidence_pct,
                 "conviction_tier": conviction_tier,
                 "architecture": "Calibrated 26-Indicator Stacking Ensemble (XGBoost + TFT + TCN)",
-                "methodology": "IEEE Access & Selective Classification (Chow tau >= 0.75)",
-                "compute_device": "NVIDIA CUDA GPU" if torch.cuda.is_available() else "CPU",
+                "methodology": "Selective Classification & Multi-Theory Confluence (Chow tau >= 0.75)",
+                "compute_device": get_device_name(),
             },
             "technical_ratings": indicators_result,
             "forecasts": forecasts,

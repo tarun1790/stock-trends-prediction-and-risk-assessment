@@ -1,6 +1,6 @@
 """
 Market Data Loader & Ingestion Engine.
-Supports Yahoo Finance live downloading, local CSV datasets, TSE sector presets,
+Supports Yahoo Finance live downloading, Binance 24/7 feeds, local CSV datasets,
 and offline caching for reproducible pipelines.
 """
 
@@ -19,8 +19,8 @@ _MEM_CACHE: dict = {}
 
 class DataLoader:
     """
-    Unified Data Loader supporting live market downloads, custom CSV files,
-    and historical sector datasets from the IEEE research paper.
+    Unified Data Loader supporting live market downloads, Binance feeds,
+    custom CSV files, and historical market sector data.
     """
 
     def __init__(self, cache_dir: Optional[Path] = None):
@@ -34,7 +34,7 @@ class DataLoader:
     ) -> pd.DataFrame:
         """
         Load historical sector dataset. Uses cached CSV if present, otherwise generates
-        and persists the Table 11 calibrated 10-year dataset.
+        and persists calibrated historical data.
         """
         if sector_key not in PAPER_SECTORS:
             raise ValueError(

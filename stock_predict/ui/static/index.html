@@ -79,12 +79,7 @@
               <option value="QQQ">QQQ - Invesco QQQ (Nasdaq 100)</option>
             </optgroup>
 
-            <optgroup label="🇹🇼 TSE Benchmark Sectors (IEEE Paper)">
-              <option value="diversified_financials">TSE Diversified Financials</option>
-              <option value="petroleum">TSE Petroleum Sector</option>
-              <option value="basic_metals">TSE Basic Metals Sector</option>
-              <option value="non_metallic_minerals">TSE Non-metallic Minerals</option>
-            </optgroup>
+
           </select>
 
           <!-- Ticker Search Box -->
@@ -311,7 +306,7 @@
 
     </div>
 
-    <!-- SECTION B: DEEP NEURAL FORECASTING ENGINE (TFT, TCN, BiLSTM) -->
+    <!-- SECTION B: DEEP NEURAL FORECASTING ENGINE (TFT, TCN, Transformer) -->
     <div class="terminal-card p-4 space-y-3 bg-zinc-950 border border-zinc-800">
       <div class="flex flex-wrap items-center justify-between border-b border-zinc-800 pb-3 gap-2">
         <div class="flex items-center space-x-3">
@@ -324,7 +319,7 @@
               </span>
             </div>
             <p class="text-[11px] text-zinc-400 mt-0.5" id="verified-trend-desc">
-              GPU-Accelerated PyTorch Architecture with Conformal Prediction Quantiles (Chow tau >= 0.75)
+              Hardware-Accelerated PyTorch Architecture with Conformal Prediction Quantiles (Chow tau >= 0.75)
             </p>
           </div>
         </div>
@@ -343,15 +338,15 @@
             <span class="text-emerald-400 font-bold text-sm" id="verified-confluence-text">--</span>
           </div>
           
-          <!-- Model Selection Dropdown (TFT, TCN, BiLSTM, etc.) -->
+          <!-- Model Selection Dropdown (TFT, TCN, Transformer, etc.) -->
           <div class="flex items-center space-x-1.5">
             <span class="text-zinc-400 text-xs font-bold">Model:</span>
             <select id="main-model-select" class="bg-black border border-zinc-700 text-xs text-white rounded px-2.5 py-1.5 focus:border-emerald-500 focus:outline-none font-mono">
               <option value="tft" selected>TFT (Temporal Fusion Transformer)</option>
               <option value="tcn">TCN (Temporal ConvNet)</option>
-              <option value="bilstm_attention">BiLSTM + Attention</option>
-              <option value="transformer">Transformer</option>
-              <option value="lstm">LSTM (Multi-Layer)</option>
+              <option value="transformer">Transformer (Attention)</option>
+              <option value="gru">Gated Recurrent Unit (GRU)</option>
+              <option value="ann">Neural Network (ANN)</option>
               <option value="xgboost">XGBoost Classifier</option>
               <option value="ensemble">Voting Ensemble</option>
             </select>
@@ -652,7 +647,7 @@
       <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2 overflow-x-auto scrollbar-none text-xs">
         <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-creditrisk">Corporate Credit Risk (Altman Z & Merton)</button>
         <button class="tab-btn px-3 py-1.5 rounded active-tab text-black bg-white font-bold transition whitespace-nowrap" data-tab="tab-glossary">
-          Indicator Glossary & Math (10 IEEE)
+          Indicator Glossary & Math (10 Foundational)
         </button>
         <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-multihorizon">
           Multi-Horizon Forecaster Curve
@@ -664,7 +659,7 @@
           Monte Carlo Conformal Simulation
         </button>
         <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-benchmarks">
-          Model Benchmark & Paper Replication
+          Model Benchmark & Architecture Comparison
         </button>
         <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-backtest">
           Institutional Risk Backtester
@@ -772,7 +767,7 @@
               </tr>
             </thead>
             <tbody id="indicators-glossary-body" class="divide-y divide-zinc-900 text-xs">
-              <tr><td colspan="6" class="p-4 text-center text-zinc-500">Calculating 10 IEEE technical indicator series from live price action...</td></tr>
+              <tr><td colspan="6" class="p-4 text-center text-zinc-500">Calculating foundational technical indicator series from live price action...</td></tr>
             </tbody>
           </table>
         </div>
@@ -860,10 +855,10 @@
         </div>
       </div>
 
-      <!-- TAB 5: BENCHMARKS & PAPER REPLICATION -->
+      <!-- TAB 5: BENCHMARKS & ARCHITECTURE COMPARISON -->
       <div id="tab-benchmarks" class="tab-content hidden space-y-3">
         <div class="flex items-center justify-between">
-          <span class="text-xs text-zinc-400">10-Year IEEE Access Benchmark Replicated Across 15 Architectures</span>
+          <span class="text-xs text-zinc-400">Multi-Model Quantitative Benchmark Replicated Across 15 Architectures</span>
           <button id="btn-run-benchmark" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-3 py-1 rounded border border-zinc-700 font-bold transition">
             Run Benchmark Suite
           </button>
@@ -939,7 +934,7 @@
 
   <!-- Clean Institutional Footer -->
   <footer class="border-t border-zinc-800 py-3 bg-black text-center text-xs text-zinc-500 font-mono w-full">
-    StockTrend AI &bull; Quantitative Market Machine Learning Platform &bull; CUDA GPU Accelerated (NVIDIA GeForce RTX 3070 Ti)
+    StockTrend AI &bull; Quantitative Market Machine Learning Platform &bull; Universal Hardware Accelerated (CUDA GPU / Apple Silicon MPS / CPU)
   </footer>
 
   <script src="/static/app.js"></script>

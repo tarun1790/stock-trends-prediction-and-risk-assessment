@@ -1,5 +1,5 @@
 """
-Models Package: 11 Baseline Models from the IEEE Paper + Advanced DL/Ensembles.
+Models Package: Quantitative Forecasting Models (Tree Ensembles, Classical Learners, Advanced Deep Neural Networks, and Meta-Ensembles).
 """
 
 from stock_predict.models.base import BaseModelWrapper
@@ -20,9 +20,7 @@ from stock_predict.models.neural_models import (
     PyTorchModelWrapper,
     create_ann_model,
     create_rnn_model,
-    create_lstm_model,
     create_gru_model,
-    create_bilstm_attention_model,
     create_transformer_model,
 )
 from stock_predict.models.advanced_neural import (
@@ -66,9 +64,7 @@ MODEL_REGISTRY = {
     "logistic_regression": LogisticRegressionModel,
     "ann": create_ann_model,
     "rnn": create_rnn_model,
-    "lstm": create_lstm_model,
     "gru": create_gru_model,
-    "bilstm_attention": create_bilstm_attention_model,
     "transformer": create_transformer_model,
     "tcn": create_tcn_model,
     "tft": create_tft_model,
@@ -88,10 +84,10 @@ __all__ = [
     "PyTorchModelWrapper",
     "create_ann_model",
     "create_rnn_model",
-    "create_lstm_model",
     "create_gru_model",
-    "create_bilstm_attention_model",
     "create_transformer_model",
+    "create_tcn_model",
+    "create_tft_model",
     "VotingEnsembleModel",
     "StackingEnsembleModel",
     "MODEL_REGISTRY",

@@ -1,6 +1,6 @@
 """
 Traditional Supervised Learning Classifiers.
-Implements the 4 traditional models from Table 2 of the IEEE paper:
+Implements foundational statistical and kernel classifiers:
 - Support Vector Classifier (SVC: RBF, Poly, Sigmoid, Linear)
 - Naïve Bayes (GaussianNB)
 - K-Nearest Neighbors (KNN)

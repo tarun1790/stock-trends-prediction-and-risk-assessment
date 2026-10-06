@@ -1,17 +1,12 @@
 """
-Automated Multi-Dataset Out-of-Sample Verification Script.
-Evaluates 5 diverse global datasets:
+Automated Multi-Asset Out-of-Sample Verification Script.
+Evaluates 6 diverse global assets across major market classes:
 1. MSFT (US Software & Cloud)
 2. AAPL (Consumer Electronics)
 3. SPY (S&P 500 ETF Benchmark)
 4. BTC-USD (Bitcoin Crypto Asset)
 5. GC=F (Gold Futures Commodity)
-
-Plus the 4 official IEEE Access Tehran Stock Exchange (TSE) datasets:
-6. TSE Diversified Financials
-7. TSE Petroleum
-8. TSE Basic Metals
-9. TSE Non-Metallic Minerals
+6. NVDA (Semiconductor & AI Hardware)
 """
 
 import sys
@@ -26,7 +21,6 @@ from stock_predict.models import (
     RandomForestModel,
     create_tcn_model,
     create_tft_model,
-    create_lstm_model,
     create_transformer_model,
 )
 from stock_predict.evaluation.metrics import evaluate_predictions
@@ -39,7 +33,7 @@ DATASETS = [
     {"name": "S&P 500 ETF (SPY)", "ticker": "SPY", "is_sector": False, "asset_class": "US Equities Benchmark"},
     {"name": "Bitcoin USD (BTC-USD)", "ticker": "BTC-USD", "is_sector": False, "asset_class": "Digital Asset / Crypto"},
     {"name": "Gold Futures (GC=F)", "ticker": "GC=F", "is_sector": False, "asset_class": "Macro Commodity"},
-    {"name": "TSE Diversified Financials", "ticker": "diversified_financials", "is_sector": True, "asset_class": "TSE Sector (Paper)"},
+    {"name": "NVIDIA Corp (NVDA)", "ticker": "NVDA", "is_sector": False, "asset_class": "Semiconductor / AI"},
 ]
 
 def verify_all():
