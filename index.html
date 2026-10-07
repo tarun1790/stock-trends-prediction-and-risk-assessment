@@ -35,74 +35,22 @@
           <p class="text-[11px] text-zinc-400">Institutional Algorithmic Signals &bull; Temporal Fusion Transformer &bull; Real-Time Order Flow</p>
         </div>
 
-        <!-- Global Asset & Stock Selector Dropdown -->
-        <div class="flex items-center space-x-2 ml-2">
-          <select id="sector-select" class="bg-zinc-950 border border-zinc-700 text-white text-xs rounded px-3 py-1.5 focus:border-emerald-500 focus:outline-none max-w-xs font-mono">
-            <optgroup label="🇮🇳 Indian Markets (NSE / BSE)">
-              <option value="RELIANCE.NS" selected>RELIANCE - Reliance Industries Ltd (₹)</option>
-              <option value="TCS.NS">TCS - Tata Consultancy Services (₹)</option>
-              <option value="INFY.NS">INFY - Infosys Limited (₹)</option>
-              <option value="HDFCBANK.NS">HDFCBANK - HDFC Bank Ltd (₹)</option>
-              <option value="TATAMOTORS.NS">TATAMOTORS - Tata Motors Ltd (₹)</option>
-              <option value="SBIN.NS">SBIN - State Bank of India (₹)</option>
-              <option value="ITC.NS">ITC - ITC Limited (₹)</option>
-              <option value="BHARTIARTL.NS">BHARTIARTL - Bharti Airtel (₹)</option>
-              <option value="^NSEI">^NSEI - NIFTY 50 Benchmark Index (₹)</option>
-              <option value="^NSEBANK">^NSEBANK - BANK NIFTY Index (₹)</option>
-            </optgroup>
-
-            <optgroup label="💱 Foreign Exchange (Forex Pairs)">
-              <option value="USDINR=X">USDINR=X - USD / Indian Rupee (₹)</option>
-              <option value="EURUSD=X">EURUSD=X - Euro / US Dollar</option>
-              <option value="GBPUSD=X">GBPUSD=X - British Pound / US Dollar</option>
-              <option value="USDJPY=X">USDJPY=X - US Dollar / Japanese Yen (¥)</option>
-              <option value="EURINR=X">EURINR=X - Euro / Indian Rupee (₹)</option>
-              <option value="AUDUSD=X">AUDUSD=X - Australian Dollar / US Dollar</option>
-            </optgroup>
-
-            <optgroup label="🪙 Cryptocurrency (Binance 24/7 Live)">
-              <option value="BTC-USD">BTC-USD - Bitcoin / USD</option>
-              <option value="ETH-USD">ETH-USD - Ethereum / USD</option>
-              <option value="SOL-USD">SOL-USD - Solana / USD</option>
-            </optgroup>
-
-            <optgroup label="🇺🇸 US Mega-Cap Equities & Indices">
-              <option value="NVDA">NVDA - NVIDIA Corporation</option>
-              <option value="AAPL">AAPL - Apple Inc</option>
-              <option value="MSFT">MSFT - Microsoft Corporation</option>
-              <option value="AMZN">AMZN - Amazon.com Inc</option>
-              <option value="GOOGL">GOOGL - Alphabet Inc</option>
-              <option value="META">META - Meta Platforms</option>
-              <option value="TSLA">TSLA - Tesla Inc</option>
-              <option value="AMD">AMD - Advanced Micro Devices</option>
-              <option value="SPY">SPY - SPDR S&P 500 ETF Trust</option>
-              <option value="QQQ">QQQ - Invesco QQQ (Nasdaq 100)</option>
-            </optgroup>
-
-            <optgroup label="🥇 Commodities & Precious Metals (Global Futures & ETFs)">
-              <option value="GC=F">GC=F - Gold Futures (COMEX $)</option>
-              <option value="SI=F">SI=F - Silver Futures (COMEX $)</option>
-              <option value="GLD">GLD - SPDR Gold Shares ETF ($)</option>
-              <option value="SLV">SLV - iShares Silver Trust ETF ($)</option>
-              <option value="CL=F">CL=F - Crude Oil WTI Futures ($)</option>
-              <option value="BZ=F">BZ=F - Brent Crude Oil Futures ($)</option>
-              <option value="NG=F">NG=F - Natural Gas Futures ($)</option>
-              <option value="HG=F">HG=F - Copper Futures ($)</option>
-            </optgroup>
-
-          </select>
-
-          <!-- Ticker Search Box with Live Autocomplete -->
-          <div class="relative inline-block">
-            <div class="flex items-center space-x-1">
-              <input type="text" id="custom-ticker-input" placeholder="Search any stock, gold, silver..." class="bg-zinc-950 border border-zinc-700 text-white text-xs rounded px-2.5 py-1.5 w-56 focus:border-emerald-500 focus:outline-none uppercase font-mono" autocomplete="off">
-              <button id="btn-custom-ticker" class="bg-emerald-600 hover:bg-emerald-500 text-white text-xs px-3 py-1.5 rounded font-bold transition flex items-center gap-1 shadow-sm">
-                <span>Analyze</span>
-              </button>
+        <!-- Universal Real-Time Stock & Asset Search Bar -->
+        <div class="relative flex-1 max-w-xl mx-4">
+          <div class="flex items-center space-x-2">
+            <div class="relative flex-1">
+              <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-500">
+                <i data-lucide="search" class="w-4 h-4"></i>
+              </span>
+              <input type="text" id="custom-ticker-input" placeholder="Search any stock, company, or commodity (e.g. Apple, Tesla, Gold, Silver, Reliance, Bitcoin)..." class="bg-zinc-950 border border-zinc-700 text-white text-xs rounded-lg pl-9 pr-3 py-2 w-full focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 focus:outline-none font-medium placeholder-zinc-500 font-mono uppercase" autocomplete="off">
             </div>
-            <!-- Search Autocomplete Suggestions Dropdown -->
-            <div id="ticker-search-results" class="hidden absolute top-full left-0 mt-1 w-80 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-50 max-h-72 overflow-y-auto text-xs font-mono divide-y divide-zinc-800"></div>
+            <button id="btn-custom-ticker" class="bg-emerald-500 hover:bg-emerald-400 text-black text-xs font-bold px-4 py-2 rounded-lg transition flex items-center space-x-1.5 whitespace-nowrap shadow-sm">
+              <i data-lucide="sparkles" class="w-3.5 h-3.5"></i>
+              <span>Predict Stock</span>
+            </button>
           </div>
+          <!-- Real-Time Search Autocomplete Dropdown -->
+          <div id="ticker-search-results" class="hidden absolute top-full left-0 right-0 mt-1 bg-zinc-900 border border-zinc-700 rounded-lg shadow-2xl z-50 max-h-80 overflow-y-auto text-xs font-mono divide-y divide-zinc-800"></div>
         </div>
       </div>
 

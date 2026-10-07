@@ -159,122 +159,86 @@ def get_system_diagnostics():
     }
 
 
-# Comprehensive Global, Indian & Forex Asset Catalog
-STOCK_DIRECTORY = {
-    # US Mega-Cap & Tech
-    "NVDA": {"name": "NVIDIA Corporation", "exchange": "NASDAQ", "sector": "Semiconductors", "currency": "$"},
-    "AAPL": {"name": "Apple Inc.", "exchange": "NASDAQ", "sector": "Consumer Electronics", "currency": "$"},
-    "MSFT": {"name": "Microsoft Corporation", "exchange": "NASDAQ", "sector": "Software & Cloud", "currency": "$"},
-    "AMZN": {"name": "Amazon.com Inc.", "exchange": "NASDAQ", "sector": "E-Commerce & Cloud", "currency": "$"},
-    "GOOGL": {"name": "Alphabet Inc.", "exchange": "NASDAQ", "sector": "Internet & AI", "currency": "$"},
-    "META": {"name": "Meta Platforms Inc.", "exchange": "NASDAQ", "sector": "Social Media & AI", "currency": "$"},
-    "TSLA": {"name": "Tesla Inc.", "exchange": "NASDAQ", "sector": "Automotive & Clean Energy", "currency": "$"},
-    "AMD": {"name": "Advanced Micro Devices", "exchange": "NASDAQ", "sector": "Semiconductors", "currency": "$"},
-    "PLTR": {"name": "Palantir Technologies", "exchange": "NYSE", "sector": "AI & Big Data", "currency": "$"},
-    "COIN": {"name": "Coinbase Global", "exchange": "NASDAQ", "sector": "Crypto Exchange", "currency": "$"},
-    "SPY": {"name": "SPDR S&P 500 ETF Trust", "exchange": "NYSE Arca", "sector": "Index ETF", "currency": "$"},
-    "QQQ": {"name": "Invesco QQQ Trust (Nasdaq 100)", "exchange": "NASDAQ", "sector": "Tech Index ETF", "currency": "$"},
-    
-    # Indian Stock Market (NSE / BSE)
-    "^NSEI": {"name": "NIFTY 50 Index", "exchange": "NSE", "sector": "Indian Benchmark Index", "currency": "₹"},
-    "^NSEBANK": {"name": "BANK NIFTY Index", "exchange": "NSE", "sector": "Indian Banking Index", "currency": "₹"},
-    "RELIANCE.NS": {"name": "Reliance Industries Ltd", "exchange": "NSE", "sector": "Energy & Telecom", "currency": "₹"},
-    "TCS.NS": {"name": "Tata Consultancy Services", "exchange": "NSE", "sector": "IT Services", "currency": "₹"},
-    "INFY.NS": {"name": "Infosys Limited", "exchange": "NSE", "sector": "IT Services", "currency": "₹"},
-    "HDFCBANK.NS": {"name": "HDFC Bank Ltd", "exchange": "NSE", "sector": "Private Banking", "currency": "₹"},
-    "TATAMOTORS.NS": {"name": "Tata Motors Ltd", "exchange": "NSE", "sector": "Automotive", "currency": "₹"},
-    "SBIN.NS": {"name": "State Bank of India", "exchange": "NSE", "sector": "Public Banking", "currency": "₹"},
-    "ITC.NS": {"name": "ITC Limited", "exchange": "NSE", "sector": "Consumer Goods", "currency": "₹"},
-    "BHARTIARTL.NS": {"name": "Bharti Airtel Ltd", "exchange": "NSE", "sector": "Telecommunications", "currency": "₹"},
-
-    # Foreign Exchange (Forex Pairs)
-    "USDINR=X": {"name": "USD / Indian Rupee", "exchange": "FOREX", "sector": "Currency Pair", "currency": "₹"},
-    "EURUSD=X": {"name": "EUR / USD", "exchange": "FOREX", "sector": "Currency Pair", "currency": "$"},
-    "GBPUSD=X": {"name": "GBP / USD", "exchange": "FOREX", "sector": "Currency Pair", "currency": "$"},
-    "USDJPY=X": {"name": "USD / JPY", "exchange": "FOREX", "sector": "Currency Pair", "currency": "¥"},
-    "EURINR=X": {"name": "EUR / Indian Rupee", "exchange": "FOREX", "sector": "Currency Pair", "currency": "₹"},
-    "AUDUSD=X": {"name": "AUD / USD", "exchange": "FOREX", "sector": "Currency Pair", "currency": "$"},
-
-    # Crypto (Binance Real-Time 24/7)
-    "BTC-USD": {"name": "Bitcoin USD", "exchange": "Crypto", "sector": "Digital Asset", "currency": "$"},
-    "ETH-USD": {"name": "Ethereum USD", "exchange": "Crypto", "sector": "Smart Contracts", "currency": "$"},
-    "SOL-USD": {"name": "Solana USD", "exchange": "Crypto", "sector": "High-Throughput L1", "currency": "$"},
-
-    # Commodities & Precious Metals
-    "GC=F": {"name": "Gold Futures", "exchange": "COMEX", "sector": "Precious Metals", "currency": "$"},
-    "SI=F": {"name": "Silver Futures", "exchange": "COMEX", "sector": "Precious Metals", "currency": "$"},
-    "CL=F": {"name": "Crude Oil WTI Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
-    "BZ=F": {"name": "Brent Crude Oil Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
-    "NG=F": {"name": "Natural Gas Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
-    "HG=F": {"name": "Copper Futures", "exchange": "COMEX", "sector": "Industrial Metals", "currency": "$"},
-    "PL=F": {"name": "Platinum Futures", "exchange": "NYMEX", "sector": "Precious Metals", "currency": "$"},
-    "GLD": {"name": "SPDR Gold Shares (ETF)", "exchange": "NYSE Arca", "sector": "Precious Metals ETF", "currency": "$"},
-    "SLV": {"name": "iShares Silver Trust (ETF)", "exchange": "NYSE Arca", "sector": "Precious Metals ETF", "currency": "$"},
-    "USO": {"name": "United States Oil Fund (ETF)", "exchange": "NYSE Arca", "sector": "Energy Commodity ETF", "currency": "$"},
-}
+_LIVE_METADATA_CACHE: Dict[str, Any] = {}
 
 
 def resolve_ticker_info(ticker: str) -> Dict[str, Any]:
     """
-    Dynamically resolve or infer asset metadata for ANY global equity, commodity, or currency.
+    Dynamically resolve real-time company identity, exchange, sector, and currency
+    directly from live market feeds for ANY asset in the world.
+    Zero hardcoded dictionaries.
     """
     clean_sym = DataLoader.resolve_symbol(ticker)
-    if clean_sym in STOCK_DIRECTORY:
-        return STOCK_DIRECTORY[clean_sym]
+    now_ts = time.time()
+    if clean_sym in _LIVE_METADATA_CACHE:
+        ts, cached = _LIVE_METADATA_CACHE[clean_sym]
+        if (now_ts - ts) < 300.0:
+            return cached
 
     curr = "₹" if (".NS" in clean_sym or ".BO" in clean_sym or clean_sym.startswith("^NSE") or "INR" in clean_sym) else ("¥" if "JPY" in clean_sym else "$")
 
-    if clean_sym.endswith("=F"):
-        meta = {"name": f"{clean_sym} Futures", "exchange": "Futures / Commodities", "sector": "Commodity / Futures", "currency": curr}
-    elif clean_sym.endswith("=X"):
-        meta = {"name": f"{clean_sym.replace('=X', '')} Currency Pair", "exchange": "FOREX", "sector": "Foreign Exchange", "currency": curr}
-    elif clean_sym.startswith("^"):
-        meta = {"name": f"{clean_sym} Benchmark Index", "exchange": "Index", "sector": "Market Benchmark", "currency": curr}
-    elif clean_sym.endswith(".NS"):
-        corp = clean_sym.replace(".NS", "")
-        meta = {"name": f"{corp} Ltd", "exchange": "NSE", "sector": "Indian Equities", "currency": "₹"}
-    elif any(c in clean_sym for c in ["BTC", "ETH", "SOL", "USDT"]):
-        meta = {"name": f"{clean_sym} Crypto", "exchange": "Crypto", "sector": "Digital Asset", "currency": "$"}
-    else:
-        try:
-            import yfinance as yf
-            t = yf.Ticker(clean_sym)
-            raw_info = t.info or {}
-            c_name = raw_info.get("shortName") or raw_info.get("longName") or clean_sym
-            ex = raw_info.get("exchange") or "Global Exchange"
-            sec = raw_info.get("sector") or raw_info.get("quoteType") or "Equities"
-            c_code = raw_info.get("currency")
-            curr = "₹" if c_code == "INR" else ("¥" if c_code == "JPY" else "$")
-            meta = {"name": c_name, "exchange": ex, "sector": sec, "currency": curr}
-        except Exception:
-            meta = {"name": clean_sym, "exchange": "Global Equities", "sector": "Equity", "currency": curr}
+    try:
+        import yfinance as yf
+        t = yf.Ticker(clean_sym)
+        raw_info = t.info or {}
+        name = raw_info.get("shortName") or raw_info.get("longName") or clean_sym
+        exchange = raw_info.get("exchange") or "Global Exchange"
+        sector = raw_info.get("sector") or raw_info.get("quoteType") or ("Commodities / Futures" if "=F" in clean_sym else "Equities")
+        c_code = raw_info.get("currency")
+        if c_code == "INR" or ".NS" in clean_sym or ".BO" in clean_sym or "^NSE" in clean_sym:
+            curr = "₹"
+        elif c_code == "EUR":
+            curr = "€"
+        elif c_code == "GBP":
+            curr = "£"
+        elif c_code == "JPY":
+            curr = "¥"
+        elif c_code in ["USD", None]:
+            curr = "$"
+        else:
+            curr = c_code
+        meta = {
+            "name": name,
+            "exchange": exchange,
+            "sector": sector,
+            "currency": curr,
+        }
+    except Exception:
+        sec = "Commodities / Futures" if "=F" in clean_sym else ("Currency Pair" if "=X" in clean_sym else ("Market Benchmark" if clean_sym.startswith("^") else "Global Equities"))
+        meta = {
+            "name": clean_sym,
+            "exchange": "Global Exchange",
+            "sector": sec,
+            "currency": curr,
+        }
 
-    STOCK_DIRECTORY[clean_sym] = meta
+    _LIVE_METADATA_CACHE[clean_sym] = (now_ts, meta)
     return meta
 
 
+class DynamicStockDirectory(dict):
+    """Dynamic directory resolving metadata in real-time on demand with zero hardcoding."""
+    def get(self, key, default=None):
+        return resolve_ticker_info(key)
+    def __getitem__(self, key):
+        return resolve_ticker_info(key)
+    def __contains__(self, key):
+        return True
+
+
+STOCK_DIRECTORY = DynamicStockDirectory()
+
+
 def _load_requested_data(req_data: Any) -> pd.DataFrame:
-    """Helper to load data based on request parameters with caching."""
-    cache_key = None
-    if hasattr(req_data, "ticker") and req_data.ticker:
-        resolved_ticker = DataLoader.resolve_symbol(req_data.ticker)
-        cache_key = f"ticker_{resolved_ticker}"
-        if cache_key in _DATA_CACHE:
-            return _DATA_CACHE[cache_key]
-        df = data_loader.fetch_live_data(resolved_ticker)
-        _DATA_CACHE[cache_key] = df
-        return df
-    elif hasattr(req_data, "sector_key") and req_data.sector_key:
-        cache_key = f"sector_{req_data.sector_key}"
-        if cache_key in _DATA_CACHE:
-            return _DATA_CACHE[cache_key]
-        df = data_loader.load_sector_data(req_data.sector_key)
-        _DATA_CACHE[cache_key] = df
-        return df
-    
-    if "sector_default" not in _DATA_CACHE:
-        _DATA_CACHE["sector_default"] = data_loader.load_sector_data("diversified_financials")
-    return _DATA_CACHE["sector_default"]
+    """Helper to load data based on request parameters with real-time fetching."""
+    ticker = getattr(req_data, "ticker", None) or "AAPL"
+    resolved_ticker = DataLoader.resolve_symbol(ticker)
+    cache_key = f"ticker_{resolved_ticker}"
+    if cache_key in _DATA_CACHE:
+        return _DATA_CACHE[cache_key]
+    df = data_loader.fetch_live_data(resolved_ticker)
+    _DATA_CACHE[cache_key] = df
+    return df
 
 
 @app.get("/api/stock/search")

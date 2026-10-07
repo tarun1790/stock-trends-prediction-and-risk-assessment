@@ -245,7 +245,15 @@ class DataLoader:
 
         # 1. Immediate local matching for commodities, crypto, indices
         for name, sym in SYMBOL_ALIASES.items():
-            if clean_upper in name or name in clean_upper or clean_upper == sym:
+            is_match = False
+            if clean_upper == name or clean_upper == sym:
+                is_match = True
+            elif clean_upper in name:
+                is_match = True
+            elif len(name) > 3 and name in clean_upper:
+                is_match = True
+
+            if is_match:
                 if sym not in seen:
                     seen.add(sym)
                     asset_type = (
@@ -414,10 +422,10 @@ class DataLoader:
             _MEM_CACHE[cache_key] = (now_ts, disk_df)
             return disk_df
 
-        # Fallback 3: Calibrated synthetic price continuum (zero-crash guarantee)
-        fallback_df = generate_sector_historical_data(sector_key="diversified_financials", num_days=300)
-        _MEM_CACHE[cache_key] = (now_ts, fallback_df)
-        return fallback_df
+        raise ValueError(
+            f"Unable to retrieve real-time market data for '{clean_ticker}'. "
+            f"Please verify the asset symbol or exchange ticker format."
+        )
 
     def load_custom_csv(
         self,

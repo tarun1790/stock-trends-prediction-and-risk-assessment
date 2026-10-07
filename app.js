@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let liveWebSocket = null;
   let currentTimeframeDays = 60; // Default 3 Months (60 trading days)
   let currentChartMode = "line"; // 'line' or 'candle' (TradingView style)
+  let activeTicker = "AAPL";
 
   // Dynamic Asset Resolver for Real-Time Exchange Information
   function getCurrency(ticker) {
@@ -96,6 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
   quickChips.forEach((chip) => {
     chip.addEventListener("click", () => {
       const sym = chip.getAttribute("data-ticker");
+      activeTicker = sym;
       if (customTickerInput) customTickerInput.value = sym;
       if (sectorSelect) sectorSelect.value = sym;
       loadMarketAndIndicators();
@@ -161,110 +163,44 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function getTargetParams() {
-    const isTicker = !["diversified_financials", "petroleum", "basic_metals", "non_metallic_minerals"].includes(
-      sectorSelect.value
-    ) || customTickerInput.value.trim() !== "";
-
-    if (customTickerInput.value.trim() !== "") {
-      return { source: "ticker", ticker: customTickerInput.value.trim().toUpperCase() };
-    } else if (isTicker) {
-      return { source: "ticker", ticker: sectorSelect.value };
+    let sym = "AAPL";
+    if (customTickerInput && customTickerInput.value.trim() !== "") {
+      sym = customTickerInput.value.trim().toUpperCase();
+    } else if (activeTicker) {
+      sym = activeTicker.toUpperCase();
     }
-    return { source: "sample", sector_key: sectorSelect.value };
+    activeTicker = sym;
+    return { source: "ticker", ticker: sym };
   }
 
   // -----------------------------------------------------------------------
   // 3. Groww-Style Stock Overview & Fundamentals
   // -----------------------------------------------------------------------
-  function getStockOverviewFallback(sym) {
-    const info = getStockInfo(sym);
-    const curr = info.currency;
-    return {
-      ticker: sym,
-      name: info.name,
-      exchange: info.exchange,
-      currency: curr,
-      current_price: 150.0,
-      day_change: 1.85,
-      day_change_pct: 1.25,
-      ai_alpha_score: 8.2,
-      ai_alpha_verdict: "BUY",
-      ai_alpha_badge: "bg-emerald-500 text-black font-extrabold",
-      adx_regime: {
-        adx_value: 26.4,
-        strength: "CONFIRMED TREND",
-        description: "Consistent directional trend with strong institutional volume support.",
-        plus_di: 28.5,
-        minus_di: 18.2,
-      },
-      technical_ratings: {
-        overall: {
-          bullish: 18,
-          neutral: 4,
-          bearish: 4,
-          total_indicators: 26,
-          score: 0.65,
-          verdict: "BUY",
-          action_badge: "bg-emerald-500 text-black font-extrabold",
-          win_probability_pct: 82.5,
-        },
-      },
-      today_range: {
-        low: 148.2,
-        high: 152.4,
-        current_ratio_pct: 75.0,
-      },
-      year_52w_range: {
-        low: 110.0,
-        high: 165.0,
-        current_ratio_pct: 72.0,
-      },
-      fundamentals: {
-        market_cap: "Live Feed",
-        pe_ratio: "Live Feed",
-        pb_ratio: "Live Feed",
-        industry_pe: "Live Feed",
-        debt_to_equity: "Live Feed",
-        roe_pct: "Live Feed",
-        eps_ttm: "Live Feed",
-        dividend_yield_pct: 0.0,
-        volume_24h: 1500000,
-      },
-      technical_verdict: {
-        verdict: "BULLISH",
-        bullish_signals: 18,
-        bearish_signals: 4,
-        neutral_signals: 4,
-      },
-      trend_engine: {
-        direction: "UP (+1)",
-        verified_accuracy_pct: 95.42,
-        confidence_pct: 82.5,
-        conviction_tier: "95%+ ULTRA CONVICTION",
-        bullish_indicators: 18,
-        bearish_indicators: 4,
-        architecture: "Calibrated 26-Indicator Stacking Ensemble (XGBoost + TFT + TCN)",
-        methodology: "Selective Classification & Multi-Theory Confluence (Chow tau >= 0.75)",
-      },
-    };
-  }
-
   async function loadStockOverview() {
     const target = getTargetParams();
-    const sym = target.ticker || "SPY";
+    const sym = target.ticker || "AAPL";
 
     let data = null;
     try {
       const res = await fetch(`/api/stock/overview/${sym}`);
       if (res.ok) {
         data = await res.json();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        console.warn("Could not fetch overview from backend:", err);
       }
     } catch (e) {
       console.warn("Could not fetch overview from backend:", e);
     }
 
     if (!data) {
-      data = getStockOverviewFallback(sym);
+      document.getElementById("stock-name").textContent = sym;
+      document.getElementById("stock-exchange").textContent = "Market Live Feed";
+      document.getElementById("stock-logo-box").textContent = sym.substring(0, 2);
+      document.getElementById("live-price").textContent = "---";
+      document.getElementById("live-change").textContent = "Live quote unavailable";
+      document.getElementById("live-change").className = "text-xs font-bold font-mono text-zinc-500";
+      return;
     }
     currentStockOverviewData = data;
 
@@ -813,71 +749,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // -----------------------------------------------------------------------
   // 7. Technical Indicators & Price Chart with Model Projection Line
   // -----------------------------------------------------------------------
-  function generateClientFallbackData(sym) {
-    const info = getStockInfo(sym);
-    const baseP = 150.0;
-    const records = [];
-    const numDays = 120;
-    const now = new Date();
-
-    let currentP = round(baseP * 0.88, 2);
-    const trendStep = (baseP - currentP) / (numDays * 0.7);
-
-    for (let i = numDays; i >= 0; i--) {
-      const d = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStr = d.toISOString().split("T")[0];
-
-      const noise = (Math.sin(i * 0.4) + Math.cos(i * 0.15)) * (baseP * 0.008);
-      currentP = i === 0 ? baseP : round(currentP + trendStep + noise, 2);
-
-      const sma = round(currentP * (1 - 0.004), 2);
-      const wma = round(currentP * (1 - 0.002), 2);
-      const rsi = round(52 + Math.sin(i * 0.5) * 15, 1);
-      const mom = round(currentP * 0.015, 2);
-      const stck = round(55 + Math.cos(i * 0.6) * 20, 1);
-      const stcd = round(54 + Math.cos(i * 0.6 + 0.3) * 18, 1);
-      const sig = round(Math.sin(i * 0.3) * 1.5, 2);
-      const lwr = round(-40 + Math.sin(i * 0.4) * 25, 1);
-      const ado = round(Math.cos(i * 0.3) * 10000, 0);
-      const cci = round(Math.sin(i * 0.3) * 60, 1);
-
-      records.push({
-        date: dateStr,
-        close: currentP,
-        open: round(currentP * 0.998, 2),
-        high: round(currentP * 1.006, 2),
-        low: round(currentP * 0.994, 2),
-        volume: Math.floor(info.vol * (0.8 + Math.random() * 0.4)),
-        sma,
-        wma,
-        mom,
-        rsi,
-        sig,
-        stck,
-        stcd,
-        lwr,
-        ado,
-        cci,
-        binary_signals: {
-          SMA: currentP >= sma ? 1 : 0,
-          WMA: currentP >= wma ? 1 : 0,
-          MOM: mom >= 0 ? 1 : 0,
-          STCK: stck >= 50 ? 1 : 0,
-          STCD: stcd >= 50 ? 1 : 0,
-          RSI: rsi >= 50 ? 1 : 0,
-          SIG: sig >= 0 ? 1 : 0,
-          LWR: lwr >= -50 ? 1 : 0,
-          ADO: ado >= 0 ? 1 : 0,
-          CCI: cci >= 0 ? 1 : 0,
-        },
-      });
-    }
-    return records;
-  }
-
   async function loadMarketAndIndicators() {
     const payload = getTargetParams();
-    const sym = payload.ticker || "SPY";
+    const sym = payload.ticker || "AAPL";
 
     try {
       const res = await fetch("/api/indicators/compute", {
@@ -886,12 +760,15 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("API returned " + res.status);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.detail || "API returned " + res.status);
+      }
       const data = await res.json();
       currentIndicatorsData = data.records;
     } catch (err) {
-      console.warn("Backend API unavailable, utilizing calibrated client dataset:", err);
-      currentIndicatorsData = generateClientFallbackData(sym);
+      console.warn("Real-time indicator compute warning:", err);
+      currentIndicatorsData = [];
     }
 
     // Await overview and predictions before chart rendering
@@ -905,10 +782,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderPriceChart() {
-    if (!currentIndicatorsData || currentIndicatorsData.length === 0) return;
     const canvas = document.getElementById("price-chart");
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
+
+    if (!currentIndicatorsData || currentIndicatorsData.length === 0) {
+      if (priceChartInstance) {
+        priceChartInstance.destroy();
+        priceChartInstance = null;
+      }
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#71717a";
+      ctx.font = "14px monospace";
+      ctx.textAlign = "center";
+      ctx.fillText("Waiting for real-time market data feed...", canvas.width / 2, canvas.height / 2);
+      return;
+    }
 
     // Filter by timeframe
     let dataSlice = currentIndicatorsData;
@@ -1763,21 +1652,27 @@ document.addEventListener("DOMContentLoaded", () => {
   // -----------------------------------------------------------------------
   // Event Listeners
   // -----------------------------------------------------------------------
-  sectorSelect.addEventListener("change", () => {
-    customTickerInput.value = "";
-    loadMarketAndIndicators();
-  });
-  btnCustomTicker.addEventListener("click", () => {
-    if (searchResultsDropdown) searchResultsDropdown.classList.add("hidden");
-    loadMarketAndIndicators();
-  });
-
-  customTickerInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
+  if (sectorSelect) {
+    sectorSelect.addEventListener("change", () => {
+      if (customTickerInput) customTickerInput.value = "";
+      loadMarketAndIndicators();
+    });
+  }
+  if (btnCustomTicker) {
+    btnCustomTicker.addEventListener("click", () => {
       if (searchResultsDropdown) searchResultsDropdown.classList.add("hidden");
       loadMarketAndIndicators();
-    }
-  });
+    });
+  }
+
+  if (customTickerInput) {
+    customTickerInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        if (searchResultsDropdown) searchResultsDropdown.classList.add("hidden");
+        loadMarketAndIndicators();
+      }
+    });
+  }
 
   // Live Universal Autocomplete Search Handler
   const searchResultsDropdown = document.getElementById("ticker-search-results");
@@ -1829,7 +1724,8 @@ document.addEventListener("DOMContentLoaded", () => {
           searchResultsDropdown.querySelectorAll(".search-item").forEach((el) => {
             el.addEventListener("click", () => {
               const sym = el.getAttribute("data-symbol");
-              customTickerInput.value = sym;
+              if (customTickerInput) customTickerInput.value = sym;
+              activeTicker = sym;
               if (sectorSelect) {
                 let optExists = Array.from(sectorSelect.options).some(o => o.value === sym);
                 if (!optExists) {
