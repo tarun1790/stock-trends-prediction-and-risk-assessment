@@ -35,8 +35,24 @@
           <p class="text-[11px] text-zinc-400">Institutional Algorithmic Signals &bull; Temporal Fusion Transformer &bull; Real-Time Order Flow</p>
         </div>
 
+        <!-- Navigation Controls: Live Terminal vs Stocks Info (Groww Style) vs System Architecture -->
+        <div class="flex items-center space-x-2">
+          <button id="btn-nav-dashboard" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-zinc-800 text-white border border-emerald-500 shadow-sm">
+            <i data-lucide="line-chart" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Live Terminal</span>
+          </button>
+          <button id="btn-nav-stocks-info" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800 hover:border-emerald-500">
+            <i data-lucide="layout-grid" class="w-3.5 h-3.5 text-emerald-400"></i>
+            <span>Stocks Info (Groww)</span>
+          </button>
+          <a href="/architecture" target="_blank" id="btn-nav-architecture" class="px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-800 hover:border-zinc-600">
+            <i data-lucide="cpu" class="w-3.5 h-3.5 text-blue-400"></i>
+            <span>Architecture Page</span>
+          </a>
+        </div>
+
         <!-- Universal Real-Time Stock & Asset Search Bar -->
-        <div class="relative flex-1 max-w-xl mx-4">
+        <div class="relative flex-1 max-w-lg mx-2">
           <div class="flex items-center space-x-2">
             <div class="relative flex-1">
               <span class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-zinc-500">
@@ -89,6 +105,55 @@
       </div>
     </div>
   </header>
+
+  <!-- ========================================================================= -->
+  <!-- GROWW-STYLE STOCKS INFO EXPLORER VIEW (ALL STOCKS CATALOG) -->
+  <!-- ========================================================================= -->
+  <section id="section-stocks-info" class="hidden w-full px-4 py-4 space-y-4 bg-zinc-950 border-b border-zinc-800 font-mono">
+    <!-- Header with Back Button -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-zinc-800 gap-2">
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-base flex items-center justify-center">
+          📊
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h2 class="text-base font-extrabold text-white">Stocks & Markets Explorer</h2>
+            <span class="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-bold">Groww Style</span>
+          </div>
+          <p class="text-[11px] text-zinc-400 mt-0.5">Explore real-time stocks across Indian NSE, US Mega-Caps, Commodities, and Crypto. Click any card to load live data and forecasts.</p>
+        </div>
+      </div>
+      <button id="btn-close-stocks-info" class="px-3.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-700 text-xs font-bold transition flex items-center space-x-1.5 self-start sm:self-auto shadow-sm">
+        <span>&times; Close &bull; Return to Live Terminal</span>
+      </button>
+    </div>
+
+    <!-- Live Market Indices Ribbon (Groww Style) -->
+    <div class="space-y-1.5">
+      <div class="flex items-center justify-between text-[10px] text-zinc-500 uppercase font-bold tracking-wider">
+        <span>Market Indices Overview</span>
+        <span class="text-zinc-600">Click index to view</span>
+      </div>
+      <div id="groww-indices-ribbon" class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2 text-xs">
+        <div class="p-2.5 bg-black border border-zinc-800 rounded animate-pulse text-zinc-500 text-center">Loading Indices...</div>
+      </div>
+    </div>
+
+    <!-- Category Filter Tabs -->
+    <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2 overflow-x-auto scrollbar-none text-xs pt-1">
+      <button class="groww-cat-btn px-3 py-1.5 rounded font-bold text-black bg-white transition whitespace-nowrap" data-cat="all">All Assets (30+)</button>
+      <button class="groww-cat-btn px-3 py-1.5 rounded font-bold text-zinc-400 hover:text-white bg-zinc-900 transition whitespace-nowrap" data-cat="indian">🇮🇳 Indian Equities (NSE)</button>
+      <button class="groww-cat-btn px-3 py-1.5 rounded font-bold text-zinc-400 hover:text-white bg-zinc-900 transition whitespace-nowrap" data-cat="us">🇺🇸 US Mega-Caps (NASDAQ)</button>
+      <button class="groww-cat-btn px-3 py-1.5 rounded font-bold text-zinc-400 hover:text-white bg-zinc-900 transition whitespace-nowrap" data-cat="commodities">🥇 Commodities (Gold/Silver)</button>
+      <button class="groww-cat-btn px-3 py-1.5 rounded font-bold text-zinc-400 hover:text-white bg-zinc-900 transition whitespace-nowrap" data-cat="crypto">🪙 Crypto 24/7 (Binance)</button>
+    </div>
+
+    <!-- Stock Cards Grid (Groww Style) -->
+    <div id="groww-stocks-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 text-xs pt-1">
+      <div class="p-4 bg-black border border-zinc-800 rounded col-span-full text-center text-zinc-500">Connecting to asset catalog...</div>
+    </div>
+  </section>
 
   <!-- ========================================================================= -->
   <!-- 2. LIVE STOCK SNAPSHOT & PERFORMANCE RANGE (ZERO HARDCODING) -->
@@ -203,8 +268,8 @@
           <span id="hero-vol" class="text-xs font-bold text-white font-mono">--</span>
         </div>
         <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
-          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">Solvency (Z)</span>
-          <span id="hero-altman" class="text-xs font-bold text-emerald-400 font-mono">--</span>
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">Ind. P/E</span>
+          <span id="hero-ind-pe" class="text-xs font-bold text-white font-mono">--</span>
         </div>
       </div>
     </div>
@@ -657,134 +722,48 @@
 
 
     <!-- SECTION E: QUANTITATIVE WORKSPACE TABS -->
+    <!-- SECTION E: QUANTITATIVE STOCKS & VALUATION WORKSPACE -->
     <div class="terminal-card p-4 space-y-4 bg-zinc-950 border border-zinc-800 font-mono">
       <!-- Tabs Navigation Strip -->
       <div class="flex items-center space-x-2 border-b border-zinc-800 pb-2 overflow-x-auto scrollbar-none text-xs">
-        <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-creditrisk">Corporate Credit Risk (Altman Z & Merton)</button>
-        <button class="tab-btn px-3 py-1.5 rounded active-tab text-black bg-white font-bold transition whitespace-nowrap" data-tab="tab-glossary">
-          Indicator Glossary & Math (10 Foundational)
+        <button class="tab-btn px-3 py-1.5 rounded active-tab text-black bg-white font-bold transition whitespace-nowrap" data-tab="tab-fundamentals">
+          Asset Fundamentals & Snapshot
         </button>
         <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-multihorizon">
           Multi-Horizon Forecaster Curve
         </button>
-        <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-explain">
-          Model Saliency & Attention Heatmap
-        </button>
-        <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-montecarlo">
-          Monte Carlo Conformal Simulation
-        </button>
-        <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-benchmarks">
-          Model Benchmark & Architecture Comparison
-        </button>
-        <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-backtest">
-          Institutional Risk Backtester
-        </button>
-        <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-fundamentals">
-          Asset Fundamentals & Snapshot
+        <button class="tab-btn px-3 py-1.5 rounded text-zinc-400 hover:text-white font-bold transition whitespace-nowrap" data-tab="tab-glossary">
+          Indicator Glossary & Math (10 Foundational)
         </button>
       </div>
 
-      
-      <!-- TAB: CREDIT RISK ASSESSMENT (ALTMAN Z-SCORE & MERTON MODEL) -->
-      <div id="tab-creditrisk" class="tab-content hidden space-y-4">
+      <!-- TAB 1: ASSET FUNDAMENTALS & SNAPSHOT (DEFAULT ACTIVE) -->
+      <div id="tab-fundamentals" class="tab-content space-y-4">
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <!-- Rating & Distress Zone Card -->
-          <div class="lg:col-span-4 bg-black border border-zinc-800 rounded p-4 space-y-3">
-            <span class="text-[10px] text-zinc-500 uppercase font-bold block">Synthetic Credit Rating</span>
-            <div class="flex items-baseline space-x-3">
-              <span id="cr-rating" class="text-3xl font-extrabold text-emerald-400 font-mono">--</span>
-              <span id="cr-category" class="text-xs text-zinc-400 font-medium">--</span>
-            </div>
-            <div class="pt-2 border-t border-zinc-800">
-              <span class="text-[10px] text-zinc-500 uppercase font-bold block">Credit Risk Tier</span>
-              <span id="cr-distress-zone" class="text-xs font-bold px-2 py-0.5 rounded inline-block mt-1 bg-zinc-900 border border-zinc-800 text-zinc-300">--</span>
-            </div>
-            <p id="cr-description" class="text-[11px] text-zinc-400 pt-1">
-              Evaluating corporate solvency and default probability...
-            </p>
-          </div>
-
-          <!-- Quantitative Metrics: Altman Z-Score & Merton DD -->
-          <div class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <!-- Altman Z-Score Card -->
-            <div class="bg-black border border-zinc-800 rounded p-4 space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="text-[10px] text-zinc-400 font-bold uppercase">Altman Z-Score</span>
-                <span class="text-[10px] text-zinc-500">Cutoff: &gt;2.99 Safe</span>
-              </div>
-              <p id="cr-z-score" class="text-2xl font-black text-white font-mono">--</p>
-              <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden flex border border-zinc-800">
-                <div id="cr-z-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 70%;"></div>
-              </div>
-              <div class="flex justify-between text-[10px] text-zinc-500 pt-1 font-mono">
-                <span>Distress &lt; 1.81</span>
-                <span>Grey 1.81-2.99</span>
-                <span class="text-emerald-400 font-bold">Safe &gt; 2.99</span>
-              </div>
-            </div>
-
-            <!-- Merton Structural Model Card -->
-            <div class="bg-black border border-zinc-800 rounded p-4 space-y-2">
-              <div class="flex justify-between items-center">
-                <span class="text-[10px] text-zinc-400 font-bold uppercase">Merton Distance to Default (DD)</span>
-                <span id="cr-merton-pd" class="text-[10px] text-emerald-400 font-bold">PD: --%</span>
-              </div>
-              <p id="cr-distance-to-default" class="text-2xl font-black text-white font-mono">--</p>
-              <p id="cr-merton-verdict" class="text-[11px] text-zinc-400">
-                Structural equity-as-call-option distance from total debt boundary.
-              </p>
-            </div>
-
-            <!-- Solvency Breakdown Strip -->
-            <div class="sm:col-span-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-              <div class="bg-zinc-950 border border-zinc-800 p-2 rounded">
-                <span class="text-zinc-500 text-[10px] block">Total Debt</span>
-                <span id="cr-debt" class="text-white font-bold font-mono">--</span>
-              </div>
-              <div class="bg-zinc-950 border border-zinc-800 p-2 rounded">
-                <span class="text-zinc-500 text-[10px] block">Total Cash</span>
-                <span id="cr-cash" class="text-emerald-400 font-bold font-mono">--</span>
-              </div>
-              <div class="bg-zinc-950 border border-zinc-800 p-2 rounded">
-                <span class="text-zinc-500 text-[10px] block">Interest Coverage</span>
-                <span id="cr-coverage" class="text-white font-bold font-mono">--</span>
-              </div>
-              <div class="bg-zinc-950 border border-zinc-800 p-2 rounded">
-                <span class="text-zinc-500 text-[10px] block">Net Debt / EBITDA</span>
-                <span id="cr-leverage" class="text-white font-bold font-mono">--</span>
-              </div>
-            </div>
-
-            <!-- Dual-Gate Combined Institutional Verdict -->
-            <div class="sm:col-span-2 bg-zinc-950 border border-emerald-900/60 p-3 rounded text-xs flex items-center space-x-3">
-              <div class="w-3 h-3 rounded-full bg-emerald-400 shrink-0"></div>
-              <div>
-                <span class="text-[10px] text-zinc-500 uppercase font-bold block">Dual-Gate Trend & Solvency Synthesis</span>
-                <p id="cr-synthesis" class="text-emerald-400 font-bold text-xs mt-0.5">--</p>
-              </div>
+          <!-- Fundamentals -->
+          <div class="lg:col-span-4 terminal-card p-4 space-y-3 bg-black border border-zinc-800 rounded">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-white border-b border-zinc-800 pb-2">
+              Company Fundamentals
+            </h4>
+            <div class="space-y-2 text-xs">
+              <div class="flex justify-between text-zinc-400"><span>Market Cap</span><span id="fund-market-cap" class="text-white font-bold">--</span></div>
+              <div class="flex justify-between text-zinc-400"><span>P/E Ratio</span><span id="fund-pe" class="text-white font-bold">--</span></div>
+              <div class="flex justify-between text-zinc-400"><span>P/B Ratio</span><span id="fund-pb" class="text-white font-bold">--</span></div>
+              <div class="flex justify-between text-zinc-400"><span>Industry P/E</span><span id="fund-ind-pe" class="text-white font-bold">--</span></div>
+              <div class="flex justify-between text-zinc-400"><span>ROE (%)</span><span id="fund-roe" class="text-emerald-400 font-bold">--</span></div>
+              <div class="flex justify-between text-zinc-400"><span>EPS (TTM)</span><span id="fund-eps" class="text-white font-bold">--</span></div>
+              <div class="flex justify-between text-zinc-400"><span>Dividend Yield</span><span id="fund-div" class="text-white font-bold">--</span></div>
+              <div class="flex justify-between text-zinc-400"><span>24h Volume</span><span id="fund-vol" class="text-white font-bold">--</span></div>
             </div>
           </div>
-        </div>
-      </div>
 
-      <!-- TAB 1: INDICATOR GLOSSARY -->
-      <div id="tab-glossary" class="tab-content space-y-3">
-        <div class="overflow-x-auto border border-zinc-800 rounded">
-          <table class="w-full text-left text-xs">
-            <thead class="bg-zinc-900 text-zinc-400 text-[10px] uppercase">
-              <tr>
-                <th class="p-2.5">Symbol</th>
-                <th class="p-2.5">Indicator Name</th>
-                <th class="p-2.5 text-center">Current Value</th>
-                <th class="p-2.5">Mathematical Trigger Condition</th>
-                <th class="p-2.5 text-center">Binary Signal</th>
-                <th class="p-2.5">Institutional Trading Meaning</th>
-              </tr>
-            </thead>
-            <tbody id="indicators-glossary-body" class="divide-y divide-zinc-900 text-xs">
-              <tr><td colspan="6" class="p-4 text-center text-zinc-500">Calculating foundational technical indicator series from live price action...</td></tr>
-            </tbody>
-          </table>
+          <!-- 10 Indicator Snapshot Cards -->
+          <div class="lg:col-span-8 space-y-2">
+            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">
+              Technical Signals Matrix Snapshot (Continuous & Binary &plusmn;1)
+            </h4>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="indicator-cards-grid"></div>
+          </div>
         </div>
       </div>
 
@@ -836,113 +815,26 @@
         </div>
       </div>
 
-      <!-- TAB 3: EXPLAINABILITY & ATTENTION -->
-      <div id="tab-explain" class="tab-content hidden space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-zinc-400">Temporal Attention Weights (TFT) & Integrated Gradients Feature Importance</span>
-          <button id="btn-run-explain" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-3 py-1 rounded border border-zinc-700 font-bold transition">
-            Run Saliency Engine
-          </button>
-        </div>
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <div class="h-64 border border-zinc-800 rounded p-2 bg-black">
-            <h4 class="text-[11px] text-zinc-400 uppercase font-bold mb-1">Feature Importance Saliency</h4>
-            <canvas id="feature-importance-chart"></canvas>
-          </div>
-          <div class="h-64 border border-zinc-800 rounded p-2 bg-black">
-            <h4 class="text-[11px] text-zinc-400 uppercase font-bold mb-1">TFT Temporal Self-Attention Weights</h4>
-            <canvas id="temporal-attention-chart"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- TAB 4: MONTE CARLO -->
-      <div id="tab-montecarlo" class="tab-content hidden space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-zinc-400">1,000-Path Conformalized Geometric Brownian Motion Simulation</span>
-          <button id="btn-run-monte-carlo" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-3 py-1 rounded border border-zinc-700 font-bold transition">
-            Run 1000 Simulations
-          </button>
-        </div>
-        <div id="monte-carlo-kpis" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs"></div>
-        <div class="h-64 w-full">
-          <canvas id="monte-carlo-chart"></canvas>
-        </div>
-      </div>
-
-      <!-- TAB 5: BENCHMARKS & ARCHITECTURE COMPARISON -->
-      <div id="tab-benchmarks" class="tab-content hidden space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-zinc-400">Multi-Model Quantitative Benchmark Replicated Across 15 Architectures</span>
-          <button id="btn-run-benchmark" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-3 py-1 rounded border border-zinc-700 font-bold transition">
-            Run Benchmark Suite
-          </button>
-        </div>
-        <div class="h-64 w-full">
-          <canvas id="benchmark-chart"></canvas>
-        </div>
+      <!-- TAB 3: INDICATOR GLOSSARY -->
+      <div id="tab-glossary" class="tab-content hidden space-y-3">
         <div class="overflow-x-auto border border-zinc-800 rounded">
           <table class="w-full text-left text-xs">
             <thead class="bg-zinc-900 text-zinc-400 text-[10px] uppercase">
               <tr>
-                <th class="p-2">Model Architecture</th>
-                <th class="p-2 text-center">Accuracy (%)</th>
-                <th class="p-2 text-center">Macro F1</th>
-                <th class="p-2 text-center">AUC-ROC</th>
-                <th class="p-2 text-center">Inference Latency</th>
+                <th class="p-2.5">Symbol</th>
+                <th class="p-2.5">Indicator Name</th>
+                <th class="p-2.5 text-center">Current Value</th>
+                <th class="p-2.5">Mathematical Trigger Condition</th>
+                <th class="p-2.5 text-center">Binary Signal</th>
+                <th class="p-2.5">Institutional Trading Meaning</th>
               </tr>
             </thead>
-            <tbody id="benchmark-table-body" class="divide-y divide-zinc-900 text-xs">
-              <tr><td colspan="5" class="p-3 text-center text-zinc-500">Click Run Benchmark Suite to execute.</td></tr>
+            <tbody id="indicators-glossary-body" class="divide-y divide-zinc-900 text-xs">
+              <tr><td colspan="6" class="p-4 text-center text-zinc-500">Calculating foundational technical indicator series from live price action...</td></tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      <!-- TAB 6: BACKTESTER -->
-      <div id="tab-backtest" class="tab-content hidden space-y-3">
-        <div class="flex items-center justify-between">
-          <span class="text-xs text-zinc-400">Walk-Forward Institutional Risk Backtesting Engine</span>
-          <button id="btn-run-backtest" class="bg-zinc-800 hover:bg-zinc-700 text-white text-xs px-3 py-1 rounded border border-zinc-700 font-bold transition">
-            Run Walk-Forward Backtest
-          </button>
-        </div>
-        <div id="backtest-kpi-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs"></div>
-        <div class="h-64 w-full">
-          <canvas id="equity-chart"></canvas>
-        </div>
-      </div>
-
-      <!-- TAB 7: ASSET FUNDAMENTALS & SNAPSHOT -->
-      <div id="tab-fundamentals" class="tab-content hidden space-y-4">
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-4">
-          <!-- Fundamentals -->
-          <div class="lg:col-span-4 terminal-card p-4 space-y-3 bg-black border border-zinc-800 rounded">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-white border-b border-zinc-800 pb-2">
-              Company Fundamentals
-            </h4>
-            <div class="space-y-2 text-xs">
-              <div class="flex justify-between text-zinc-400"><span>Market Cap</span><span id="fund-market-cap" class="text-white font-bold">--</span></div>
-              <div class="flex justify-between text-zinc-400"><span>P/E Ratio</span><span id="fund-pe" class="text-white font-bold">--</span></div>
-              <div class="flex justify-between text-zinc-400"><span>P/B Ratio</span><span id="fund-pb" class="text-white font-bold">--</span></div>
-              <div class="flex justify-between text-zinc-400"><span>Industry P/E</span><span id="fund-ind-pe" class="text-white font-bold">--</span></div>
-              <div class="flex justify-between text-zinc-400"><span>ROE (%)</span><span id="fund-roe" class="text-emerald-400 font-bold">--</span></div>
-              <div class="flex justify-between text-zinc-400"><span>EPS (TTM)</span><span id="fund-eps" class="text-white font-bold">--</span></div>
-              <div class="flex justify-between text-zinc-400"><span>Dividend Yield</span><span id="fund-div" class="text-white font-bold">--</span></div>
-              <div class="flex justify-between text-zinc-400"><span>24h Volume</span><span id="fund-vol" class="text-white font-bold">--</span></div>
-            </div>
-          </div>
-
-          <!-- 10 Indicator Snapshot Cards -->
-          <div class="lg:col-span-8 space-y-2">
-            <h4 class="text-xs font-bold uppercase tracking-wider text-zinc-400">
-              Technical Signals Matrix Snapshot (Continuous & Binary &plusmn;1)
-            </h4>
-            <div class="grid grid-cols-2 sm:grid-cols-5 gap-2" id="indicator-cards-grid"></div>
-          </div>
-        </div>
-      </div>
-
     </div>
 
   </main>

@@ -104,6 +104,210 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
+  // -----------------------------------------------------------------------
+  // Groww-Style Stocks & Markets Explorer Navigation
+  // -----------------------------------------------------------------------
+  const btnNavDashboard = document.getElementById("btn-nav-dashboard");
+  const btnNavStocksInfo = document.getElementById("btn-nav-stocks-info");
+  const btnCloseStocksInfo = document.getElementById("btn-close-stocks-info");
+  const sectionStocksInfo = document.getElementById("section-stocks-info");
+  const mainWorkspace = document.querySelector("main");
+  const stockSnapshotSection = document.querySelector("section.border-b.bg-zinc-950");
+  const growwIndicesRibbon = document.getElementById("groww-indices-ribbon");
+  const growwStocksGrid = document.getElementById("groww-stocks-grid");
+  const growwCatBtns = document.querySelectorAll(".groww-cat-btn");
+
+  let exploreDataCache = null;
+  let activeExploreCategory = "all";
+
+  function switchAppView(view) {
+    if (view === "stocks-info") {
+      if (sectionStocksInfo) sectionStocksInfo.classList.remove("hidden");
+      if (mainWorkspace) mainWorkspace.classList.add("hidden");
+      if (stockSnapshotSection) stockSnapshotSection.classList.add("hidden");
+
+      if (btnNavStocksInfo) {
+        btnNavStocksInfo.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-emerald-500 text-black border border-emerald-400 shadow-sm";
+      }
+      if (btnNavDashboard) {
+        btnNavDashboard.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 border border-zinc-700";
+      }
+      loadAndRenderExploreStocks();
+    } else {
+      if (sectionStocksInfo) sectionStocksInfo.classList.add("hidden");
+      if (mainWorkspace) mainWorkspace.classList.remove("hidden");
+      if (stockSnapshotSection) stockSnapshotSection.classList.remove("hidden");
+
+      if (btnNavDashboard) {
+        btnNavDashboard.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-zinc-800 text-white border border-emerald-500 shadow-sm";
+      }
+      if (btnNavStocksInfo) {
+        btnNavStocksInfo.className = "px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center space-x-1.5 bg-emerald-950/60 hover:bg-emerald-900/80 text-emerald-400 border border-emerald-800 hover:border-emerald-500";
+      }
+    }
+    if (window.lucide) lucide.createIcons();
+  }
+
+  if (btnNavStocksInfo) {
+    btnNavStocksInfo.addEventListener("click", () => switchAppView("stocks-info"));
+  }
+  if (btnNavDashboard) {
+    btnNavDashboard.addEventListener("click", () => switchAppView("dashboard"));
+  }
+  if (btnCloseStocksInfo) {
+    btnCloseStocksInfo.addEventListener("click", () => switchAppView("dashboard"));
+  }
+
+  // Category filter buttons
+  growwCatBtns.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      growwCatBtns.forEach((b) => {
+        b.className = "groww-cat-btn px-3 py-1.5 rounded font-bold text-zinc-400 hover:text-white bg-zinc-900 transition whitespace-nowrap";
+      });
+      btn.className = "groww-cat-btn px-3 py-1.5 rounded font-bold text-black bg-white transition whitespace-nowrap";
+      activeExploreCategory = btn.getAttribute("data-cat") || "all";
+      renderGrowwStocksCards();
+    });
+  });
+
+  async function loadAndRenderExploreStocks() {
+    try {
+      if (!exploreDataCache) {
+        const res = await fetch("/api/stocks/explore");
+        if (!res.ok) throw new Error("Failed to fetch explore stocks");
+        exploreDataCache = await res.json();
+      }
+      renderGrowwIndices();
+      renderGrowwStocksCards();
+    } catch (err) {
+      console.error("Error loading explore stocks:", err);
+      if (growwStocksGrid) {
+        growwStocksGrid.innerHTML = `<div class="col-span-full p-4 bg-rose-950/20 border border-rose-800 text-rose-300 rounded text-center">Failed to load stock catalog: ${err.message}</div>`;
+      }
+    }
+  }
+
+  function renderGrowwIndices() {
+    if (!growwIndicesRibbon || !exploreDataCache || !exploreDataCache.market_indices) return;
+    const indices = exploreDataCache.market_indices;
+    growwIndicesRibbon.innerHTML = indices.map((idx) => {
+      const isUp = idx.change >= 0;
+      const colorCls = isUp ? "text-emerald-400" : "text-rose-400";
+      const sign = isUp ? "+" : "";
+      return `
+        <div class="cursor-pointer p-2 rounded bg-black border border-zinc-800 hover:border-zinc-600 transition" onclick="window.selectGrowwStock('${idx.symbol}')">
+          <div class="flex justify-between items-center text-[10px] text-zinc-400 font-bold">
+            <span class="truncate">${idx.name}</span>
+            <span class="text-[9px] px-1 rounded bg-zinc-900 text-zinc-500">${idx.exchange}</span>
+          </div>
+          <div class="flex items-baseline space-x-1.5 mt-1 font-mono">
+            <span class="text-xs font-black text-white">${idx.currency}${idx.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+            <span class="text-[10px] font-bold ${colorCls}">${sign}${idx.change_pct}%</span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function renderGrowwStocksCards() {
+    if (!growwStocksGrid || !exploreDataCache || !exploreDataCache.categories) return;
+
+    let items = [];
+    if (activeExploreCategory === "all") {
+      Object.keys(exploreDataCache.categories).forEach((cat) => {
+        items = items.concat(exploreDataCache.categories[cat]);
+      });
+    } else if (exploreDataCache.categories[activeExploreCategory]) {
+      items = exploreDataCache.categories[activeExploreCategory];
+    }
+
+    if (items.length === 0) {
+      growwStocksGrid.innerHTML = `<div class="col-span-full p-6 text-center text-zinc-500">No stocks available in this category.</div>`;
+      return;
+    }
+
+    growwStocksGrid.innerHTML = items.map((stock) => {
+      const isUp = stock.change >= 0;
+      const sign = isUp ? "+" : "";
+      const changeColor = isUp ? "text-emerald-400" : "text-rose-400";
+      const badgeBg = isUp ? "bg-emerald-950/60 border-emerald-800/80 text-emerald-300" : "bg-rose-950/60 border-rose-800/80 text-rose-300";
+      
+      const avatarLetter = (stock.name || stock.symbol).charAt(0).toUpperCase();
+      let avatarBg = "bg-emerald-500/10 text-emerald-400 border-emerald-500/30";
+      if (stock.category === "crypto" || stock.symbol.includes("BTC") || stock.symbol.includes("ETH")) {
+        avatarBg = "bg-amber-500/10 text-amber-400 border-amber-500/30";
+      } else if (stock.category === "commodities" || stock.symbol.includes("=F")) {
+        avatarBg = "bg-yellow-500/10 text-yellow-400 border-yellow-500/30";
+      }
+
+      // 52-week position percentage
+      const range = (stock.high_52w - stock.low_52w) || 1;
+      const pct = Math.min(100, Math.max(0, ((stock.price - stock.low_52w) / range) * 100));
+
+      return `
+        <div class="groww-stock-card cursor-pointer p-3.5 rounded-lg bg-black border border-zinc-800 hover:border-emerald-500 hover:shadow-lg hover:shadow-emerald-950/20 transition-all duration-200 flex flex-col justify-between group" onclick="window.selectGrowwStock('${stock.symbol}')">
+          <div>
+            <!-- Top Row: Icon + Ticker + Exchange -->
+            <div class="flex items-center justify-between pb-2 border-b border-zinc-900">
+              <div class="flex items-center space-x-2.5">
+                <div class="w-8 h-8 rounded-lg ${avatarBg} border font-black text-sm flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+                  ${avatarLetter}
+                </div>
+                <div>
+                  <h4 class="text-xs font-bold text-white tracking-wide truncate max-w-[140px] group-hover:text-emerald-400 transition-colors">${stock.name}</h4>
+                  <span class="text-[10px] text-zinc-500 block truncate max-w-[140px]">${stock.sector}</span>
+                </div>
+              </div>
+              <div class="text-right">
+                <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">${stock.exchange}</span>
+              </div>
+            </div>
+
+            <!-- Price & Daily Change -->
+            <div class="pt-2.5 pb-1.5 flex items-baseline justify-between">
+              <div>
+                <span class="text-base font-extrabold text-white font-mono">${stock.currency}${stock.price.toLocaleString(undefined, {minimumFractionDigits: 2})}</span>
+              </div>
+              <div class="flex items-center space-x-1 font-mono text-[11px] font-bold px-1.5 py-0.5 rounded border ${badgeBg}">
+                <span>${sign}${stock.change_pct}%</span>
+              </div>
+            </div>
+
+            <!-- 52-Week Range Bar -->
+            <div class="pt-1 pb-2 space-y-1 text-[10px] text-zinc-500 font-mono">
+              <div class="flex justify-between">
+                <span>52W L: ${stock.currency}${stock.low_52w}</span>
+                <span>52W H: ${stock.currency}${stock.high_52w}</span>
+              </div>
+              <div class="w-full bg-zinc-900 h-1 rounded overflow-hidden relative">
+                <div class="bg-emerald-500 h-full" style="width: ${pct}%;"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Footer: Market Cap & AI Signal -->
+          <div class="pt-2 border-t border-zinc-900 flex items-center justify-between text-[10px] font-mono">
+            <span class="text-zinc-500">M.Cap: <strong class="text-zinc-300">${stock.market_cap}</strong></span>
+            <span class="text-[9px] font-black uppercase px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800/80">
+              ${stock.rating || "BUY"}
+            </span>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  // Global window handler to select stock from Groww cards
+  window.selectGrowwStock = function(symbol) {
+    if (!symbol) return;
+    activeTicker = symbol;
+    if (customTickerInput) customTickerInput.value = symbol;
+    if (sectorSelect) sectorSelect.value = symbol;
+    switchAppView("dashboard");
+    loadMarketAndIndicators();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // Chart Display Mode Toggle (Line Glow vs Candlestick)
   const btnModeLine = document.getElementById("btn-chart-mode-line");
   const btnModeCandle = document.getElementById("btn-chart-mode-candle");

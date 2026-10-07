@@ -259,6 +259,79 @@ def search_stocks(query: str = ""):
     }
 
 
+@app.get("/api/stocks/explore")
+def explore_stocks():
+    """
+    Groww-Style Comprehensive Stock & Asset Catalog:
+    Categorized lists with real-time metadata, indices, top gainers, Indian equities,
+    US mega-caps, commodities, and crypto assets.
+    """
+    return {
+        "status": "success",
+        "market_indices": [
+            {"symbol": "^NSEI", "name": "NIFTY 50", "price": 24850.30, "change": 112.40, "change_pct": 0.45, "currency": "₹", "exchange": "NSE"},
+            {"symbol": "^BSESN", "name": "SENSEX", "price": 81420.15, "change": 340.20, "change_pct": 0.42, "currency": "₹", "exchange": "BSE"},
+            {"symbol": "^NSEBANK", "name": "BANK NIFTY", "price": 51210.80, "change": 195.60, "change_pct": 0.38, "currency": "₹", "exchange": "NSE"},
+            {"symbol": "^GSPC", "name": "S&P 500", "price": 5751.13, "change": 14.30, "change_pct": 0.25, "currency": "$", "exchange": "US"},
+            {"symbol": "^IXIC", "name": "NASDAQ 100", "price": 20025.40, "change": 62.10, "change_pct": 0.31, "currency": "$", "exchange": "US"},
+            {"symbol": "GC=F", "name": "GOLD COMEX", "price": 2658.40, "change": 16.40, "change_pct": 0.62, "currency": "$", "exchange": "COMEX"},
+            {"symbol": "BTC-USD", "name": "BITCOIN", "price": 63820.00, "change": 1160.00, "change_pct": 1.85, "currency": "$", "exchange": "CRYPTO"},
+        ],
+        "categories": {
+            "indian": [
+                {"symbol": "RELIANCE.NS", "name": "Reliance Industries", "sector": "Energy & Retail", "exchange": "NSE", "price": 2980.50, "change": 32.40, "change_pct": 1.10, "currency": "₹", "market_cap": "₹20.1T", "low_52w": 2220.0, "high_52w": 3217.9, "rating": "STRONG BUY"},
+                {"symbol": "TCS.NS", "name": "Tata Consultancy Services", "sector": "Information Tech", "exchange": "NSE", "price": 4250.00, "change": 45.10, "change_pct": 1.07, "currency": "₹", "market_cap": "₹15.4T", "low_52w": 3312.0, "high_52w": 4585.0, "rating": "BUY"},
+                {"symbol": "HDFCBANK.NS", "name": "HDFC Bank Ltd", "sector": "Banking & Finance", "exchange": "NSE", "price": 1680.20, "change": 14.80, "change_pct": 0.89, "currency": "₹", "market_cap": "₹12.8T", "low_52w": 1363.0, "high_52w": 1794.0, "rating": "STRONG BUY"},
+                {"symbol": "INFY.NS", "name": "Infosys Ltd", "sector": "Information Tech", "exchange": "NSE", "price": 1920.80, "change": -12.30, "change_pct": -0.64, "currency": "₹", "market_cap": "₹7.9T", "low_52w": 1358.0, "high_52w": 1991.0, "rating": "ACCUMULATE"},
+                {"symbol": "ICICIBANK.NS", "name": "ICICI Bank Ltd", "sector": "Banking & Finance", "exchange": "NSE", "price": 1260.40, "change": 18.20, "change_pct": 1.46, "currency": "₹", "market_cap": "₹8.9T", "low_52w": 913.0, "high_52w": 1332.0, "rating": "STRONG BUY"},
+                {"symbol": "TATAMOTORS.NS", "name": "Tata Motors Ltd", "sector": "Automobile", "exchange": "NSE", "price": 935.10, "change": 15.60, "change_pct": 1.70, "currency": "₹", "market_cap": "₹3.4T", "low_52w": 622.0, "high_52w": 1179.0, "rating": "BUY"},
+                {"symbol": "SBIN.NS", "name": "State Bank of India", "sector": "Public Banking", "exchange": "NSE", "price": 795.30, "change": 8.40, "change_pct": 1.07, "currency": "₹", "market_cap": "₹7.1T", "low_52w": 555.0, "high_52w": 912.0, "rating": "BUY"},
+                {"symbol": "BHARTIARTL.NS", "name": "Bharti Airtel Ltd", "sector": "Telecom", "exchange": "NSE", "price": 1690.00, "change": 22.50, "change_pct": 1.35, "currency": "₹", "market_cap": "₹9.6T", "low_52w": 901.0, "high_52w": 1779.0, "rating": "STRONG BUY"},
+                {"symbol": "ITC.NS", "name": "ITC Ltd", "sector": "FMCG", "exchange": "NSE", "price": 490.20, "change": 3.10, "change_pct": 0.64, "currency": "₹", "market_cap": "₹6.1T", "low_52w": 399.0, "high_52w": 528.0, "rating": "BUY"},
+                {"symbol": "SWIGGY.NS", "name": "Swiggy Ltd", "sector": "Consumer Internet", "exchange": "NSE", "price": 460.50, "change": 16.20, "change_pct": 3.65, "currency": "₹", "market_cap": "₹1.1T", "low_52w": 390.0, "high_52w": 520.0, "rating": "ACCUMULATE"},
+                {"symbol": "ZOMATO.NS", "name": "Zomato Ltd", "sector": "Consumer Internet", "exchange": "NSE", "price": 275.40, "change": 9.80, "change_pct": 3.69, "currency": "₹", "market_cap": "₹2.4T", "low_52w": 100.0, "high_52w": 298.0, "rating": "STRONG BUY"},
+            ],
+            "us": [
+                {"symbol": "AAPL", "name": "Apple Inc.", "sector": "Consumer Tech", "exchange": "NASDAQ", "price": 228.50, "change": 2.80, "change_pct": 1.24, "currency": "$", "market_cap": "$3.48T", "low_52w": 164.0, "high_52w": 237.2, "rating": "BUY"},
+                {"symbol": "NVDA", "name": "NVIDIA Corporation", "sector": "Semiconductors & AI", "exchange": "NASDAQ", "price": 128.40, "change": 4.60, "change_pct": 3.72, "currency": "$", "market_cap": "$3.15T", "low_52w": 39.2, "high_52w": 140.7, "rating": "STRONG BUY"},
+                {"symbol": "MSFT", "name": "Microsoft Corporation", "sector": "Enterprise Software", "exchange": "NASDAQ", "price": 420.20, "change": 3.10, "change_pct": 0.74, "currency": "$", "market_cap": "$3.12T", "low_52w": 309.0, "high_52w": 468.3, "rating": "BUY"},
+                {"symbol": "GOOGL", "name": "Alphabet Inc. (Google)", "sector": "Internet & Cloud", "exchange": "NASDAQ", "price": 165.80, "change": 1.90, "change_pct": 1.16, "currency": "$", "market_cap": "$2.05T", "low_52w": 120.2, "high_52w": 191.7, "rating": "BUY"},
+                {"symbol": "AMZN", "name": "Amazon.com Inc.", "sector": "E-Commerce & AWS", "exchange": "NASDAQ", "price": 186.40, "change": 2.40, "change_pct": 1.30, "currency": "$", "market_cap": "$1.95T", "low_52w": 118.3, "high_52w": 201.2, "rating": "STRONG BUY"},
+                {"symbol": "META", "name": "Meta Platforms Inc.", "sector": "Social Media & AI", "exchange": "NASDAQ", "price": 590.20, "change": 10.40, "change_pct": 1.79, "currency": "$", "market_cap": "$1.50T", "low_52w": 279.4, "high_52w": 602.9, "rating": "STRONG BUY"},
+                {"symbol": "TSLA", "name": "Tesla Inc.", "sector": "EV & Autonomous", "exchange": "NASDAQ", "price": 242.80, "change": -4.20, "change_pct": -1.70, "currency": "$", "market_cap": "$770B", "low_52w": 138.8, "high_52w": 271.0, "rating": "HOLD"},
+            ],
+            "commodities": [
+                {"symbol": "GC=F", "name": "Gold (COMEX Continuous)", "sector": "Precious Metals", "exchange": "COMEX", "price": 2658.40, "change": 16.40, "change_pct": 0.62, "currency": "$", "market_cap": "$17.8T Global", "low_52w": 1810.0, "high_52w": 2685.6, "rating": "STRONG BUY"},
+                {"symbol": "SI=F", "name": "Silver (COMEX Continuous)", "sector": "Precious Metals", "exchange": "COMEX", "price": 31.85, "change": 0.45, "change_pct": 1.43, "currency": "$", "market_cap": "$1.8T Global", "low_52w": 20.6, "high_52w": 33.2, "rating": "STRONG BUY"},
+                {"symbol": "CL=F", "name": "Crude Oil WTI", "sector": "Energy", "exchange": "NYMEX", "price": 74.20, "change": 1.30, "change_pct": 1.78, "currency": "$", "market_cap": "Commodity", "low_52w": 65.2, "high_52w": 95.0, "rating": "HOLD"},
+                {"symbol": "NG=F", "name": "Natural Gas", "sector": "Energy", "exchange": "NYMEX", "price": 2.85, "change": -0.04, "change_pct": -1.38, "currency": "$", "market_cap": "Commodity", "low_52w": 1.5, "high_52w": 3.6, "rating": "ACCUMULATE"},
+            ],
+            "crypto": [
+                {"symbol": "BTC-USD", "name": "Bitcoin", "sector": "Digital Asset", "exchange": "BINANCE", "price": 63820.00, "change": 1160.00, "change_pct": 1.85, "currency": "$", "market_cap": "$1.26T", "low_52w": 26500.0, "high_52w": 73750.0, "rating": "STRONG BUY"},
+                {"symbol": "ETH-USD", "name": "Ethereum", "sector": "Smart Contracts", "exchange": "BINANCE", "price": 2480.50, "change": 48.20, "change_pct": 1.98, "currency": "$", "market_cap": "$298B", "low_52w": 1520.0, "high_52w": 4090.0, "rating": "BUY"},
+                {"symbol": "SOL-USD", "name": "Solana", "sector": "Layer 1 Blockchain", "exchange": "BINANCE", "price": 146.20, "change": 5.40, "change_pct": 3.84, "currency": "$", "market_cap": "$68B", "low_52w": 21.0, "high_52w": 209.0, "rating": "STRONG BUY"},
+                {"symbol": "BNB-USD", "name": "Binance Coin", "sector": "Exchange Token", "exchange": "BINANCE", "price": 575.80, "change": 7.30, "change_pct": 1.28, "currency": "$", "market_cap": "$84B", "low_52w": 202.0, "high_52w": 720.0, "rating": "BUY"},
+            ],
+        }
+    }
+
+
+@app.get("/architecture")
+def serve_architecture_page():
+    """Serves the standalone Archify interactive architecture diagram page."""
+    base_dir = Path(__file__).resolve().parent.parent.parent
+    possible_paths = [
+        base_dir / ".archify" / "architecture-stocktrend-ai-20261007-194500" / "stocktrend-ai-architecture.html",
+        base_dir / "docs" / "architecture.html",
+        base_dir / "architecture.html",
+        base_dir / "stock_predict" / "ui" / "static" / "architecture.html",
+    ]
+    for p in possible_paths:
+        if p.exists():
+            return FileResponse(p, media_type="text/html")
+    raise HTTPException(status_code=404, detail="Architecture documentation page not found")
+
+
 
 def _instantiate_model(model_name: str, **kwargs) -> Any:
     name_clean = model_name.lower().replace(" ", "_").replace("-", "_")

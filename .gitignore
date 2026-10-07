@@ -16,6 +16,10 @@ htmlcov/
 *.html
 !index.html
 !docs/index.html
+!docs/architecture.html
+!architecture.html
+!stock_predict/ui/static/architecture.html
+!.archify/**/*.html
 StockTrend_AI_Complete_Project_Guide.pdf
 StockTrend_AI_System_Design_Specification.pdf
 

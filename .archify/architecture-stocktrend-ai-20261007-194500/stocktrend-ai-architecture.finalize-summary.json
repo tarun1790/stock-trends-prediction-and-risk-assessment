@@ -1,0 +1,48 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\projects\\predict stock trends\\.archify\\architecture-stocktrend-ai-20261007-194500\\candidate.json",
+    "sha256": "bdb4c7b677818b91c1816bbefeb079b3a90e8aff78229378b7e07adf63ca71c5",
+    "bytes": 9209
+  },
+  "artifact": {
+    "path": "C:\\projects\\predict stock trends\\.archify\\architecture-stocktrend-ai-20261007-194500\\stocktrend-ai-architecture.html",
+    "sha256": "eccb161d69da653d8175342cc3829c37b34abde92ad9b03ffcb8818e5cae8c3f",
+    "bytes": 781855
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\projects\\predict stock trends\\.archify\\architecture-stocktrend-ai-20261007-194500\\stocktrend-ai-architecture.finalize.json",
+    "summaryReceipt": "C:\\projects\\predict stock trends\\.archify\\architecture-stocktrend-ai-20261007-194500\\stocktrend-ai-architecture.finalize-summary.json",
+    "browserCheckReceipt": "C:\\projects\\predict stock trends\\.archify\\architecture-stocktrend-ai-20261007-194500\\stocktrend-ai-architecture.browser-check.json"
+  },
+  "update": {
+    "status": "unavailable",
+    "installedVersion": null,
+    "availableVersion": null,
+    "releaseNotes": null,
+    "checkedAt": null,
+    "source": null,
+    "noticeRequired": false,
+    "noticeText": null,
+    "reason": "invalid-local-release"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2836
+}

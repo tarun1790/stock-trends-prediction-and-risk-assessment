@@ -90,3 +90,22 @@ def test_api_physical_credit_risk():
     assert "SAFE" in data["credit_risk_tier"]
     assert data["institutional_risk_synthesis"]["credit_passed"] is True
 
+
+def test_api_stocks_explore():
+    res = client.get("/api/stocks/explore")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["status"] == "success"
+    assert len(data["market_indices"]) >= 5
+    assert "indian" in data["categories"]
+    assert "us" in data["categories"]
+    assert "commodities" in data["categories"]
+    assert "crypto" in data["categories"]
+
+
+def test_api_architecture_page():
+    res = client.get("/architecture")
+    assert res.status_code == 200
+    assert "text/html" in res.headers["content-type"]
+
+

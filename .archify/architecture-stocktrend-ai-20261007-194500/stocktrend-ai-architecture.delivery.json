@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "130c02eb-7528-40f9-bbad-5cf583bce4a1",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "C:\\projects\\predict stock trends\\.archify\\architecture-stocktrend-ai-20261007-194500\\candidate.json",
+  "output": "C:\\projects\\predict stock trends\\.archify\\architecture-stocktrend-ai-20261007-194500\\stocktrend-ai-architecture.html",
+  "specification": {
+    "sha256": "bdb4c7b677818b91c1816bbefeb079b3a90e8aff78229378b7e07adf63ca71c5",
+    "bytes": 9209
+  },
+  "artifact": {
+    "sha256": "eccb161d69da653d8175342cc3829c37b34abde92ad9b03ffcb8818e5cae8c3f",
+    "bytes": 781855
+  }
+}

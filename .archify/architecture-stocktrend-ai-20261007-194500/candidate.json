@@ -1,0 +1,371 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "StockTrend AI | Quantitative Machine Learning & Real-Time Trading Architecture",
+    "output": ".archify/architecture-stocktrend-ai-20261007-194500/stocktrend-ai-architecture.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/tarun1790/stock-trends-prediction-and-risk-assessment",
+      "provider": "github",
+      "link_mode": "web",
+      "revision": "b619321b4a516b43da47b49255cd2e3976c6ee77"
+    }
+  },
+  "components": [
+    {
+      "id": "users",
+      "type": "external",
+      "label": "Trader & Client",
+      "sublabel": "Web Browser UI",
+      "pos": [160, 80],
+      "size": [180, 64]
+    },
+    {
+      "id": "yfinance",
+      "type": "cloud",
+      "label": "Yahoo Finance & NSE",
+      "sublabel": "IST Session Lock",
+      "pos": [480, 80],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/data/loader.py",
+          "line": 173,
+          "label": "DataLoader"
+        }
+      ]
+    },
+    {
+      "id": "binance",
+      "type": "cloud",
+      "label": "Binance WebSocket",
+      "sublabel": "24/7 Crypto Stream",
+      "pos": [800, 80],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/core/order_book.py",
+          "line": 150,
+          "label": "OrderBook"
+        }
+      ]
+    },
+    {
+      "id": "growwui",
+      "type": "frontend",
+      "label": "Groww Stocks Terminal",
+      "sublabel": "Explore & Chart UI",
+      "pos": [160, 260],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/api/main.py",
+          "line": 85,
+          "label": "Web Static"
+        }
+      ]
+    },
+    {
+      "id": "dataloader",
+      "type": "backend",
+      "label": "Data Ingestion Engine",
+      "sublabel": "In-Memory TTL Cache",
+      "pos": [480, 260],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/data/loader.py",
+          "line": 173,
+          "label": "DataLoader"
+        }
+      ]
+    },
+    {
+      "id": "wsstream",
+      "type": "messagebus",
+      "label": "WebSocket Hub",
+      "sublabel": "Real-Time Broadcast",
+      "pos": [800, 260],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/api/main.py",
+          "line": 818,
+          "label": "WS Endpoint"
+        }
+      ]
+    },
+    {
+      "id": "fastapi",
+      "type": "backend",
+      "label": "FastAPI Engine",
+      "sublabel": "REST & Inference API",
+      "pos": [480, 440],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/api/main.py",
+          "line": 85,
+          "label": "FastAPI App"
+        }
+      ]
+    },
+    {
+      "id": "orderbook",
+      "type": "backend",
+      "label": "L2 Order Book",
+      "sublabel": "Bid/Ask Depth Engine",
+      "pos": [800, 440],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/core/order_book.py",
+          "line": 150,
+          "label": "OrderBookProvider"
+        }
+      ]
+    },
+    {
+      "id": "features",
+      "type": "backend",
+      "label": "26-Quant Indicators",
+      "sublabel": "FIR Hull MA & SuperTrend",
+      "pos": [480, 620],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/core/indicators.py",
+          "line": 159,
+          "label": "compute_indicators"
+        }
+      ]
+    },
+    {
+      "id": "fracdiff",
+      "type": "backend",
+      "label": "Fractional Diff",
+      "sublabel": "Stationary d* Transform",
+      "pos": [800, 620],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/core/fractional_diff.py",
+          "line": 22,
+          "label": "FracDiff"
+        }
+      ]
+    },
+    {
+      "id": "tftmodel",
+      "type": "backend",
+      "label": "Temporal Fusion TFT",
+      "sublabel": "Attention & Quantiles",
+      "pos": [160, 800],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/models/advanced_neural.py",
+          "line": 215,
+          "label": "PyTorchTFT"
+        }
+      ]
+    },
+    {
+      "id": "tcnmodel",
+      "type": "backend",
+      "label": "Temporal ConvNet TCN",
+      "sublabel": "Dilated Causal 1D Conv",
+      "pos": [480, 800],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/models/advanced_neural.py",
+          "line": 98,
+          "label": "PyTorchTCN"
+        }
+      ]
+    },
+    {
+      "id": "ensemble",
+      "type": "backend",
+      "label": "Calibrated Ensemble",
+      "sublabel": "XGB, LightGBM, RF",
+      "pos": [800, 800],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/models/calibrated_ensemble.py",
+          "line": 22,
+          "label": "Ensemble"
+        }
+      ]
+    },
+    {
+      "id": "cudaruntime",
+      "type": "backend",
+      "label": "Compute Hardware",
+      "sublabel": "CUDA GPU / MPS / CPU",
+      "pos": [480, 980],
+      "size": [180, 64],
+      "sources": [
+        {
+          "path": "stock_predict/config.py",
+          "line": 59,
+          "label": "DEVICE"
+        }
+      ]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Client Interface Layer",
+      "wraps": ["users", "growwui"]
+    },
+    {
+      "kind": "security-group",
+      "label": "FastAPI Application Server",
+      "wraps": ["fastapi", "wsstream", "orderbook", "dataloader"]
+    },
+    {
+      "kind": "region",
+      "label": "Quantitative Modeling & Compute Engine",
+      "wraps": ["features", "fracdiff", "tftmodel", "tcnmodel", "ensemble", "cudaruntime"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "users-to-ui",
+      "from": "users",
+      "to": "growwui",
+      "label": "Browser HTTPS",
+      "variant": "emphasis"
+    },
+    {
+      "id": "ui-to-api",
+      "from": "growwui",
+      "to": "fastapi",
+      "label": "REST & WebSockets",
+      "variant": "emphasis"
+    },
+    {
+      "id": "yfinance-to-loader",
+      "from": "yfinance",
+      "to": "dataloader",
+      "label": "Session OHLCV"
+    },
+    {
+      "id": "binance-to-ws",
+      "from": "binance",
+      "to": "wsstream",
+      "label": "Live Crypto Ticks"
+    },
+    {
+      "id": "loader-to-api",
+      "from": "dataloader",
+      "to": "fastapi",
+      "label": "Cached Bars"
+    },
+    {
+      "id": "api-to-ws",
+      "from": "fastapi",
+      "to": "wsstream",
+      "label": "Stream Dispatch"
+    },
+    {
+      "id": "ws-to-orderbook",
+      "from": "wsstream",
+      "to": "orderbook",
+      "label": "L2 Depth Stream"
+    },
+    {
+      "id": "api-to-features",
+      "from": "fastapi",
+      "to": "features",
+      "label": "Raw OHLCV Series"
+    },
+    {
+      "id": "features-to-fracdiff",
+      "from": "features",
+      "to": "fracdiff",
+      "label": "Stationary Signals"
+    },
+    {
+      "id": "features-to-tft",
+      "from": "features",
+      "to": "tftmodel",
+      "label": "Multi-Horizon Sequences"
+    },
+    {
+      "id": "features-to-tcn",
+      "from": "features",
+      "to": "tcnmodel",
+      "label": "Temporal Convolutions"
+    },
+    {
+      "id": "features-to-ensemble",
+      "from": "features",
+      "to": "ensemble",
+      "label": "Feature Vectors"
+    },
+    {
+      "id": "tft-to-cuda",
+      "from": "tftmodel",
+      "to": "cudaruntime",
+      "label": "GPU Tensors",
+      "variant": "dashed"
+    },
+    {
+      "id": "tcn-to-cuda",
+      "from": "tcnmodel",
+      "to": "cudaruntime",
+      "label": "CUDA Conv1d",
+      "variant": "dashed"
+    },
+    {
+      "id": "ensemble-to-cuda",
+      "from": "ensemble",
+      "to": "cudaruntime",
+      "label": "Parallel CPU/GPU",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Real-Time Multi-Asset Ingestion",
+      "items": [
+        "NSE physical exchange lock (09:15-15:30 IST) preventing off-market false prints",
+        "Binance 24/7 WebSocket feed for live crypto ticks",
+        "In-memory TTL cache delivering sub-millisecond repeated bar retrieval"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Quantitative Engineering & Stationarity",
+      "items": [
+        "26-indicator feature matrix including Hull MA FIR filter and SuperTrend ATR",
+        "Fractional differentiation preserves non-stationary long-term price memory without destroying signal"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Deep Temporal & Ensemble Forecasters",
+      "items": [
+        "PyTorch Temporal Fusion Transformer (TFT) with multi-head self-attention",
+        "PyTorch Temporal Convolutional Network (TCN) with causal dilated 1D convolutions",
+        "15-model calibrated voting consensus governed by Chow's selective classification"
+      ]
+    },
+    {
+      "dot": "amber",
+      "title": "Groww-Style Financial Web Terminal",
+      "items": [
+        "Multi-asset stock catalog covering Indian NSE, US mega-caps, commodities, and crypto",
+        "TradingView-style interactive candlestick and line charts with forward target trajectory",
+        "Live Level 2 order book depth and real-time trade prints"
+      ]
+    }
+  ]
+}
