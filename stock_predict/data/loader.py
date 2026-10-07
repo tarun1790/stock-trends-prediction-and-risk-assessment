@@ -13,8 +13,106 @@ from stock_predict.data.sample_data import generate_sector_historical_data
 
 
 import time
+from typing import Dict, List, Optional, Union
 
 _MEM_CACHE: dict = {}
+
+# Canonical Symbol Aliases covering commodities, crypto, indices, forex, and equities
+SYMBOL_ALIASES: Dict[str, str] = {
+    # Commodities
+    "GOLD": "GC=F",
+    "SILVER": "SI=F",
+    "CRUDE": "CL=F",
+    "CRUDE OIL": "CL=F",
+    "OIL": "CL=F",
+    "WTI": "CL=F",
+    "BRENT": "BZ=F",
+    "NATURAL GAS": "NG=F",
+    "NATGAS": "NG=F",
+    "GAS": "NG=F",
+    "COPPER": "HG=F",
+    "PLATINUM": "PL=F",
+    "PALLADIUM": "PA=F",
+    "GOLD ETF": "GLD",
+    "SILVER ETF": "SLV",
+
+    # Crypto
+    "BITCOIN": "BTC-USD",
+    "BTC": "BTC-USD",
+    "ETHEREUM": "ETH-USD",
+    "ETH": "ETH-USD",
+    "SOLANA": "SOL-USD",
+    "SOL": "SOL-USD",
+    "DOGECOIN": "DOGE-USD",
+    "DOGE": "DOGE-USD",
+    "RIPPLE": "XRP-USD",
+    "XRP": "XRP-USD",
+    "CARDANO": "ADA-USD",
+    "ADA": "ADA-USD",
+    "BINANCE COIN": "BNB-USD",
+    "BNB": "BNB-USD",
+
+    # Major Indices
+    "NIFTY": "^NSEI",
+    "NIFTY 50": "^NSEI",
+    "NIFTY50": "^NSEI",
+    "BANKNIFTY": "^NSEBANK",
+    "BANK NIFTY": "^NSEBANK",
+    "SENSEX": "^BSESN",
+    "SP500": "SPY",
+    "S&P 500": "SPY",
+    "S&P": "SPY",
+    "NASDAQ": "QQQ",
+    "NASDAQ 100": "QQQ",
+    "DOW": "DIA",
+    "DOW JONES": "DIA",
+    "RUSSELL 2000": "IWM",
+
+    # Indian Equities (Colloquial to NSE Ticker)
+    "RELIANCE": "RELIANCE.NS",
+    "TCS": "TCS.NS",
+    "INFOSYS": "INFY.NS",
+    "INFY": "INFY.NS",
+    "HDFC": "HDFCBANK.NS",
+    "HDFCBANK": "HDFCBANK.NS",
+    "TATA MOTORS": "TATAMOTORS.NS",
+    "TATAMOTORS": "TATAMOTORS.NS",
+    "TATA STEEL": "TATASTEEL.NS",
+    "TATASTEEL": "TATASTEEL.NS",
+    "SBI": "SBIN.NS",
+    "SBIN": "SBIN.NS",
+    "ITC": "ITC.NS",
+    "BHARTI AIRTEL": "BHARTIARTL.NS",
+    "AIRTEL": "BHARTIARTL.NS",
+    "BHARTIARTL": "BHARTIARTL.NS",
+    "ICICI": "ICICIBANK.NS",
+    "ICICIBANK": "ICICIBANK.NS",
+    "WIPRO": "WIPRO.NS",
+    "LT": "LT.NS",
+    "L&T": "LT.NS",
+    "MARUTI": "MARUTI.NS",
+    "KOTAK": "KOTAKBANK.NS",
+    "KOTAKBANK": "KOTAKBANK.NS",
+    "ADANI ENTERPRISES": "ADANIENT.NS",
+    "ADANIENT": "ADANIENT.NS",
+    "ADANI PORTS": "ADANIPORTS.NS",
+    "ADANIPORTS": "ADANIPORTS.NS",
+    "BAJAJ FINANCE": "BAJFINANCE.NS",
+    "BAJFINANCE": "BAJFINANCE.NS",
+    "ASIAN PAINTS": "ASIANPAINT.NS",
+    "ASIANPAINT": "ASIANPAINT.NS",
+    "TITAN": "TITAN.NS",
+    "SUN PHARMA": "SUNPHARMA.NS",
+    "SUNPHARMA": "SUNPHARMA.NS",
+
+    # Forex
+    "USDINR": "USDINR=X",
+    "EURUSD": "EURUSD=X",
+    "GBPUSD": "GBPUSD=X",
+    "USDJPY": "USDJPY=X",
+    "EURINR": "EURINR=X",
+    "GBPINR": "GBPINR=X",
+}
 
 
 class DataLoader:
@@ -82,6 +180,121 @@ class DataLoader:
         df["Volume"] = df_raw["volume"].astype(float).values
         return df
 
+    @classmethod
+    def resolve_symbol(cls, symbol: str) -> str:
+        """
+        Resolve colloquial names, commodity terms, company names, and un-suffixed tickers
+        to canonical exchange-traded symbols.
+        """
+        if not symbol:
+            return "AAPL"
+        
+        clean = symbol.strip().upper()
+
+        # Direct alias check
+        if clean in SYMBOL_ALIASES:
+            return SYMBOL_ALIASES[clean]
+        
+        clean_norm = " ".join(clean.split())
+        if clean_norm in SYMBOL_ALIASES:
+            return SYMBOL_ALIASES[clean_norm]
+        
+        for k, v in SYMBOL_ALIASES.items():
+            if clean == k or clean == v:
+                return v
+
+        # Canonical formats preserved
+        if (
+            clean.endswith(".NS")
+            or clean.endswith(".BO")
+            or clean.endswith("=F")
+            or clean.endswith("=X")
+            or clean.startswith("^")
+            or "-USD" in clean
+        ):
+            return clean
+
+        # If it looks like a full company name or multi-word query, resolve via search
+        if len(clean) > 4 or " " in clean:
+            try:
+                matches = cls.search_symbols(clean, limit=1)
+                if matches and matches[0].get("symbol"):
+                    return matches[0]["symbol"]
+            except Exception:
+                pass
+
+        return clean
+
+    @classmethod
+    def search_symbols(cls, query: str, limit: int = 8) -> List[Dict[str, str]]:
+        """
+        Universal symbol search across global markets with Yahoo Finance API
+        and instant local matching for commodities, crypto, indices, and equities.
+        """
+        import urllib.request
+        import urllib.parse
+        import json
+
+        if not query or not query.strip():
+            return []
+
+        clean_q = query.strip()
+        clean_upper = clean_q.upper()
+        results: List[Dict[str, str]] = []
+        seen = set()
+
+        # 1. Immediate local matching for commodities, crypto, indices
+        for name, sym in SYMBOL_ALIASES.items():
+            if clean_upper in name or name in clean_upper or clean_upper == sym:
+                if sym not in seen:
+                    seen.add(sym)
+                    asset_type = (
+                        "COMMODITY" if "=F" in sym
+                        else ("CRYPTO" if "-USD" in sym
+                        else ("INDEX" if "^" in sym
+                        else ("FOREX" if "=X" in sym else "EQUITY")))
+                    )
+                    results.append({
+                        "symbol": sym,
+                        "name": name.title(),
+                        "exchange": "COMMODITY" if "=F" in sym else ("NSE" if ".NS" in sym else "GLOBAL"),
+                        "type": asset_type,
+                    })
+                    if len(results) >= 4:
+                        break
+
+        # 2. Yahoo Finance public search
+        try:
+            url = f"https://query2.finance.yahoo.com/v1/finance/search?q={urllib.parse.quote(clean_q)}&quotesCount={limit}&newsCount=0"
+            req = urllib.request.Request(
+                url,
+                headers={"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"},
+            )
+            with urllib.request.urlopen(req, timeout=3.5) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+            
+            for item in data.get("quotes", []):
+                sym = item.get("symbol")
+                if not sym or sym in seen:
+                    continue
+                seen.add(sym)
+                disp_name = item.get("shortname") or item.get("longname") or sym
+                quote_type = item.get("quoteType", "EQUITY")
+                exchange = item.get("exchange", "GLOBAL")
+
+                results.append({
+                    "symbol": sym,
+                    "name": disp_name,
+                    "exchange": exchange,
+                    "type": quote_type,
+                })
+                if len(results) >= limit:
+                    break
+        except Exception:
+            pass
+
+        return results
+
     def fetch_live_data(
         self,
         ticker: str,
@@ -96,7 +309,7 @@ class DataLoader:
         Fetch live or historical stock data from Yahoo Finance or Binance with in-memory TTL caching.
 
         Args:
-            ticker: Stock symbol (e.g. 'AAPL', 'MSFT', 'NVDA', 'SPY', 'BTC-USD').
+            ticker: Stock symbol (e.g. 'AAPL', 'MSFT', 'NVDA', 'SPY', 'BTC-USD', 'GC=F', 'SI=F').
             start_date: Start date string (YYYY-MM-DD).
             end_date: End date string (YYYY-MM-DD).
             period: Lookback period string (e.g. '1y', '5y', '10y', 'max').
@@ -107,7 +320,8 @@ class DataLoader:
         Returns:
             Standardized DataFrame with ['Open', 'High', 'Low', 'Close', 'Volume'].
         """
-        clean_ticker = ticker.strip().upper()
+        clean_ticker = self.resolve_symbol(ticker)
+        safe_sym = clean_ticker.replace(":", "_").replace("/", "_").replace("\\", "_")
         cache_key = f"{clean_ticker}_{interval}_{start_date}_{period}"
         now_ts = time.time()
 
@@ -128,7 +342,7 @@ class DataLoader:
         if clean_ticker in ["BTC-USD", "BTCUSDT", "ETH-USD", "ETHUSDT", "BTC", "ETH"]:
             try:
                 df = self.fetch_binance_live_klines(symbol=clean_ticker, interval=interval, limit=365)
-                cache_file = self.cache_dir / f"{clean_ticker}_{interval}.csv"
+                cache_file = self.cache_dir / f"{safe_sym}_{interval}.csv"
                 df.to_csv(cache_file)
                 _MEM_CACHE[cache_key] = (now_ts, df)
                 return df
@@ -140,7 +354,7 @@ class DataLoader:
         except ImportError:
             raise ImportError("yfinance package is required for live market data fetching.")
 
-        cache_file = self.cache_dir / f"{clean_ticker}_{interval}.csv"
+        cache_file = self.cache_dir / f"{safe_sym}_{interval}.csv"
 
         # Resilient network fetch with retry
         raw_df = pd.DataFrame()
@@ -156,6 +370,20 @@ class DataLoader:
             except Exception:
                 if attempt == 0:
                     time.sleep(0.4)
+
+        if raw_df.empty:
+            # Try searching symbol or appending .NS for Indian tickers
+            alt_res = self.search_symbols(clean_ticker, limit=2)
+            if alt_res and alt_res[0]["symbol"] != clean_ticker:
+                try:
+                    alt_sym = alt_res[0]["symbol"]
+                    t_alt = yf.Ticker(alt_sym)
+                    if start_date:
+                        raw_df = t_alt.history(start=start_date, end=end_date, interval=interval)
+                    else:
+                        raw_df = t_alt.history(period=period, interval=interval)
+                except Exception:
+                    pass
 
         if not raw_df.empty:
             # Standardize columns

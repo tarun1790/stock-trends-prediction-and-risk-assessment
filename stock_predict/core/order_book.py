@@ -87,7 +87,30 @@ class MarketSessionTracker:
                 "detail": "Live 24/5 Interbank Currency Liquidity Feed" if is_open else "Forex Weekend Market Close",
             }
 
-        # 4. US Equities (NYSE / NASDAQ)
+        # 4. Commodities Futures (CME / COMEX / NYMEX - 23 Hours/Day)
+        if clean.endswith("=F"):
+            weekday = now_est.weekday()
+            cur_time = now_est.time()
+            is_weekend_closed = (
+                (weekday == 4 and cur_time >= dtime(17, 0))
+                or (weekday == 5)
+                or (weekday == 6 and cur_time < dtime(18, 0))
+            )
+            # Daily maintenance break: 5:00 PM - 6:00 PM EST Mon-Thu
+            is_daily_break = (weekday < 5) and (dtime(17, 0) <= cur_time < dtime(18, 0))
+            is_open = not (is_weekend_closed or is_daily_break)
+            return {
+                "market": "Commodities Futures (CME / COMEX / NYMEX)",
+                "exchange": "COMEX / NYMEX",
+                "is_open": is_open,
+                "status": "LIVE COMMODITIES OPEN" if is_open else "SESSION BREAK / CLOSED",
+                "timezone": "America/New_York",
+                "current_local_time": now_est.strftime("%I:%M:%S %p EDT"),
+                "trading_hours": "Sunday 6:00 PM - Friday 5:00 PM EDT (23h / day)",
+                "detail": "Live Global Commodity Futures Contract Feed" if is_open else "Electronic Trading Daily Break / Weekend Close",
+            }
+
+        # 5. US Equities (NYSE / NASDAQ)
         weekday = now_est.weekday()
         cur_time = now_est.time()
         market_open = dtime(9, 30)

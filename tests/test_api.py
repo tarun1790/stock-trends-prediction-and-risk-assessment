@@ -58,3 +58,35 @@ def test_api_backtest():
     assert "metrics" in data
     assert "equity_curve" in data
     assert data["metrics"]["initial_capital"] == 50000.0
+
+
+def test_api_universal_search():
+    res = client.get("/api/stock/search?query=silver")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["count"] > 0
+    symbols = [r["symbol"] for r in data["results"]]
+    assert "SI=F" in symbols or "SLV" in symbols
+
+    res_gold = client.get("/api/stock/search?query=gold")
+    assert res_gold.status_code == 200
+    gold_data = res_gold.json()
+    assert gold_data["count"] > 0
+
+
+def test_api_commodity_resolution():
+    from stock_predict.data.loader import DataLoader
+    assert DataLoader.resolve_symbol("gold") == "GC=F"
+    assert DataLoader.resolve_symbol("silver") == "SI=F"
+    assert DataLoader.resolve_symbol("crude oil") == "CL=F"
+    assert DataLoader.resolve_symbol("reliance") == "RELIANCE.NS"
+
+
+def test_api_physical_credit_risk():
+    res = client.get("/api/risk/credit/GC=F")
+    assert res.status_code == 200
+    data = res.json()
+    assert data["synthetic_credit_rating"] == "AAA"
+    assert "SAFE" in data["credit_risk_tier"]
+    assert data["institutional_risk_synthesis"]["credit_passed"] is True
+

@@ -7,6 +7,21 @@ technical indicator parameters, and model hyperparameters.
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List, Optional
+import os
+import sys
+
+_DLL_HANDLES = []
+if sys.platform == "win32":
+    for _p in sys.path:
+        _cand = os.path.join(_p, "torch", "lib")
+        if os.path.isdir(_cand):
+            try:
+                _DLL_HANDLES.append(os.add_dll_directory(_cand))
+                os.environ["PATH"] = _cand + os.pathsep + os.environ.get("PATH", "")
+            except Exception:
+                pass
+            break
+
 import torch
 
 BASE_DIR = Path(__file__).resolve().parent.parent

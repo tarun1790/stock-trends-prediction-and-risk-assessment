@@ -349,8 +349,8 @@ class MultiTheoryPredictor:
         theories_list = [theory_1, theory_2, theory_3, theory_4, theory_5, theory_6, theory_7, theory_8]
         weights = [0.25, 0.20, 0.15, 0.12, 0.08, 0.08, 0.06, 0.06]
 
-        synthesized_target = round(sum(w * t["target_price"] for w, t in zip(weights, theories_list)), 2)
-        synthesized_return = round(((synthesized_target - curr_price) / curr_price) * 100.0, 2)
+        synthesized_target = float(round(sum(w * t["target_price"] for w, t in zip(weights, theories_list)), 2))
+        synthesized_return = float(round(((synthesized_target - curr_price) / curr_price) * 100.0, 2))
         is_bullish = synthesized_return >= 0.0
 
         # ---------------------------------------------------------------------
@@ -367,19 +367,19 @@ class MultiTheoryPredictor:
             # Ensure daily bounds reflect actual volatility
             h_vol_cone = daily_vol * np.sqrt(h)
 
-            h_target_expected = round(curr_price * (1.0 + (h_drift_pct / 100.0)), 2)
-            h_bull_90 = round(h_target_expected + (1.28 * curr_price * h_vol_cone), 2)
-            h_bear_10 = round(h_target_expected - (1.28 * curr_price * h_vol_cone), 2)
+            h_target_expected = float(round(curr_price * (1.0 + (h_drift_pct / 100.0)), 2))
+            h_bull_90 = float(round(h_target_expected + (1.28 * curr_price * h_vol_cone), 2))
+            h_bear_10 = float(round(h_target_expected - (1.28 * curr_price * h_vol_cone), 2))
 
             conf_base = 82.0 + min(abs(synthesized_return) * 0.4, 12.0)
-            conf_h = round(max(conf_base - (h - 1) * 0.4, 62.0), 1)
+            conf_h = float(round(max(conf_base - (h - 1) * 0.4, 62.0), 1))
 
             multi_horizon_forecasts[f"horizon_{h}d"] = {
                 "horizon_days": h,
                 "trend": "UP" if is_bullish else "DOWN",
-                "confidence_up_pct": conf_h if is_bullish else round(100.0 - conf_h, 1),
-                "confidence_down_pct": round(100.0 - conf_h, 1) if is_bullish else conf_h,
-                "expected_return_pct": round(h_drift_pct, 2),
+                "confidence_up_pct": conf_h if is_bullish else float(round(100.0 - conf_h, 1)),
+                "confidence_down_pct": float(round(100.0 - conf_h, 1)) if is_bullish else conf_h,
+                "expected_return_pct": float(round(h_drift_pct, 2)),
                 "target_price": h_target_expected,
                 "bull_target_90th": h_bull_90,
                 "bear_target_10th": h_bear_10,
@@ -388,20 +388,20 @@ class MultiTheoryPredictor:
         return {
             "ticker": clean_ticker,
             "currency": currency,
-            "current_price": round(curr_price, 2),
-            "day_change": round(day_change, 2),
-            "day_change_pct": round(day_change_pct, 2),
+            "current_price": float(round(curr_price, 2)),
+            "day_change": float(round(day_change, 2)),
+            "day_change_pct": float(round(day_change_pct, 2)),
             "synthesized_consensus": {
                 "target_price": synthesized_target,
                 "expected_return_pct": synthesized_return,
                 "primary_bias": "BULLISH" if synthesized_return >= 0 else "BEARISH",
                 "verdict": "STRONG BUY" if synthesized_return >= 20.0 else ("BUY" if synthesized_return >= 6.0 else ("HOLD" if synthesized_return >= -6.0 else "SELL")),
-                "confidence_pct": round(min(max(75.0 + abs(synthesized_return) * 0.5, 70.0), 96.0), 1),
-                "confidence": round(min(max(75.0 + abs(synthesized_return) * 0.5, 70.0), 96.0), 1),
+                "confidence_pct": float(round(min(max(75.0 + abs(synthesized_return) * 0.5, 70.0), 96.0), 1)),
+                "confidence": float(round(min(max(75.0 + abs(synthesized_return) * 0.5, 70.0), 96.0), 1)),
                 "target_range": {
-                    "low": round(min(t["target_price"] for t in theories_list), 2),
-                    "median": round(float(np.median([t["target_price"] for t in theories_list])), 2),
-                    "high": round(max(t["target_price"] for t in theories_list), 2),
+                    "low": float(round(min(t["target_price"] for t in theories_list), 2)),
+                    "median": float(round(float(np.median([t["target_price"] for t in theories_list])), 2)),
+                    "high": float(round(max(t["target_price"] for t in theories_list), 2)),
                 },
                 "theories_count": len(theories_list),
             },

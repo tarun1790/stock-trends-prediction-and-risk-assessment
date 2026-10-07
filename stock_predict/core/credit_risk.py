@@ -33,6 +33,15 @@ class CreditRiskAnalyzer:
         Compute complete credit risk profile for an asset.
         """
         clean_ticker = ticker.strip().upper()
+
+        # Physical commodities, crypto, indices, and currencies have zero corporate bankruptcy risk
+        if self._is_physical_or_macro_asset(clean_ticker):
+            if df is not None and len(df) >= 30:
+                returns = df["Close"].pct_change().dropna()
+                equity_vol = float(returns.tail(60).std() * np.sqrt(252))
+            else:
+                equity_vol = 0.22
+            return self._build_physical_macro_profile(clean_ticker, equity_vol)
         
         # 1. Fetch live balance sheet and market metrics if not provided
         fund = fundamentals or self._fetch_live_fundamentals(clean_ticker)
@@ -288,6 +297,64 @@ class CreditRiskAnalyzer:
             }
 
     @staticmethod
+    def _is_physical_or_macro_asset(ticker: str) -> bool:
+        clean = ticker.strip().upper()
+        if clean.endswith("=F") or clean.endswith("=X") or clean.startswith("^"):
+            return True
+        if any(c in clean for c in ["BTC", "ETH", "SOL", "USDT", "GLD", "SLV", "USO", "GOLD", "SILVER"]):
+            return True
+        return False
+
+    def _build_physical_macro_profile(self, clean_ticker: str, volatility: float) -> Dict[str, Any]:
+        vol_pct = round(volatility * 100.0, 2)
+        asset_label = (
+            "Commodity Futures" if "=F" in clean_ticker
+            else ("Forex Pair" if "=X" in clean_ticker
+            else ("Market Benchmark Index" if "^" in clean_ticker
+            else "Digital / Physical Reserve Asset"))
+        )
+        return {
+            "ticker": clean_ticker,
+            "synthetic_credit_rating": "AAA",
+            "rating_category": f"Prime Reserve / {asset_label}",
+            "credit_risk_tier": "SAFE ZONE (Physical / Sovereign Backed)",
+            "altman_z_score": 9.99,
+            "z_score_details": {
+                "z_score": 9.99,
+                "distress_zone": "SAFE ZONE (Zero Insolvency Risk)",
+                "badge_color": "text-emerald-400 border-emerald-800 bg-emerald-950/40",
+                "description": f"{clean_ticker} is an institutional physical commodity, currency, or market index with zero corporate insolvency or bankruptcy risk.",
+                "x1_working_capital_ratio": 1.0,
+                "x2_retained_earnings_ratio": 1.0,
+                "x3_operating_efficiency": 1.0,
+                "x4_market_equity_to_debt": 99.0,
+                "x5_asset_turnover": 1.0,
+            },
+            "merton_structural_model": {
+                "distance_to_default": 10.0,
+                "default_probability_pct": 0.0,
+                "asset_volatility_pct": vol_pct,
+                "equity_volatility_pct": vol_pct,
+                "merton_verdict": "ZERO DEFAULT RISK (Physical Reserve / Asset Backed)",
+            },
+            "solvency_metrics": {
+                "debt_to_equity_pct": 0.0,
+                "net_debt_to_ebitda": 0.0,
+                "cash_to_debt_ratio": 99.9,
+                "interest_coverage_ratio": 99.9,
+                "total_debt_formatted": "$0",
+                "total_cash_formatted": "$100B+",
+                "net_debt_formatted": "$0",
+                "ebitda_formatted": "N/A (Physical Asset)",
+            },
+            "institutional_risk_synthesis": {
+                "credit_passed": True,
+                "recommendation": f"SOLVENCY UNIMPAIRED: {clean_ticker} has zero corporate debt insolvency risk; institutional grade reserve backing.",
+                "risk_reward_multiplier": 1.0,
+            },
+        }
+
+    @staticmethod
     def _format_currency(amount: float, symbol: str = "$") -> str:
         if amount >= 1e12:
             return f"{symbol}{amount / 1e12:.2f}T"
@@ -296,3 +363,4 @@ class CreditRiskAnalyzer:
         elif amount >= 1e6:
             return f"{symbol}{amount / 1e6:.2f}M"
         return f"{symbol}{amount:,.2f}"
+

@@ -200,20 +200,68 @@ STOCK_DIRECTORY = {
     "ETH-USD": {"name": "Ethereum USD", "exchange": "Crypto", "sector": "Smart Contracts", "currency": "$"},
     "SOL-USD": {"name": "Solana USD", "exchange": "Crypto", "sector": "High-Throughput L1", "currency": "$"},
 
-    # Commodities
-    "CL=F": {"name": "Crude Oil WTI Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
+    # Commodities & Precious Metals
     "GC=F": {"name": "Gold Futures", "exchange": "COMEX", "sector": "Precious Metals", "currency": "$"},
+    "SI=F": {"name": "Silver Futures", "exchange": "COMEX", "sector": "Precious Metals", "currency": "$"},
+    "CL=F": {"name": "Crude Oil WTI Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
+    "BZ=F": {"name": "Brent Crude Oil Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
+    "NG=F": {"name": "Natural Gas Futures", "exchange": "NYMEX", "sector": "Energy Commodity", "currency": "$"},
+    "HG=F": {"name": "Copper Futures", "exchange": "COMEX", "sector": "Industrial Metals", "currency": "$"},
+    "PL=F": {"name": "Platinum Futures", "exchange": "NYMEX", "sector": "Precious Metals", "currency": "$"},
+    "GLD": {"name": "SPDR Gold Shares (ETF)", "exchange": "NYSE Arca", "sector": "Precious Metals ETF", "currency": "$"},
+    "SLV": {"name": "iShares Silver Trust (ETF)", "exchange": "NYSE Arca", "sector": "Precious Metals ETF", "currency": "$"},
+    "USO": {"name": "United States Oil Fund (ETF)", "exchange": "NYSE Arca", "sector": "Energy Commodity ETF", "currency": "$"},
 }
+
+
+def resolve_ticker_info(ticker: str) -> Dict[str, Any]:
+    """
+    Dynamically resolve or infer asset metadata for ANY global equity, commodity, or currency.
+    """
+    clean_sym = DataLoader.resolve_symbol(ticker)
+    if clean_sym in STOCK_DIRECTORY:
+        return STOCK_DIRECTORY[clean_sym]
+
+    curr = "₹" if (".NS" in clean_sym or ".BO" in clean_sym or clean_sym.startswith("^NSE") or "INR" in clean_sym) else ("¥" if "JPY" in clean_sym else "$")
+
+    if clean_sym.endswith("=F"):
+        meta = {"name": f"{clean_sym} Futures", "exchange": "Futures / Commodities", "sector": "Commodity / Futures", "currency": curr}
+    elif clean_sym.endswith("=X"):
+        meta = {"name": f"{clean_sym.replace('=X', '')} Currency Pair", "exchange": "FOREX", "sector": "Foreign Exchange", "currency": curr}
+    elif clean_sym.startswith("^"):
+        meta = {"name": f"{clean_sym} Benchmark Index", "exchange": "Index", "sector": "Market Benchmark", "currency": curr}
+    elif clean_sym.endswith(".NS"):
+        corp = clean_sym.replace(".NS", "")
+        meta = {"name": f"{corp} Ltd", "exchange": "NSE", "sector": "Indian Equities", "currency": "₹"}
+    elif any(c in clean_sym for c in ["BTC", "ETH", "SOL", "USDT"]):
+        meta = {"name": f"{clean_sym} Crypto", "exchange": "Crypto", "sector": "Digital Asset", "currency": "$"}
+    else:
+        try:
+            import yfinance as yf
+            t = yf.Ticker(clean_sym)
+            raw_info = t.info or {}
+            c_name = raw_info.get("shortName") or raw_info.get("longName") or clean_sym
+            ex = raw_info.get("exchange") or "Global Exchange"
+            sec = raw_info.get("sector") or raw_info.get("quoteType") or "Equities"
+            c_code = raw_info.get("currency")
+            curr = "₹" if c_code == "INR" else ("¥" if c_code == "JPY" else "$")
+            meta = {"name": c_name, "exchange": ex, "sector": sec, "currency": curr}
+        except Exception:
+            meta = {"name": clean_sym, "exchange": "Global Equities", "sector": "Equity", "currency": curr}
+
+    STOCK_DIRECTORY[clean_sym] = meta
+    return meta
 
 
 def _load_requested_data(req_data: Any) -> pd.DataFrame:
     """Helper to load data based on request parameters with caching."""
     cache_key = None
     if hasattr(req_data, "ticker") and req_data.ticker:
-        cache_key = f"ticker_{req_data.ticker}"
+        resolved_ticker = DataLoader.resolve_symbol(req_data.ticker)
+        cache_key = f"ticker_{resolved_ticker}"
         if cache_key in _DATA_CACHE:
             return _DATA_CACHE[cache_key]
-        df = data_loader.fetch_live_data(req_data.ticker)
+        df = data_loader.fetch_live_data(resolved_ticker)
         _DATA_CACHE[cache_key] = df
         return df
     elif hasattr(req_data, "sector_key") and req_data.sector_key:
@@ -227,6 +275,25 @@ def _load_requested_data(req_data: Any) -> pd.DataFrame:
     if "sector_default" not in _DATA_CACHE:
         _DATA_CACHE["sector_default"] = data_loader.load_sector_data("diversified_financials")
     return _DATA_CACHE["sector_default"]
+
+
+@app.get("/api/stock/search")
+def search_stocks(query: str = ""):
+    """
+    Live Universal Asset Autocomplete Search:
+    Instant search for stocks (US, NSE, Global), commodities (Gold, Silver, Oil),
+    crypto (BTC, ETH), and forex pairs worldwide.
+    """
+    if not query or not query.strip():
+        return {"query": "", "count": 0, "results": []}
+
+    results = DataLoader.search_symbols(query.strip(), limit=8)
+    return {
+        "query": query.strip(),
+        "count": len(results),
+        "results": results,
+    }
+
 
 
 def _instantiate_model(model_name: str, **kwargs) -> Any:
@@ -275,13 +342,8 @@ def get_stock_overview(ticker: str):
     """
     Groww-Style Stock Fundamentals, 52-Week Performance Bar & Technical Summary.
     """
-    clean_sym = ticker.strip().upper()
-    info = STOCK_DIRECTORY.get(clean_sym, {
-        "name": clean_sym,
-        "exchange": "US",
-        "sector": "Equity",
-        "currency": "$",
-    })
+    clean_sym = DataLoader.resolve_symbol(ticker)
+    info = resolve_ticker_info(clean_sym)
 
     try:
         df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
@@ -451,7 +513,7 @@ def get_credit_risk_assessment(ticker: str):
     - Balance Sheet Solvency: Debt-to-Equity, Net Debt / EBITDA, Cash Coverage
     - Dual-Gate Trend & Credit Risk Synthesis
     """
-    clean_sym = ticker.strip().upper()
+    clean_sym = DataLoader.resolve_symbol(ticker)
     try:
         df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else None
         return credit_risk_analyzer.evaluate_credit_risk(clean_sym, df=df)
@@ -461,7 +523,7 @@ def get_credit_risk_assessment(ticker: str):
 
 @app.get("/api/market/live-quote/{ticker}")
 def get_live_market_quote(ticker: str):
-    clean_sym = ticker.strip().upper()
+    clean_sym = DataLoader.resolve_symbol(ticker)
     # Crypto: fetch Binance real-time price
     if clean_sym in ["BTC-USD", "BTCUSDT", "BTC", "ETH-USD", "ETHUSDT", "ETH"]:
         pair = "BTCUSDT" if "BTC" in clean_sym else "ETHUSDT"
@@ -524,7 +586,7 @@ def get_trade_signals(ticker: str):
     - Market Regime Detection & 15-Model Consensus Agreement %
     - Educational Indicator Explanations & Meanings
     """
-    clean_sym = ticker.strip().upper()
+    clean_sym = DataLoader.resolve_symbol(ticker)
     try:
         df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
         curr_price = float(df["Close"].iloc[-1])
@@ -785,7 +847,7 @@ def get_market_order_book(ticker: str):
     """
     Genuine Real-Time Level-2 Order Book & Recent Executed Buy/Sell Trades Feed.
     """
-    clean_sym = ticker.strip().upper()
+    clean_sym = DataLoader.resolve_symbol(ticker)
     return RealTimeOrderBookProvider.get_order_book_and_trades(clean_sym)
 
 
@@ -799,7 +861,7 @@ async def live_ticker_websocket(websocket: WebSocket, ticker: str):
     - Real-time sub-second streaming for 24/7 Crypto (Binance).
     """
     await websocket.accept()
-    clean_ticker = ticker.strip().upper()
+    clean_ticker = DataLoader.resolve_symbol(ticker)
 
     try:
         while True:
@@ -1018,10 +1080,11 @@ def run_benchmark_api(req: BenchmarkRequest):
 @app.post("/api/predict", response_model=LivePredictResponse)
 def predict_live_trend(req: LivePredictRequest):
     try:
-        df = data_loader.fetch_live_data(req.ticker) if req.ticker != "sample" else data_loader.load_sector_data("diversified_financials")
+        clean_sym = DataLoader.resolve_symbol(req.ticker)
+        df = data_loader.fetch_live_data(clean_sym) if clean_sym != "sample" else data_loader.load_sector_data("diversified_financials")
         from stock_predict.models.calibrated_ensemble import CalibratedProductionEnsemble
         ensemble = CalibratedProductionEnsemble(confidence_threshold=0.75)
-        analysis = ensemble.analyze_asset(df, ticker=req.ticker)
+        analysis = ensemble.analyze_asset(df, ticker=clean_sym)
 
         ov = analysis["technical_ratings"]["overall"]
         is_bullish = ov["score"] >= 0
@@ -1042,7 +1105,7 @@ def predict_live_trend(req: LivePredictRequest):
         }
 
         return LivePredictResponse(
-            ticker=req.ticker,
+            ticker=clean_sym,
             model_name=req.model_name,
             data_mode=req.data_mode,
             prediction_trend="UP" if signal == 1 else "DOWN",
@@ -1060,7 +1123,7 @@ def predict_live_trend(req: LivePredictRequest):
 @app.post("/api/predict/multi-horizon")
 def predict_multi_horizon_api(req: LivePredictRequest):
     try:
-        clean_sym = req.ticker.strip().upper()
+        clean_sym = DataLoader.resolve_symbol(req.ticker)
         df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
         analysis = ensemble_engine.analyze_asset(df, ticker=clean_sym)
 
@@ -1093,7 +1156,7 @@ def get_predict_theories_api(ticker: str):
     7. GARCH(1,1) Volatility Risk Cones
     8. Deep Temporal Sequence Models (PyTorch TCN & TFT)
     """
-    clean_sym = ticker.strip().upper()
+    clean_sym = DataLoader.resolve_symbol(ticker)
     try:
         df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
         analysis = ensemble_engine.analyze_asset(df, ticker=clean_sym)

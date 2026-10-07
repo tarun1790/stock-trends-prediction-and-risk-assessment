@@ -36,9 +36,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const isIndian = cleanSym.includes(".NS") || cleanSym.startsWith("^NSE") || cleanSym.includes("INR");
     const isCrypto = cleanSym.includes("BTC") || cleanSym.includes("ETH") || cleanSym.includes("SOL");
     const isForex = cleanSym.includes("=X");
+    const isCommodity = cleanSym.endsWith("=F") || ["GLD", "SLV", "USO", "GOLD", "SILVER", "CRUDE"].includes(cleanSym);
 
     let exchange = "US Equity";
-    if (isIndian) exchange = "NSE India";
+    if (isCommodity) exchange = "Commodities / Futures";
+    else if (isIndian) exchange = "NSE India";
     else if (isCrypto) exchange = "Binance 24/7";
     else if (isForex) exchange = "Global FX 24/5";
 
@@ -1765,10 +1767,96 @@ document.addEventListener("DOMContentLoaded", () => {
     customTickerInput.value = "";
     loadMarketAndIndicators();
   });
-  btnCustomTicker.addEventListener("click", loadMarketAndIndicators);
-  customTickerInput.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") loadMarketAndIndicators();
+  btnCustomTicker.addEventListener("click", () => {
+    if (searchResultsDropdown) searchResultsDropdown.classList.add("hidden");
+    loadMarketAndIndicators();
   });
+
+  customTickerInput.addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      if (searchResultsDropdown) searchResultsDropdown.classList.add("hidden");
+      loadMarketAndIndicators();
+    }
+  });
+
+  // Live Universal Autocomplete Search Handler
+  const searchResultsDropdown = document.getElementById("ticker-search-results");
+  let searchDebounceTimer = null;
+
+  if (customTickerInput && searchResultsDropdown) {
+    customTickerInput.addEventListener("input", () => {
+      const query = customTickerInput.value.trim();
+      clearTimeout(searchDebounceTimer);
+
+      if (query.length < 2) {
+        searchResultsDropdown.classList.add("hidden");
+        searchResultsDropdown.innerHTML = "";
+        return;
+      }
+
+      searchDebounceTimer = setTimeout(async () => {
+        try {
+          const res = await fetch(`/api/stock/search?query=${encodeURIComponent(query)}`);
+          if (!res.ok) return;
+          const data = await res.json();
+          const results = data.results || [];
+
+          if (results.length === 0) {
+            searchResultsDropdown.innerHTML = `
+              <div class="px-3 py-2 text-zinc-500 italic text-center">
+                Press Analyze to query "${query.toUpperCase()}"
+              </div>`;
+            searchResultsDropdown.classList.remove("hidden");
+            return;
+          }
+
+          searchResultsDropdown.innerHTML = results.map((item) => `
+            <div class="search-item px-3 py-2 hover:bg-zinc-800 cursor-pointer flex items-center justify-between transition group border-b border-zinc-800/60 last:border-0" data-symbol="${item.symbol}">
+              <div class="flex items-center space-x-2">
+                <span class="font-bold text-white group-hover:text-emerald-400">${item.symbol}</span>
+                <span class="text-zinc-400 text-[11px] truncate max-w-[130px]">${item.name}</span>
+              </div>
+              <div class="flex items-center space-x-1">
+                <span class="text-[9px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 border border-zinc-700">${item.type || 'ASSET'}</span>
+                <span class="text-[9px] px-1 py-0.5 rounded text-zinc-500">${item.exchange || ''}</span>
+              </div>
+            </div>
+          `).join("");
+
+          searchResultsDropdown.classList.remove("hidden");
+
+          // Wire click on suggestions
+          searchResultsDropdown.querySelectorAll(".search-item").forEach((el) => {
+            el.addEventListener("click", () => {
+              const sym = el.getAttribute("data-symbol");
+              customTickerInput.value = sym;
+              if (sectorSelect) {
+                let optExists = Array.from(sectorSelect.options).some(o => o.value === sym);
+                if (!optExists) {
+                  const newOpt = document.createElement("option");
+                  newOpt.value = sym;
+                  newOpt.textContent = `${sym} - Search Selected`;
+                  sectorSelect.appendChild(newOpt);
+                }
+                sectorSelect.value = sym;
+              }
+              searchResultsDropdown.classList.add("hidden");
+              loadMarketAndIndicators();
+            });
+          });
+        } catch (e) {
+          // Keep silent on transient network errors
+        }
+      }, 200);
+    });
+
+    // Close dropdown when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!customTickerInput.contains(e.target) && !searchResultsDropdown.contains(e.target)) {
+        searchResultsDropdown.classList.add("hidden");
+      }
+    });
+  }
   overlaySelect.addEventListener("change", renderPriceChart);
   mainModelSelect.addEventListener("change", loadMainPredictions);
 
