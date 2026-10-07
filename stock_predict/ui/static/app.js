@@ -203,11 +203,27 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     currentStockOverviewData = data;
+    activeTicker = data.ticker;
+    if (customTickerInput && customTickerInput.value.trim() !== data.ticker) {
+      customTickerInput.value = data.ticker;
+    }
 
     // Header Identity
     document.getElementById("stock-name").textContent = data.name;
     document.getElementById("stock-exchange").textContent = data.exchange;
+    const tickerBadge = document.getElementById("stock-ticker-badge");
+    if (tickerBadge) tickerBadge.textContent = data.ticker;
+    const sectorBadge = document.getElementById("stock-sector");
+    if (sectorBadge) sectorBadge.textContent = data.sector || "Equities";
     document.getElementById("stock-logo-box").textContent = data.ticker.substring(0, 2);
+
+    // Session status pill
+    const sessPill = document.getElementById("stock-session-pill");
+    if (sessPill && data.session) {
+      const isOpen = data.session.is_open;
+      sessPill.className = `text-[10px] font-mono px-2 py-0.5 rounded border ${isOpen ? "border-emerald-800 text-emerald-400 bg-emerald-950/40" : "border-zinc-800 text-zinc-500 bg-black"}`;
+      sessPill.textContent = data.session.session_name || (isOpen ? "MARKET OPEN" : "MARKET CLOSED");
+    }
 
     // Live Price & Change
     const isUp = data.day_change >= 0;
@@ -232,20 +248,38 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("tech-verdict-text").className = `text-sm font-extrabold ${isVerdictUp ? "text-emerald-400" : "text-rose-400"}`;
     document.getElementById("tech-verdict-counts").textContent = `${v.bullish_signals} Bullish • ${v.neutral_signals} Neutral • ${v.bearish_signals} Bearish`;
     document.getElementById("verdict-icon-box").textContent = isVerdictUp ? "▲" : "▼";
-    document.getElementById("verdict-icon-box").className = `w-9 h-9 rounded bg-black border ${isVerdictUp ? "border-emerald-800 text-emerald-400" : "border-rose-800 text-rose-400"} flex items-center justify-center font-bold text-base`;
+    document.getElementById("verdict-icon-box").className = `w-9 h-9 rounded bg-black border ${isVerdictUp ? "border-emerald-800 text-emerald-400" : "border-rose-800 text-rose-400"} flex items-center justify-center font-bold text-base shrink-0`;
 
-    // Fundamentals
+    // Fundamentals (Both in hero banner and bottom card)
     const f = data.fundamentals;
-    document.getElementById("fund-market-cap").textContent = f.market_cap;
-    document.getElementById("fund-pe").textContent = f.pe_ratio;
-    document.getElementById("fund-pb").textContent = f.pb_ratio;
-    document.getElementById("fund-ind-pe").textContent = f.industry_pe;
-    document.getElementById("fund-roe").textContent = `${f.roe_pct}%`;
-    document.getElementById("fund-eps").textContent = `${curr}${f.eps_ttm}`;
-    document.getElementById("fund-vol").textContent = f.volume_24h.toLocaleString();
+    const setVal = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = (val !== undefined && val !== null) ? val : "--"; };
+    setVal("fund-market-cap", f.market_cap);
+    setVal("fund-pe", f.pe_ratio);
+    setVal("fund-pb", f.pb_ratio);
+    setVal("fund-ind-pe", f.industry_pe);
+    setVal("fund-roe", f.roe_pct !== "N/A" ? `${f.roe_pct}%` : "N/A");
+    setVal("fund-eps", f.eps_ttm !== "N/A" ? `${curr}${f.eps_ttm}` : "N/A");
+    setVal("fund-vol", typeof f.volume_24h === "number" ? f.volume_24h.toLocaleString() : f.volume_24h);
+    setVal("fund-div", `${f.dividend_yield_pct}%`);
 
+    // Hero banner elements
+    setVal("hero-market-cap", f.market_cap);
+    setVal("hero-pe", f.pe_ratio);
+    setVal("hero-pb", f.pb_ratio);
+    setVal("hero-ind-pe", f.industry_pe);
+    setVal("hero-roe", f.roe_pct !== "N/A" ? `${f.roe_pct}%` : "N/A");
+    setVal("hero-eps", f.eps_ttm !== "N/A" ? `${curr}${f.eps_ttm}` : "N/A");
+    setVal("hero-dte", f.debt_to_equity !== undefined ? f.debt_to_equity : "N/A");
+    setVal("hero-div", `${f.dividend_yield_pct}%`);
+    setVal("hero-vol", typeof f.volume_24h === "number" ? f.volume_24h.toLocaleString() : f.volume_24h);
+
+    // Credit Risk in Hero Banner
     if (data.credit_risk) {
-      renderCreditRisk(data.credit_risk);
+      const cr = data.credit_risk;
+      if (cr.altman_z) {
+        setVal("hero-altman", `${cr.altman_z.score.toFixed(2)} (${cr.altman_z.zone})`);
+      }
+      renderCreditRisk(cr);
     }
 
 
@@ -631,11 +665,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateLiveStreamData(d) {
     if (!d || d.price === undefined) return;
     const target = getTargetParams();
-    const currentSym = (target.ticker || "SPY").toUpperCase();
+    const currentSym = (activeTicker || target.ticker || "AAPL").toUpperCase();
 
     // Prevent cross-ticker contamination
-    if (d.ticker && d.ticker.toUpperCase() !== currentSym) {
-      return;
+    if (d.ticker) {
+      const dSym = d.ticker.toUpperCase();
+      if (dSym !== currentSym && !dSym.includes(currentSym) && !currentSym.includes(dSym)) {
+        return;
+      }
     }
 
     const currPriceEl = document.getElementById("live-price");
@@ -1661,7 +1698,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (btnCustomTicker) {
     btnCustomTicker.addEventListener("click", () => {
       if (searchResultsDropdown) searchResultsDropdown.classList.add("hidden");
-      loadMarketAndIndicators();
+      const origText = btnCustomTicker.innerHTML;
+      btnCustomTicker.innerHTML = `<span class="spinner mr-1"></span> Searching...`;
+      loadMarketAndIndicators().finally(() => {
+        btnCustomTicker.innerHTML = origText;
+        if (window.lucide) lucide.createIcons();
+      });
     });
   }
 
@@ -1669,7 +1711,12 @@ document.addEventListener("DOMContentLoaded", () => {
     customTickerInput.addEventListener("keypress", (e) => {
       if (e.key === "Enter") {
         if (searchResultsDropdown) searchResultsDropdown.classList.add("hidden");
-        loadMarketAndIndicators();
+        const origText = btnCustomTicker ? btnCustomTicker.innerHTML : "";
+        if (btnCustomTicker) btnCustomTicker.innerHTML = `<span class="spinner mr-1"></span> Searching...`;
+        loadMarketAndIndicators().finally(() => {
+          if (btnCustomTicker) btnCustomTicker.innerHTML = origText;
+          if (window.lucide) lucide.createIcons();
+        });
       }
     });
   }

@@ -105,6 +105,61 @@ SYMBOL_ALIASES: Dict[str, str] = {
     "SUN PHARMA": "SUNPHARMA.NS",
     "SUNPHARMA": "SUNPHARMA.NS",
 
+    # US Mega-Caps & Popular Global Equities
+    "APPLE": "AAPL",
+    "MICROSOFT": "MSFT",
+    "TESLA": "TSLA",
+    "NVIDIA": "NVDA",
+    "GOOGLE": "GOOGL",
+    "ALPHABET": "GOOGL",
+    "AMAZON": "AMZN",
+    "META": "META",
+    "FACEBOOK": "META",
+    "NETFLIX": "NFLX",
+    "AMD": "AMD",
+    "INTEL": "INTC",
+    "QUALCOMM": "QCOM",
+    "BROADCOM": "AVGO",
+    "TSMC": "TSM",
+    "TAIWAN SEMICONDUCTOR": "TSM",
+    "ASML": "ASML",
+    "BERKSHIRE": "BRK-B",
+    "JPMORGAN": "JPM",
+    "JPM": "JPM",
+    "VISA": "V",
+    "MASTERCARD": "MA",
+    "WALMART": "WMT",
+    "DISNEY": "DIS",
+    "BOEING": "BA",
+    "COCA COLA": "KO",
+    "COCA-COLA": "KO",
+    "COKE": "KO",
+    "PEPSI": "PEP",
+    "PEPSICO": "PEP",
+    "NIKE": "NKE",
+    "FORD": "F",
+    "GENERAL MOTORS": "GM",
+    "GM": "GM",
+    "UBER": "UBER",
+    "AIRBNB": "ABNB",
+    "PALANTIR": "PLTR",
+    "COINBASE": "COIN",
+    "SNOWFLAKE": "SNOW",
+    "ALIBABA": "BABA",
+    "BABA": "BABA",
+    "SONY": "SONY",
+    "TOYOTA": "TM",
+
+    # Indian Growth & Tech Equities
+    "SWIGGY": "SWIGGY.NS",
+    "ZOMATO": "ZOMATO.NS",
+    "PAYTM": "PAYTM.NS",
+    "JIO": "JIOFIN.NS",
+    "JIO FINANCIAL": "JIOFIN.NS",
+    "OLA": "OLAELEC.NS",
+    "OLA ELECTRIC": "OLAELEC.NS",
+    "NYKAA": "NYKAA.NS",
+
     # Forex
     "USDINR": "USDINR=X",
     "EURUSD": "EURUSD=X",
@@ -203,7 +258,7 @@ class DataLoader:
             if clean == k or clean == v:
                 return v
 
-        # Canonical formats preserved
+        # If not resolved from aliases, check if it's already an exact canonical ticker
         if (
             clean.endswith(".NS")
             or clean.endswith(".BO")
@@ -214,14 +269,13 @@ class DataLoader:
         ):
             return clean
 
-        # If it looks like a full company name or multi-word query, resolve via search
-        if len(clean) > 4 or " " in clean:
-            try:
-                matches = cls.search_symbols(clean, limit=1)
-                if matches and matches[0].get("symbol"):
-                    return matches[0]["symbol"]
-            except Exception:
-                pass
+        # Resolve via global symbol search if query is colloquial or un-suffixed
+        try:
+            matches = cls.search_symbols(clean, limit=1)
+            if matches and matches[0].get("symbol"):
+                return matches[0]["symbol"]
+        except Exception:
+            pass
 
         return clean
 
@@ -243,7 +297,7 @@ class DataLoader:
         results: List[Dict[str, str]] = []
         seen = set()
 
-        # 1. Immediate local matching for commodities, crypto, indices
+        # 1. Immediate local matching for commodities, crypto, indices, equities
         for name, sym in SYMBOL_ALIASES.items():
             is_match = False
             if clean_upper == name or clean_upper == sym:
@@ -268,7 +322,7 @@ class DataLoader:
                         "exchange": "COMMODITY" if "=F" in sym else ("NSE" if ".NS" in sym else "GLOBAL"),
                         "type": asset_type,
                     })
-                    if len(results) >= 4:
+                    if len(results) >= limit:
                         break
 
         # 2. Yahoo Finance public search

@@ -94,71 +94,119 @@
   <!-- 2. LIVE STOCK SNAPSHOT & PERFORMANCE RANGE (ZERO HARDCODING) -->
   <!-- ========================================================================= -->
   <section class="border-b border-zinc-800 bg-zinc-950 w-full px-4 py-3">
-    <div class="w-full grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
-      
-      <!-- Company Identity & Live Price -->
-      <div class="lg:col-span-4 flex items-center space-x-4">
-        <div id="stock-logo-box" class="w-12 h-12 rounded bg-white text-black font-black text-lg flex items-center justify-center">
-          --
-        </div>
-        <div>
-          <div class="flex items-center space-x-2">
-            <h2 id="stock-name" class="text-base font-bold text-white tracking-wide">Connecting Real-Time Market Feed...</h2>
-            <span id="stock-exchange" class="text-[10px] font-mono px-1.5 py-0.2 rounded border border-zinc-700 text-zinc-400">--</span>
+    <div class="w-full space-y-3">
+      <!-- Top Row: Identity, Ranges, AI Verdict -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+        <!-- Company Identity & Live Price -->
+        <div class="lg:col-span-5 flex items-center space-x-3.5">
+          <div id="stock-logo-box" class="w-12 h-12 rounded-lg bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-lg flex items-center justify-center shrink-0">
+            --
           </div>
-          
-          <div class="flex items-baseline space-x-2 mt-1">
-            <span id="live-price" class="text-2xl font-extrabold font-mono text-white">--</span>
-            <span id="live-change" class="text-xs font-bold font-mono text-zinc-400">--</span>
+          <div class="min-w-0">
+            <div class="flex items-center space-x-2 flex-wrap gap-y-1">
+              <h2 id="stock-name" class="text-base font-bold text-white tracking-wide truncate max-w-xs sm:max-w-md">Connecting Real-Time Market Feed...</h2>
+              <span id="stock-ticker-badge" class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-zinc-800 text-emerald-400 border border-zinc-700">--</span>
+              <span id="stock-exchange" class="text-[10px] font-mono px-1.5 py-0.5 rounded border border-zinc-700 text-zinc-400">--</span>
+              <span id="stock-sector" class="text-[10px] font-mono px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-400">--</span>
+              <span id="stock-session-pill" class="text-[10px] font-mono px-2 py-0.5 rounded border border-zinc-800 text-zinc-500 bg-black">--</span>
+            </div>
+            
+            <div class="flex items-baseline space-x-2.5 mt-1">
+              <span id="live-price" class="text-2xl font-extrabold font-mono text-white">--</span>
+              <span id="live-change" class="text-xs font-bold font-mono text-zinc-400">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Performance Range Sliders -->
+        <div class="lg:col-span-4 grid grid-cols-2 gap-2.5 text-xs font-mono">
+          <div class="terminal-card p-2 space-y-1">
+            <div class="flex justify-between text-zinc-400 text-[10px]">
+              <span>Today's Low</span>
+              <span class="font-bold text-white">Today's Range</span>
+              <span>Today's High</span>
+            </div>
+            <div class="flex justify-between text-white font-bold text-[11px]">
+              <span id="today-low">--</span>
+              <span id="today-high">--</span>
+            </div>
+            <div class="w-full bg-zinc-900 h-1.5 rounded overflow-hidden relative border border-zinc-800">
+              <div id="today-range-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 50%;"></div>
+            </div>
+          </div>
+
+          <div class="terminal-card p-2 space-y-1">
+            <div class="flex justify-between text-zinc-400 text-[10px]">
+              <span>52W Low</span>
+              <span class="font-bold text-white">52-Week Range</span>
+              <span>52W High</span>
+            </div>
+            <div class="flex justify-between text-white font-bold text-[11px]">
+              <span id="year-low">--</span>
+              <span id="year-high">--</span>
+            </div>
+            <div class="w-full bg-zinc-900 h-1.5 rounded overflow-hidden relative border border-zinc-800">
+              <div id="year-range-bar" class="bg-white h-full transition-all duration-300" style="width: 50%;"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Technical Verdict -->
+        <div class="lg:col-span-3 terminal-card p-2.5 flex items-center justify-between font-mono">
+          <div>
+            <span class="text-[10px] text-zinc-400 uppercase tracking-wider block font-semibold">Technical Verdict</span>
+            <span id="tech-verdict-text" class="text-sm font-extrabold text-white">ANALYZING...</span>
+            <span id="tech-verdict-counts" class="text-[10px] text-zinc-500 block">-- Bullish &bull; -- Neutral &bull; -- Bearish</span>
+          </div>
+          <div id="verdict-icon-box" class="w-9 h-9 rounded bg-black border border-zinc-700 text-zinc-400 flex items-center justify-center font-bold text-base shrink-0">
+            ◼
           </div>
         </div>
       </div>
 
-      <!-- Performance Range Sliders -->
-      <div class="lg:col-span-5 grid grid-cols-2 gap-3 text-xs font-mono">
-        <div class="terminal-card p-2.5 space-y-1">
-          <div class="flex justify-between text-zinc-400 text-[11px]">
-            <span>Today's Low</span>
-            <span class="font-bold text-white">Today's Range</span>
-            <span>Today's High</span>
-          </div>
-          <div class="flex justify-between text-white font-bold text-[11px]">
-            <span id="today-low">--</span>
-            <span id="today-high">--</span>
-          </div>
-          <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden relative border border-zinc-800">
-            <div id="today-range-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 50%;"></div>
-          </div>
+      <!-- Real-Time Fundamentals & Valuation Dossier Grid (Instant Visibility) -->
+      <div class="pt-2.5 border-t border-zinc-900 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-10 gap-2 text-xs font-mono">
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">Market Cap</span>
+          <span id="hero-market-cap" class="text-xs font-bold text-white font-mono">--</span>
         </div>
-
-        <div class="terminal-card p-2.5 space-y-1">
-          <div class="flex justify-between text-zinc-400 text-[11px]">
-            <span>52W Low</span>
-            <span class="font-bold text-white">52-Week Range</span>
-            <span>52W High</span>
-          </div>
-          <div class="flex justify-between text-white font-bold text-[11px]">
-            <span id="year-low">--</span>
-            <span id="year-high">--</span>
-          </div>
-          <div class="w-full bg-zinc-900 h-2 rounded overflow-hidden relative border border-zinc-800">
-            <div id="year-range-bar" class="bg-white h-full transition-all duration-300" style="width: 50%;"></div>
-          </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">P/E Ratio</span>
+          <span id="hero-pe" class="text-xs font-bold text-white font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">P/B Ratio</span>
+          <span id="hero-pb" class="text-xs font-bold text-white font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">Industry P/E</span>
+          <span id="hero-ind-pe" class="text-xs font-bold text-white font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">ROE</span>
+          <span id="hero-roe" class="text-xs font-bold text-emerald-400 font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">EPS (TTM)</span>
+          <span id="hero-eps" class="text-xs font-bold text-white font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">Debt / Eq</span>
+          <span id="hero-dte" class="text-xs font-bold text-white font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">Div Yield</span>
+          <span id="hero-div" class="text-xs font-bold text-white font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">24h Volume</span>
+          <span id="hero-vol" class="text-xs font-bold text-white font-mono">--</span>
+        </div>
+        <div class="bg-zinc-900/60 border border-zinc-800/80 rounded px-2.5 py-1.5">
+          <span class="text-[10px] text-zinc-500 uppercase block font-semibold">Solvency (Z)</span>
+          <span id="hero-altman" class="text-xs font-bold text-emerald-400 font-mono">--</span>
         </div>
       </div>
-
-      <!-- AI Technical Verdict -->
-      <div class="lg:col-span-3 terminal-card p-2.5 flex items-center justify-between font-mono">
-        <div>
-          <span class="text-[10px] text-zinc-400 uppercase tracking-wider block">Technical Verdict</span>
-          <span id="tech-verdict-text" class="text-sm font-extrabold text-white">ANALYZING...</span>
-          <span id="tech-verdict-counts" class="text-[10px] text-zinc-500 block">-- Bullish &bull; -- Neutral &bull; -- Bearish</span>
-        </div>
-        <div id="verdict-icon-box" class="w-9 h-9 rounded bg-black border border-zinc-700 text-zinc-400 flex items-center justify-center font-bold text-base">
-          ◼
-        </div>
-      </div>
-
     </div>
   </section>
 
