@@ -383,7 +383,7 @@ def get_stock_overview(ticker: str):
     info = resolve_ticker_info(clean_sym)
 
     try:
-        df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
+        df = data_loader.fetch_live_data(clean_sym)
         close_series = df["Close"]
         high_series = df["High"]
         low_series = df["Low"]
@@ -625,7 +625,7 @@ def get_trade_signals(ticker: str):
     """
     clean_sym = DataLoader.resolve_symbol(ticker)
     try:
-        df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
+        df = data_loader.fetch_live_data(clean_sym)
         curr_price = float(df["Close"].iloc[-1])
         
         # Calculate ATR for dynamic risk management
@@ -963,8 +963,13 @@ def fetch_market_data(req: DataFetchRequest):
                 period=req.period,
             )
         else:
-            sector = req.sector_key or "diversified_financials"
-            df = data_loader.load_sector_data(sector)
+            target_sym = DataLoader.resolve_symbol(req.sector_key or "SPY")
+            df = data_loader.fetch_live_data(
+                ticker=target_sym,
+                start_date=req.start_date,
+                end_date=req.end_date,
+                period=req.period,
+            )
 
         preview = []
         for dt, row in df.tail(100).iterrows():
@@ -1118,7 +1123,7 @@ def run_benchmark_api(req: BenchmarkRequest):
 def predict_live_trend(req: LivePredictRequest):
     try:
         clean_sym = DataLoader.resolve_symbol(req.ticker)
-        df = data_loader.fetch_live_data(clean_sym) if clean_sym != "sample" else data_loader.load_sector_data("diversified_financials")
+        df = data_loader.fetch_live_data(clean_sym)
         from stock_predict.models.calibrated_ensemble import CalibratedProductionEnsemble
         ensemble = CalibratedProductionEnsemble(confidence_threshold=0.75)
         analysis = ensemble.analyze_asset(df, ticker=clean_sym)
@@ -1161,7 +1166,7 @@ def predict_live_trend(req: LivePredictRequest):
 def predict_multi_horizon_api(req: LivePredictRequest):
     try:
         clean_sym = DataLoader.resolve_symbol(req.ticker)
-        df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
+        df = data_loader.fetch_live_data(clean_sym)
         analysis = ensemble_engine.analyze_asset(df, ticker=clean_sym)
 
         return {
@@ -1195,7 +1200,7 @@ def get_predict_theories_api(ticker: str):
     """
     clean_sym = DataLoader.resolve_symbol(ticker)
     try:
-        df = data_loader.fetch_live_data(clean_sym) if clean_sym != "SAMPLE" else data_loader.load_sector_data("diversified_financials")
+        df = data_loader.fetch_live_data(clean_sym)
         analysis = ensemble_engine.analyze_asset(df, ticker=clean_sym)
         return {
             "ticker": clean_sym,
@@ -1213,7 +1218,8 @@ def get_predict_theories_api(ticker: str):
 @app.post("/api/explain")
 def explain_prediction_api(req: LivePredictRequest):
     try:
-        df = data_loader.fetch_live_data(req.ticker) if req.ticker != "sample" else data_loader.load_sector_data("diversified_financials")
+        clean_sym = DataLoader.resolve_symbol(req.ticker)
+        df = data_loader.fetch_live_data(clean_sym)
         data = prepare_dataset(df, mode=req.data_mode, sequence_length=20)
 
         model = _instantiate_model(req.model_name, epochs=25)

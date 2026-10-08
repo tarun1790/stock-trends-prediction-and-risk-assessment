@@ -23,9 +23,10 @@ htmlcov/
 StockTrend_AI_Complete_Project_Guide.pdf
 StockTrend_AI_System_Design_Specification.pdf
 
-# Sector dataset cache
-*_10yr.csv
-data_storage/*.json
+# Real-time data & temporary caches
+*.csv
+data_storage/
+data_storage/*
 scratch/
 
 

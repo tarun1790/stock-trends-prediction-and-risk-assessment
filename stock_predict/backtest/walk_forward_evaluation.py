@@ -16,15 +16,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def run_day_by_day_walk_forward(ticker_symbol: str, test_days: int = 250, conviction_threshold: float = 75.0):
     dl = DataLoader()
-    if ticker_symbol.lower() in [
-        "diversified_financials",
-        "petroleum",
-        "basic_metals",
-        "non_metallic_minerals",
-    ]:
-        df = dl.load_sector_data(ticker_symbol.lower())
-    else:
-        df = dl.fetch_live_data(ticker_symbol)
+    sector_map = {
+        "diversified_financials": "XLF",
+        "petroleum": "XLE",
+        "basic_metals": "XME",
+        "non_metallic_minerals": "XLB",
+    }
+    target_sym = sector_map.get(ticker_symbol.lower(), ticker_symbol)
+    df = dl.fetch_live_data(target_sym)
 
     if len(df) < test_days + 60:
         test_days = max(len(df) - 60, 50)

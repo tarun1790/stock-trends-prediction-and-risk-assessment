@@ -9,7 +9,6 @@ from typing import Optional, Union
 import numpy as np
 import pandas as pd
 from stock_predict.config import DATA_DIR, PAPER_SECTORS
-from stock_predict.data.sample_data import generate_sector_historical_data
 
 
 import time
@@ -188,22 +187,20 @@ class DataLoader:
         force_refresh: bool = False,
     ) -> pd.DataFrame:
         """
-        Load historical sector dataset. Uses cached CSV if present, otherwise generates
-        and persists calibrated historical data.
+        Load real-time historical sector benchmark ETF dataset dynamically.
         """
-        if sector_key not in PAPER_SECTORS:
-            raise ValueError(
-                f"Unknown sector '{sector_key}'. Available: {list(PAPER_SECTORS.keys())}"
-            )
-
-        cache_file = self.cache_dir / f"{sector_key}_10yr.csv"
-        if cache_file.exists() and not force_refresh:
-            df = pd.read_csv(cache_file, parse_dates=["Date"], index_col="Date")
-            return df
-
-        df = generate_sector_historical_data(sector_key=sector_key, num_days=2450)
-        df.to_csv(cache_file)
-        return df
+        sector_etf_map = {
+            "diversified_financials": "XLF",
+            "petroleum": "XLE",
+            "basic_metals": "XME",
+            "non_metallic_minerals": "XLB",
+            "technology": "XLK",
+            "financials": "XLF",
+            "energy": "XLE",
+            "healthcare": "XLV",
+        }
+        etf_ticker = sector_etf_map.get(sector_key.lower(), "SPY")
+        return self.fetch_live_data(etf_ticker, period="5y", interval="1d", force_refresh=force_refresh)
 
     def fetch_binance_live_klines(
         self,
@@ -406,8 +403,6 @@ class DataLoader:
         if clean_ticker in ["BTC-USD", "BTCUSDT", "ETH-USD", "ETHUSDT", "BTC", "ETH"]:
             try:
                 df = self.fetch_binance_live_klines(symbol=clean_ticker, interval=interval, limit=365)
-                cache_file = self.cache_dir / f"{safe_sym}_{interval}.csv"
-                df.to_csv(cache_file)
                 _MEM_CACHE[cache_key] = (now_ts, df)
                 return df
             except Exception:
@@ -417,8 +412,6 @@ class DataLoader:
             import yfinance as yf
         except ImportError:
             raise ImportError("yfinance package is required for live market data fetching.")
-
-        cache_file = self.cache_dir / f"{safe_sym}_{interval}.csv"
 
         # Resilient network fetch with retry
         raw_df = pd.DataFrame()
@@ -460,23 +453,13 @@ class DataLoader:
                 raw_df["Volume"].values if "Volume" in raw_df.columns else 0.0
             )
 
-            # Persist memory & disk cache
+            # Persist in-memory cache for TTL duration
             _MEM_CACHE[cache_key] = (now_ts, df)
-            try:
-                df.to_csv(cache_file)
-            except Exception:
-                pass
             return df
 
-        # Fallback 1: In-memory cache
+        # In-memory cache fallback if brief network blip
         if cache_key in _MEM_CACHE:
             return _MEM_CACHE[cache_key][1].copy()
-
-        # Fallback 2: Disk cache
-        if cache_file.exists():
-            disk_df = pd.read_csv(cache_file, parse_dates=[0], index_col=0)
-            _MEM_CACHE[cache_key] = (now_ts, disk_df)
-            return disk_df
 
         raise ValueError(
             f"Unable to retrieve real-time market data for '{clean_ticker}'. "
