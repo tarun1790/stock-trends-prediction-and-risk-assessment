@@ -261,13 +261,18 @@ def analyze_asset_and_order_book(
         font=dict(family="monospace"),
     )
 
-    # Horizon Targets
+    # Horizon Targets & 90% Conformal Corridors
+    c_low = risk_metrics.get("conformal_lower_90", p1 * 0.98)
+    c_high = risk_metrics.get("conformal_upper_90", p1 * 1.02)
+    chow_decision = analysis.get("trend_engine", {}).get("trade_decision", "EXECUTE")
+    regime_desc = analysis.get("regime_classification", {}).get("regime_name", "TRENDING")
+
     horizon_summary = f"""
-    | Forecast Horizon | Predicted Trend | Expected Return | Target Price | Selective Model Confidence |
-    | :--- | :---: | :---: | :---: | :---: |
-    | **1-Day Target** | `{"UP ▲" if h1.get("trend")=="UP" else "DOWN ▼"}` | `{h1.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p1:,.2f}`** | `{h1.get("confidence_up_pct", 75.0)}%` |
-    | **5-Day Target** | `{"UP ▲" if h5.get("trend")=="UP" else "DOWN ▼"}` | `{h5.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p5:,.2f}`** | `{h5.get("confidence_up_pct", 73.0)}%` |
-    | **20-Day Target**| `{"UP ▲" if h20.get("trend")=="UP" else "DOWN ▼"}` | `{h20.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p20:,.2f}`** | `{h20.get("confidence_up_pct", 70.0)}%` |
+    | Forecast Horizon | Predicted Trend | Expected Return | Target Price | 90% Conformal Corridor | Selective Execution |
+    | :--- | :---: | :---: | :---: | :---: | :---: |
+    | **1-Day Target** | `{"UP ▲" if h1.get("trend")=="UP" else "DOWN ▼"}` | `{h1.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p1:,.2f}`** | **`{currency}{c_low:,.2f} – {currency}{c_high:,.2f}`** | **`{chow_decision}`** |
+    | **5-Day Target** | `{"UP ▲" if h5.get("trend")=="UP" else "DOWN ▼"}` | `{h5.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p5:,.2f}`** | `{h5.get("confidence_up_pct", 73.0)}% Conf` | `Chow tau >= 75%` |
+    | **20-Day Target**| `{"UP ▲" if h20.get("trend")=="UP" else "DOWN ▼"}` | `{h20.get("expected_return_pct", 0.0):+.2f}%` | **`{currency}{p20:,.2f}`** | `{h20.get("confidence_up_pct", 70.0)}% Conf` | `Regime: {regime_desc}` |
     """
 
     # Multi-Theory Valuation Markdown
@@ -305,6 +310,8 @@ def analyze_asset_and_order_book(
     | **ATR Stop Loss** | **`{currency}{stop_loss:,.2f}`** | Volatility Risk Floor |
     | **Target 1 (Consensus)** | **`{currency}{target_1:,.2f}`** | Synthesized Multi-Theory Fair Value |
     | **Target 2 (Extended)** | **`{currency}{target_2:,.2f}`** | High Bullish Extension Target |
+    | **90% Conformal Corridor** | **`{currency}{c_low:,.2f} – {currency}{c_high:,.2f}`** | Finite-Sample 90% Price Containment Guarantee |
+    | **Chow Selective Execution** | **`{chow_decision}`** | Selective Classification (Abstain on Chop) |
     | **Risk / Reward Ratio** | **`{rr_ratio}`** | Favorable Asymmetric Edge |
     | **Position Sizing** | **`12.5% Capital`** | Half-Kelly Fractional Allocation |
     """

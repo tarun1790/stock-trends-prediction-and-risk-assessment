@@ -460,7 +460,16 @@ def compute_26_technical_indicators(df: pd.DataFrame) -> Dict[str, Any]:
     tot_bear = ma_bear + osc_bear
     tot_neut = ma_neut + osc_neut
     tot_signals = ma_total + osc_total
-    overall_score = round((tot_bull - tot_bear) / tot_signals, 2)
+
+    # Institutional Regime-Adaptive Confluence Weighting:
+    # In trend regimes (ADX >= 22), Moving Averages dictate 70% of direction.
+    # In rangebound regimes (ADX < 18), Oscillators dictate 65% of mean-reversion.
+    if adx_val >= 22.0:
+        overall_score = round(0.70 * ma_score + 0.30 * osc_score, 2)
+    elif adx_val < 18.0:
+        overall_score = round(0.35 * ma_score + 0.65 * osc_score, 2)
+    else:
+        overall_score = round(0.55 * ma_score + 0.45 * osc_score, 2)
 
     if overall_score > 0.40:
         overall_verdict = "STRONG BUY"

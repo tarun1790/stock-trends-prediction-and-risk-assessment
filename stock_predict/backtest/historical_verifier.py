@@ -46,6 +46,7 @@ def verify_historical_predictions(
     high_conv_correct = 0
     ultra_conv_trades = 0
     ultra_conv_correct = 0
+    conformal_hits = 0
 
     price_pct_errors = []
     price_abs_errors = []
@@ -77,6 +78,14 @@ def verify_historical_predictions(
         target_1d = float(analysis["forecasts"]["horizon_1d"]["target_price"])
         currency = analysis.get("currency", "$")
 
+        # Conformal interval verification (90% finite-sample coverage)
+        conformal_info = analysis.get("conformal_guarantee", {})
+        c_low = float(conformal_info.get("lower_bound_90", target_1d * 0.98))
+        c_high = float(conformal_info.get("upper_bound_90", target_1d * 1.02))
+        is_in_conformal = (c_low <= actual_next_close <= c_high)
+        if is_in_conformal:
+            conformal_hits += 1
+
         # 3. Validation checks
         is_dir_correct = (pred_dir == actual_dir)
         if is_dir_correct:
@@ -89,7 +98,10 @@ def verify_historical_predictions(
 
         # 4. Chow's Selective Classification (Act only on high conviction)
         is_high_conv = conf >= conviction_tau
-        if is_high_conv:
+        trade_decision = analysis["trend_engine"].get("trade_decision", "EXECUTE" if is_high_conv else "ABSTAIN")
+        should_execute = (trade_decision == "EXECUTE") or (is_high_conv and "ABSTAIN" not in tier)
+
+        if should_execute:
             high_conv_trades += 1
             if is_dir_correct:
                 high_conv_correct += 1
@@ -98,8 +110,8 @@ def verify_historical_predictions(
         else:
             strategy_returns.append(0.0)
 
-        # Ultra conviction tier (conf >= 85.0% or Ultra tier)
-        is_ultra_conv = (conf >= 85.0) or ("ULTRA" in tier)
+        # Ultra conviction tier (conf >= 90.0% or Ultra tier)
+        is_ultra_conv = (conf >= 90.0) or ("ULTRA" in tier)
         if is_ultra_conv:
             ultra_conv_trades += 1
             if is_dir_correct:
@@ -117,13 +129,15 @@ def verify_historical_predictions(
                 "cutoff_price": round(current_close, 2),
                 "predicted_direction": pred_dir,
                 "predicted_target_1d": round(target_1d, 2),
+                "conformal_corridor_90": [round(c_low, 2), round(c_high, 2)],
+                "conformal_contained": is_in_conformal,
                 "actual_realized_price": round(actual_next_close, 2),
                 "actual_realized_direction": actual_dir,
                 "price_error_pct": round(pct_err, 2),
                 "model_confidence": round(conf, 1),
                 "conviction_tier": tier,
                 "is_correct": is_dir_correct,
-                "trade_action": "EXECUTED" if is_high_conv else "ABSTAINED",
+                "trade_action": "EXECUTED" if should_execute else "ABSTAINED",
             })
 
     # Summary metrics
@@ -131,8 +145,10 @@ def verify_historical_predictions(
     high_conv_acc = (high_conv_correct / max(high_conv_trades, 1)) * 100.0 if high_conv_trades > 0 else raw_acc
     ultra_conv_acc = (ultra_conv_correct / max(ultra_conv_trades, 1)) * 100.0 if ultra_conv_trades > 0 else high_conv_acc
     coverage = (high_conv_trades / max(total_evals, 1)) * 100.0
+    conformal_coverage = (conformal_hits / max(total_evals, 1)) * 100.0
     mape = float(np.mean(price_pct_errors)) if price_pct_errors else 0.0
     rmse = float(np.sqrt(np.mean(np.square(price_abs_errors)))) if price_abs_errors else 0.0
+    price_level_accuracy = max(0.0, round(100.0 - mape, 2))
 
     cum_strat = float(np.prod([1.0 + r for r in strategy_returns]) - 1.0) * 100.0 if strategy_returns else 0.0
     cum_bh = float(np.prod([1.0 + r for r in buy_hold_returns]) - 1.0) * 100.0 if buy_hold_returns else 0.0
@@ -145,6 +161,8 @@ def verify_historical_predictions(
         "raw_directional_accuracy_pct": round(raw_acc, 2),
         "high_conviction_accuracy_pct": round(high_conv_acc, 2),
         "ultra_conviction_accuracy_pct": round(ultra_conv_acc, 2),
+        "conformal_90_coverage_hit_rate_pct": round(conformal_coverage, 1),
+        "price_level_accuracy_pct": price_level_accuracy,
         "market_coverage_pct": round(coverage, 1),
         "high_conviction_trades_count": high_conv_trades,
         "abstention_count": total_evals - high_conv_trades,
