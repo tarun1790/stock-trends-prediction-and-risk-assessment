@@ -151,8 +151,8 @@ st.markdown(
     .c-gold { color: #f59e0b !important; }
     .c-white { color: #ffffff !important; }
 
-    /* Groww Stock Card */
-    .groww-card {
+    /* Asset Stock Card */
+    .asset-card {
         background: #0d0d0d;
         border: 1px solid #27272a;
         border-radius: 8px;
@@ -160,20 +160,20 @@ st.markdown(
         transition: border-color 0.15s ease;
         margin-bottom: 8px;
     }
-    .groww-card:hover {
+    .asset-card:hover {
         border-color: #22c55e;
     }
-    .groww-sym {
+    .asset-sym {
         font-weight: 800;
         font-size: 14px;
         color: #ffffff;
     }
-    .groww-name {
+    .asset-name {
         font-size: 11px;
         color: #a1a1aa;
         margin-bottom: 6px;
     }
-    .groww-price {
+    .asset-price {
         font-size: 16px;
         font-weight: 800;
         font-family: monospace;
@@ -252,7 +252,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Navigation Controls: Live Terminal vs Stocks Info (Groww Style)
+# Navigation Controls: Live Terminal vs Stocks Info
 if "nav_mode" not in st.session_state:
     st.session_state.nav_mode = "Live Terminal"
 if "active_ticker" not in st.session_state:
@@ -266,13 +266,13 @@ with nav_c1:
         st.rerun()
 
 with nav_c2:
-    btn_groww_type = "primary" if st.session_state.nav_mode == "Stocks Info (Groww)" else "secondary"
-    if st.button("📊 Stocks Info (Groww)", use_container_width=True, type=btn_groww_type):
-        st.session_state.nav_mode = "Stocks Info (Groww)"
+    btn_stocks_type = "primary" if st.session_state.nav_mode == "Stocks Info" else "secondary"
+    if st.button("📊 Stocks Info", use_container_width=True, type=btn_stocks_type):
+        st.session_state.nav_mode = "Stocks Info"
         st.rerun()
 
-# Asset Catalog for Groww Explorer
-GROWW_CATALOG = {
+# Asset Catalog for Explorer
+ASSET_CATALOG = {
     "🇮🇳 Indian Equities (NSE)": [
         ("Reliance Industries", "RELIANCE.NS", "Energy & Conglomerate", "NSE"),
         ("Tata Consultancy Services", "TCS.NS", "IT Services", "NSE"),
@@ -299,18 +299,18 @@ GROWW_CATALOG = {
         ("Crude Oil WTI", "CL=F", "Global Energy", "NYMEX"),
         ("Copper Continuous", "HG=F", "Industrial Metal", "COMEX"),
     ],
-    "🪙 Crypto 24/7 (Binance)": [
-        ("Bitcoin", "BTC-USD", "Store of Value", "Binance / Global"),
-        ("Ethereum", "ETH-USD", "Smart Contracts Platform", "Binance / Global"),
-        ("Solana", "SOL-USD", "High-Throughput L1", "Binance / Global"),
-        ("Binance Coin", "BNB-USD", "Ecosystem Utility", "Binance / Global"),
+    "🪙 Crypto 24/7": [
+        ("Bitcoin", "BTC-USD", "Store of Value", "Global 24/7"),
+        ("Ethereum", "ETH-USD", "Smart Contracts Platform", "Global 24/7"),
+        ("Solana", "SOL-USD", "High-Throughput L1", "Global 24/7"),
+        ("Binance Coin", "BNB-USD", "Ecosystem Utility", "Global 24/7"),
     ],
 }
 
 # =========================================================================
-# VIEW 1: GROWW-STYLE STOCKS INFO EXPLORER
+# VIEW 1: STOCKS INFO EXPLORER
 # =========================================================================
-if st.session_state.nav_mode == "Stocks Info (Groww)":
+if st.session_state.nav_mode == "Stocks Info":
     st.markdown(
         """
         <div style="background:#0a0a0a; border:1px solid #27272a; border-radius:6px; padding:12px 16px; margin: 10px 0 16px 0;">
@@ -321,14 +321,14 @@ if st.session_state.nav_mode == "Stocks Info (Groww)":
                         Explore real-time stocks across Indian NSE, US Mega-Caps, Commodities, and Crypto. Click any card to inspect and predict.
                     </div>
                 </div>
-                <span class="badge-live">GROWW VIEW</span>
+                <span class="badge-live">MARKETS</span>
             </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    for category, stocks in GROWW_CATALOG.items():
+    for category, stocks in ASSET_CATALOG.items():
         st.markdown(f"<div style='font-size:12px; font-weight:800; text-transform:uppercase; color:#a1a1aa; margin:16px 0 8px 0; border-bottom:1px solid #1f1f23; padding-bottom:4px;'>{category}</div>", unsafe_allow_html=True)
         cols = st.columns(4)
         for i, (name, ticker, sector, exchange) in enumerate(stocks):
@@ -336,12 +336,12 @@ if st.session_state.nav_mode == "Stocks Info (Groww)":
             with col:
                 st.markdown(
                     f"""
-                    <div class="groww-card">
+                    <div class="asset-card">
                         <div style="display:flex; justify-content:space-between; align-items:baseline;">
-                            <span class="groww-sym">{ticker}</span>
+                            <span class="asset-sym">{ticker}</span>
                             <span style="font-size:10px; color:#71717a; border:1px solid #27272a; padding:1px 5px; border-radius:3px;">{exchange}</span>
                         </div>
-                        <div class="groww-name">{name} &bull; {sector}</div>
+                        <div class="asset-name">{name} &bull; {sector}</div>
                     </div>
                     """,
                     unsafe_allow_html=True,
@@ -494,7 +494,7 @@ else:
             unsafe_allow_html=True,
         )
 
-    # 2. FUNDAMENTAL VALUATION DOSSIER (GROWW METRICS)
+    # 2. FUNDAMENTAL VALUATION DOSSIER (FINANCIAL RATIOS)
     # Estimate clean ratios
     approx_pe = round(curr_price / max(atr_val * 2.5, 1.0), 1)
     approx_pb = round(max(approx_pe / 8.0, 1.2), 2)

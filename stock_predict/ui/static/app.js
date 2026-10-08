@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let exchange = "US Equity";
     if (isCommodity) exchange = "Commodities / Futures";
     else if (isIndian) exchange = "NSE India";
-    else if (isCrypto) exchange = "Binance 24/7";
+    else if (isCrypto) exchange = "Crypto 24/7";
     else if (isForex) exchange = "Global FX 24/5";
 
     return {
@@ -803,7 +803,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       liveWebSocket.onopen = () => {
         if (wsStatusText) {
-          wsStatusText.textContent = isCrypto ? `BINANCE LIVE WS: ${sym}` : `WS LIVE STREAM: ${sym}`;
+          wsStatusText.textContent = isCrypto ? `CRYPTO LIVE FEED: ${sym}` : `WS LIVE STREAM: ${sym}`;
         }
       };
 
